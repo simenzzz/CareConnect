@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - CareConnect</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="auth-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <div class="logo">
+                    <i class="fas fa-heart"></i>
+                    <span>CareConnect</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#services">Services</a></li>
+                    <li><a href="index.html#about">About</a></li>
+                    <li><a href="index.html#faq">FAQ</a></li>
+                    <li><a href="login.html" class="btn-login">Sitter Login</a></li>
+                </ul>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Signup Section -->
+    <section class="auth-section">
+        <div class="auth-container">
+            <div class="auth-card signup-card">
+                <div class="auth-header">
+                    <h1>Join as a Sitter</h1>
+                    <p>Start your journey as a trusted caregiver</p>
+                </div>
+
+                <form class="auth-form" id="signupForm" enctype="multipart/form-data">
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h3>Personal Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="fullName">Full Name *</label>
+                            <div class="input-group">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="fullName" name="fullName" required>
+                            </div>
+                            <span class="error-message" id="fullNameError"></span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="age">Age *</label>
+                                <div class="input-group">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <input type="number" id="age" name="age" min="18" max="65" required>
+                                </div>
+                                <span class="error-message" id="ageError"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="dateOfBirth">Date of Birth *</label>
+                                <div class="input-group">
+                                    <i class="fas fa-birthday-cake"></i>
+                                    <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                                </div>
+                                <span class="error-message" id="dateOfBirthError"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="area">Area in Lebanon *</label>
+                            <div class="input-group">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <select id="area" name="area" required>
+                                    <option value="">Select your area</option>
+                                    <option value="beirut">Beirut</option>
+                                    <option value="mount-lebanon">Mount Lebanon</option>
+                                    <option value="north-lebanon">North Lebanon</option>
+                                    <option value="south-lebanon">South Lebanon</option>
+                                    <option value="beqaa">Beqaa</option>
+                                    <option value="nabatieh">Nabatieh</option>
+                                    <option value="akkar">Akkar</option>
+                                    <option value="baalbek-hermel">Baalbek-Hermel</option>
+                                </select>
+                            </div>
+                            <span class="error-message" id="areaError"></span>
+                        </div>
+                    </div>
+
+                    <!-- Work Information -->
+                    <div class="form-section">
+                        <h3>Work Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="hoursPerWeek">How many hours can you work per week? *</label>
+                            <div class="input-group">
+                                <i class="fas fa-clock"></i>
+                                <select id="hoursPerWeek" name="hoursPerWeek" required>
+                                    <option value="">Select hours per week</option>
+                                    <option value="1-10">1-10 hours</option>
+                                    <option value="11-20">11-20 hours</option>
+                                    <option value="21-30">21-30 hours</option>
+                                    <option value="31-40">31-40 hours</option>
+                                    <option value="40+">40+ hours</option>
+                                </select>
+                            </div>
+                            <span class="error-message" id="hoursPerWeekError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>What type of sitter are you? *</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" name="sitterType" value="pet-sitter">
+                                    <span class="checkmark"></span>
+                                    <div class="checkbox-content">
+                                        <i class="fas fa-paw"></i>
+                                        <span>Pet Sitter</span>
+                                    </div>
+                                </label>
+                                <label class="checkbox-container">
+                                    <input type="checkbox" name="sitterType" value="baby-sitter">
+                                    <span class="checkmark"></span>
+                                    <div class="checkbox-content">
+                                        <i class="fas fa-baby"></i>
+                                        <span>Baby Sitter</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <span class="error-message" id="sitterTypeError"></span>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="form-section">
+                        <h3>Contact Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <div class="input-group">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <span class="error-message" id="emailError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Phone Number *</label>
+                            <div class="input-group">
+                                <i class="fas fa-phone"></i>
+                                <input type="tel" id="phone" name="phone" placeholder="+961 XX XXX XXX" required>
+                            </div>
+                            <span class="error-message" id="phoneError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password *</label>
+                            <div class="input-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="password" name="password" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span class="error-message" id="passwordError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password *</label>
+                            <div class="input-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span class="error-message" id="confirmPasswordError"></span>
+                        </div>
+                    </div>
+
+                    <!-- Document Upload -->
+                    <div class="form-section">
+                        <h3>Required Documents</h3>
+                        
+                        <div class="form-group">
+                            <label for="cv">CV/Resume (PDF) *</label>
+                            <div class="file-upload">
+                                <input type="file" id="cv" name="cv" accept=".pdf" required>
+                                <label for="cv" class="file-upload-label">
+                                    <i class="fas fa-file-pdf"></i>
+                                    <span class="file-text">Choose CV file</span>
+                                    <span class="file-info">PDF format only</span>
+                                </label>
+                            </div>
+                            <span class="error-message" id="cvError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="identityDocument">Identity Document *</label>
+                            <div class="file-upload">
+                                <input type="file" id="identityDocument" name="identityDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+                                <label for="identityDocument" class="file-upload-label">
+                                    <i class="fas fa-id-card"></i>
+                                    <span class="file-text">Choose Identity Document</span>
+                                    <span class="file-info">PDF, JPG, PNG formats accepted</span>
+                                </label>
+                            </div>
+                            <span class="error-message" id="identityDocumentError"></span>
+                            <p class="help-text">Upload your Lebanese ID card or passport</p>
+                        </div>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="form-group">
+                        <label class="checkbox-container terms-checkbox">
+                            <input type="checkbox" id="termsAccepted" required>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-text">
+                                I agree to the <a href="#" class="terms-link">Terms and Conditions</a> and <a href="#" class="terms-link">Privacy Policy</a> *
+                            </span>
+                        </label>
+                        <span class="error-message" id="termsError"></span>
+                    </div>
+
+                    <button type="submit" class="btn-auth">
+                        <span class="btn-text">Create Account</span>
+                        <div class="btn-loader" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="login.html">Sign in here</a></p>
+                    <p>Are you a customer? <a href="customer-signup.html">Sign up as a customer</a></p>
+                </div>
+            </div>
+
+            <div class="auth-side">
+                <div class="auth-side-content">
+                    <h2>Why Join CareConnect?</h2>
+                    <p>Become part of Lebanon's most trusted caregiving community and start earning while making a difference.</p>
+                    <div class="benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Background verified</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>Competitive rates</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>Flexible hours</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-users"></i>
+                            <span>Supportive team</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Easy booking system</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-heart"></i>
+                            <span>Make a difference</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="logo">
+                        <i class="fas fa-heart"></i>
+                        <span>CareConnect</span>
+                    </div>
+                    <p>Providing trusted care for your most precious family members.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact Info</h3>
+                    <div class="contact-info">
+                        <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                        <p><i class="fas fa-envelope"></i> info@careconnect.com</p>
+                        <p><i class="fas fa-map-marker-alt"></i> Beirut, Lebanon</p>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 CareConnect. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="auth-script.js"></script>
+</body>
+</html>

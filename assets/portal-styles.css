@@ -1,0 +1,363 @@
+/* Portal Selection Page Styles */
+
+.portal-section {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    padding: 100px 0 50px;
+    position: relative;
+}
+
+.portal-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.portal-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.portal-header {
+    text-align: center;
+    margin-bottom: 60px;
+    color: white;
+}
+
+.portal-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.portal-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.portal-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.portal-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.portal-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+}
+
+.portal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.sitter-card::before {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.customer-card::before {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.portal-card-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.portal-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+}
+
+.sitter-card .portal-icon {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+}
+
+.portal-icon i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+.portal-card-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.portal-card-header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+.portal-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.benefits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.benefit-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.benefit-item i {
+    font-size: 1.2rem;
+    color: #e74c3c;
+    width: 20px;
+    text-align: center;
+}
+
+.sitter-card .benefit-item i {
+    color: #3498db;
+}
+
+.benefit-item span {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.portal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn-portal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-portal.primary {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.sitter-card .btn-portal.primary {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.btn-portal.secondary {
+    background: transparent;
+    color: #e74c3c;
+    border: 2px solid #e74c3c;
+}
+
+.sitter-card .btn-portal.secondary {
+    color: #3498db;
+    border-color: #3498db;
+}
+
+.btn-portal:hover {
+    transform: translateY(-2px);
+}
+
+.btn-portal.primary:hover {
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.sitter-card .btn-portal.primary:hover {
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.btn-portal.secondary:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.sitter-card .btn-portal.secondary:hover {
+    background: #3498db;
+    color: white;
+}
+
+.portal-footer {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.portal-footer p {
+    color: white;
+    font-size: 1.1rem;
+}
+
+.portal-footer a {
+    color: #f39c12;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.portal-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .portal-cards {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .portal-card {
+        padding: 30px 20px;
+    }
+    
+    .portal-header h1 {
+        font-size: 2.5rem;
+    }
+    
+    .portal-header p {
+        font-size: 1rem;
+    }
+    
+    .portal-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .portal-icon i {
+        font-size: 2rem;
+    }
+    
+    .portal-card-header h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .portal-section {
+        padding: 80px 0 30px;
+    }
+    
+    .portal-header h1 {
+        font-size: 2rem;
+    }
+    
+    .portal-card {
+        padding: 20px 15px;
+    }
+    
+    .benefits-list {
+        gap: 10px;
+    }
+    
+    .benefit-item {
+        padding: 10px;
+    }
+    
+    .portal-actions {
+        gap: 12px;
+    }
+    
+    .btn-portal {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Animation Classes */
+.portal-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.portal-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hover Effects */
+.portal-card:hover .portal-icon {
+    transform: scale(1.1);
+}
+
+.portal-card:hover .benefit-item {
+    background: #e9ecef;
+}
+
+/* Loading States */
+.btn-portal.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-portal.loading i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
