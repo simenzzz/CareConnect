@@ -1,0 +1,119 @@
+.sitter-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 30px;
+}
+
+.sitter-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.sitter-image {
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.sitter-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sitter-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  color: white;
+}
+
+.sitter-info {
+  padding: 20px;
+}
+
+.sitter-info h3 {
+  font-size: 20px;
+  color: #2c3e50;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.sitter-location {
+  color: #7f8c8d;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.sitter-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.sitter-type {
+  background: #e8f4fd;
+  color: #2c5aa0;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sitter-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.stars i {
+  color: #ddd;
+  font-size: 14px;
+}
+
+.stars i.filled {
+  color: #ffc107;
+}
+
+.rating-text {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sitter-experience {
+  color: #7f8c8d;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.contact-btn {
+  width: 100%;
+  background: #2c5aa0;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.contact-btn:hover {
+  background: #1e3f73;
+}

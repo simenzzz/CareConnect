@@ -1,0 +1,146 @@
+.services-division {
+  padding: 100px 0;
+  background: white;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-header h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.section-header p {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 40px;
+  margin-top: 60px;
+}
+
+.service-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+}
+
+.service-header {
+  padding: 40px 30px;
+  text-align: center;
+  position: relative;
+}
+
+.pet-service .service-header {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.baby-service .service-header {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.service-icon {
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.service-icon i {
+  font-size: 3rem;
+  color: white;
+}
+
+.service-header h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.service-content {
+  padding: 40px 30px;
+}
+
+.service-features {
+  list-style: none;
+  margin-bottom: 30px;
+}
+
+.service-features li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.service-features i {
+  color: #27ae60;
+  margin-right: 15px;
+  font-size: 1.2rem;
+}
+
+.service-pricing {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e74c3c;
+}
+
+.btn-service {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, #27ae60, #229954);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  text-decoration: none;
+  text-align: center;
+  font-weight: 600;
+  transition: transform 0.3s ease;
+}
+
+.btn-service:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .service-header {
+    padding: 30px 20px;
+  }
+  
+  .service-content {
+    padding: 30px 20px;
+  }
+}
