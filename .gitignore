@@ -1,0 +1,12 @@
+# Firebase service account keys
+careconnect-*-firebase-adminsdk-*.json
+firebase-service-account.json
+
+# Environment variables
+.env
+
+# Old files
+old-*
+
+# Dependencies
+node_modules/
