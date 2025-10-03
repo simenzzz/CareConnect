@@ -65,7 +65,7 @@ router.post('/register', async (req, res): Promise<express.Response> => {
     );
     
     if (existingUser.rows.length > 0) {
-      return res.status(409).json({ error: 'User already exists' });
+      return res.status(409).json({ error: 'This email address is already in use. Please use a different email or try logging in.' });
     }
     
     // Start transaction
@@ -82,20 +82,88 @@ router.post('/register', async (req, res): Promise<express.Response> => {
       
       // Insert profile based on user type
       if (userType === 'customer') {
-        const { fullName, dateOfBirth, area, city } = profileData;
+        const { fullName, dateOfBirth, area, city, children, pets } = profileData;
+        
+        console.log('📥 Received customer profile data:');
+        console.log('  - Full Name:', fullName);
+        console.log('  - Date of Birth:', dateOfBirth);
+        console.log('  - Area:', area);
+        console.log('  - City:', city);
+        console.log('  - Children:', children ? `${children.length} children` : 'No children');
+        console.log('  - Pets:', pets ? `${pets.length} pets` : 'No pets');
+        
+        if (children && children.length > 0) {
+          console.log('👶 Children details:', JSON.stringify(children, null, 2));
+        }
+        
+        if (pets && pets.length > 0) {
+          console.log('🐕 Pets details:', JSON.stringify(pets, null, 2));
+        }
         
         if (!fullName || !dateOfBirth || !area || !city) {
           throw new Error('Missing required customer fields: fullName, dateOfBirth, area, city');
         }
         
-        await query(
-          'INSERT INTO customers (user_id, full_name, date_of_birth, area, city) VALUES ($1, $2, $3, $4, $5)',
+        // Insert customer
+        const customerResult = await query(
+          'INSERT INTO customers (user_id, full_name, date_of_birth, area, city) VALUES ($1, $2, $3, $4, $5) RETURNING id',
           [userId, fullName, dateOfBirth, area, city]
         );
+        
+        const customerId = customerResult.rows[0].id;
+        
+        // Insert children if provided
+        if (children && children.length > 0) {
+          console.log(`👶 Inserting ${children.length} children...`);
+          for (const child of children) {
+            try {
+              console.log(`  - Inserting child: ${child.name}, age: ${child.age} (type: ${typeof child.age})`);
+              
+              // Convert age to integer
+              const ageInt = parseInt(child.age);
+              console.log(`  - Converted age to integer: ${ageInt}`);
+              
+              if (isNaN(ageInt)) {
+                console.error(`  ❌ Invalid age for child ${child.name}: ${child.age}`);
+                throw new Error(`Invalid age for child ${child.name}`);
+              }
+              
+              const result = await query(
+                'INSERT INTO children (customer_id, name, age, hobbies, school_type, special_needs) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+                [customerId, child.name, ageInt, child.hobbies || '', child.schoolType || '', child.specialNeeds || '']
+              );
+              console.log(`    ✅ Child inserted successfully with ID: ${result.rows[0].id}`);
+            } catch (childError) {
+              console.error(`  ❌ Error inserting child ${child.name}:`, childError);
+              throw childError;
+            }
+          }
+        } else {
+          console.log('👶 No children to insert');
+        }
+        
+        // Insert pets if provided
+        if (pets && pets.length > 0) {
+          console.log(`🐕 Inserting ${pets.length} pets...`);
+          for (const pet of pets) {
+            try {
+              console.log(`  - Inserting pet: ${pet.name} (${pet.type})`);
+              const result = await query(
+                'INSERT INTO pets (customer_id, name, type, breed, personality, care_instructions, special_needs) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+                [customerId, pet.name, pet.type, pet.breed || '', pet.personality || '', pet.careInstructions || '', pet.specialNeeds || '']
+              );
+              console.log(`    ✅ Pet inserted successfully with ID: ${result.rows[0].id}`);
+            } catch (petError) {
+              console.error(`  ❌ Error inserting pet ${pet.name}:`, petError);
+              throw petError;
+            }
+          }
+        } else {
+          console.log('🐕 No pets to insert');
+        }
       } else if (userType === 'sitter') {
         const { 
           fullName, 
-          age, 
           dateOfBirth, 
           area, 
           city, 
@@ -104,13 +172,13 @@ router.post('/register', async (req, res): Promise<express.Response> => {
           experience 
         } = profileData;
         
-        if (!fullName || !age || !dateOfBirth || !area || !city || !hoursPerWeek || !sitterType) {
+        if (!fullName || !dateOfBirth || !area || !city || !hoursPerWeek || !sitterType) {
           throw new Error('Missing required sitter fields');
         }
         
         await query(
-          'INSERT INTO sitters (user_id, full_name, age, date_of_birth, area, city, hours_per_week, sitter_type, experience) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-          [userId, fullName, age, dateOfBirth, area, city, hoursPerWeek, sitterType, experience]
+          'INSERT INTO sitters (user_id, full_name, date_of_birth, area, city, hours_per_week, sitter_type, experience) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [userId, fullName, dateOfBirth, area, city, hoursPerWeek, sitterType, experience]
         );
       }
       
