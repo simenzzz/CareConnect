@@ -1,19 +1,23 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
+import { authService } from '../services/authService'
+import storageService from '../services/storageService'
 import './SignupPage.css'
 
 interface FormData {
   fullName: string
-  age: string
   dateOfBirth: string
   email: string
   phone: string
   password: string
   confirmPassword: string
   area: string
+  location: string
   hoursPerWeek: string
   sitterType: string[]
+  description: string
+  skills: string[]
   cv: File | null
   identityDocument: File | null
   termsAccepted: boolean
@@ -24,17 +28,20 @@ interface FormErrors {
 }
 
 const SignupPage: React.FC = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
-    age: '',
     dateOfBirth: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
     area: '',
+    location: '',
     hoursPerWeek: '',
     sitterType: [],
+    description: '',
+    skills: [],
     cv: null,
     identityDocument: null,
     termsAccepted: false
@@ -42,12 +49,30 @@ const SignupPage: React.FC = () => {
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [uploadingCV, setUploadingCV] = useState(false)
+  const [uploadingID, setUploadingID] = useState(false)
+  const [newSkill, setNewSkill] = useState('')
+
+  // Lebanon geography data
+  const lebanonAreas = {
+    'Beirut': ['Hamra', 'Verdun', 'Ashrafieh', 'Gemmayzeh', 'Mar Mikhael', 'Ras Beirut', 'Achrafieh', 'Badaro', 'Sin el Fil', 'Bourj Hammoud'],
+    'Mount Lebanon': ['Jounieh', 'Kaslik', 'Antelias', 'Dbayeh', 'Zalka', 'Baabda', 'Aley', 'Bhamdoun', 'Broummana', 'Metn', 'Hazmieh'],
+    'North Lebanon': ['Tripoli', 'Zgharta', 'Koura', 'Bcharre', 'Batroun', 'Byblos', 'Jbeil', 'Amioun', 'Zgharta', 'Miniyeh'],
+    'South Lebanon': ['Sidon', 'Tyre', 'Nabatieh', 'Marjayoun', 'Hasbaya', 'Jezzine', 'Saida', 'Sour', 'Bint Jbeil', 'Khiam'],
+    'Bekaa': ['Zahle', 'Baalbek', 'Hermel', 'Rashaya', 'West Bekaa', 'Marjayoun', 'Chtaura', 'Anjar', 'Qabb Elias', 'Rayak'],
+    'Nabatieh': ['Nabatieh', 'Marjayoun', 'Hasbaya', 'Bint Jbeil', 'Khiam', 'Tebnine', 'Ain Ebel', 'Deir Mimas', 'Kfar Kila', 'Rmeish']
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
+      // Reset location when area changes
+      ...(name === 'area' && { location: '' })
     }))
     
     // Clear error when user starts typing
@@ -56,6 +81,80 @@ const SignupPage: React.FC = () => {
         ...prev,
         [name]: ''
       }))
+    }
+
+        // Clear general error when user starts typing
+        if (errors.general) {
+          setErrors(prev => ({
+            ...prev,
+            general: ''
+          }))
+        }
+
+        // Clear success message when user starts typing
+        if (successMessage) {
+          setSuccessMessage('')
+        }
+
+    // Real-time validation for specific fields
+    if (name === 'email' && value.trim()) {
+      if (!isValidEmail(value)) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: 'Please enter a valid email address'
+        }))
+      } else {
+        // Clear error if validation passes
+        setErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }))
+      }
+    }
+
+    if (name === 'phone' && value.trim()) {
+      if (!isValidLebanesePhone(value)) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: 'Please enter a valid Lebanese phone number'
+        }))
+      } else {
+        // Clear error if validation passes
+        setErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }))
+      }
+    }
+
+    if (name === 'dateOfBirth' && value) {
+      if (!isOver18(value)) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: 'You must be at least 18 years old to register'
+        }))
+      } else {
+        // Clear error if validation passes
+        setErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }))
+      }
+    }
+
+    if (name === 'password' && value) {
+      if (!isValidPassword(value)) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: getPasswordErrorMessage(value)
+        }))
+      } else {
+        // Clear error if validation passes
+        setErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }))
+      }
     }
   }
 
@@ -77,31 +176,157 @@ const SignupPage: React.FC = () => {
     }
   }
 
+  const togglePassword = () => {
+    setShowPassword(!showPassword)
+  }
+
+  const toggleConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword)
+  }
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()]
+      }))
+      setNewSkill('')
+      // Clear any skill errors
+      setErrors(prev => ({
+        ...prev,
+        skills: ''
+      }))
+    }
+  }
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }))
+  }
+
+  const handleKeyPressSkill = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddSkill()
+    }
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target
     if (files && files[0]) {
+      const file = files[0]
+      
+      // Just store the file in form data, don't upload yet
       setFormData(prev => ({
         ...prev,
-        [name]: files[0]
+        [name]: file
       }))
+      
+      // Clear any previous errors for this field
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }))
+      
+      console.log(`📎 File selected for ${name}:`, file.name)
     }
+  }
+
+  // Validation helper functions
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const isValidLebanesePhone = (phone: string): boolean => {
+    // Lebanese phone number patterns: +961XXXXXXXXX or 961XXXXXXXXX or 0XXXXXXXXX
+    const phoneRegex = /^(\+961|961|0)?[0-9]{8}$/
+    return phoneRegex.test(phone.replace(/\s/g, ''))
+  }
+
+  const isOver18 = (dateOfBirth: string): boolean => {
+    const today = new Date()
+    const birthDate = new Date(dateOfBirth)
+    const age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      return age - 1 >= 18
+    }
+    return age >= 18
+  }
+
+  const isValidPassword = (password: string): boolean => {
+    // At least 8 characters
+    if (password.length < 8) return false
+    
+    // At least 1 uppercase letter (A-Z)
+    if (!/[A-Z]/.test(password)) return false
+    
+    // At least 1 lowercase letter (a-z)
+    if (!/[a-z]/.test(password)) return false
+    
+    // At least 1 number (0-9)
+    if (!/[0-9]/.test(password)) return false
+    
+    // At least 1 special character (!@#$%^&* etc.)
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return false
+    
+    return true
+  }
+
+  const getPasswordErrorMessage = (password: string): string => {
+    if (password.length < 8) return 'Password must be at least 8 characters long'
+    if (!/[A-Z]/.test(password)) return 'Password must contain at least 1 uppercase letter (A-Z)'
+    if (!/[a-z]/.test(password)) return 'Password must contain at least 1 lowercase letter (a-z)'
+    if (!/[0-9]/.test(password)) return 'Password must contain at least 1 number (0-9)'
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return 'Password must contain at least 1 special character (!@#$%^&* etc.)'
+    return ''
   }
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required'
-    if (!formData.age) newErrors.age = 'Age is required'
-    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required'
-    if (!formData.email.trim()) newErrors.email = 'Email is required'
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
-    if (!formData.password) newErrors.password = 'Password is required'
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match'
+    
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Date of birth is required'
+    } else if (!isOver18(formData.dateOfBirth)) {
+      newErrors.dateOfBirth = 'You must be at least 18 years old to register'
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required'
+    } else if (!isValidLebanesePhone(formData.phone)) {
+      newErrors.phone = 'Please enter a valid Lebanese phone number'
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required'
+    } else if (!isValidPassword(formData.password)) {
+      newErrors.password = getPasswordErrorMessage(formData.password)
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match'
+    }
     if (!formData.area) newErrors.area = 'Area is required'
+    if (!formData.location) newErrors.location = 'Location is required'
     if (!formData.hoursPerWeek) newErrors.hoursPerWeek = 'Hours per week is required'
     if (formData.sitterType.length === 0) newErrors.sitterType = 'Please select at least one sitter type'
-    if (!formData.cv) newErrors.cv = 'CV is required'
-    if (!formData.identityDocument) newErrors.identityDocument = 'Identity document is required'
+    
+    // Check if files are selected
+    if (!formData.cv) newErrors.cv = 'Please select your CV'
+    if (!formData.identityDocument) newErrors.identityDocument = 'Please select your identity document'
+    
     if (!formData.termsAccepted) newErrors.termsAccepted = 'You must accept the terms and conditions'
 
     setErrors(newErrors)
@@ -112,22 +337,147 @@ const SignupPage: React.FC = () => {
     e.preventDefault()
     
     if (!validateForm()) {
+      // Scroll to first error
+      const firstErrorField = Object.keys(errors)[0]
+      const errorElement = document.querySelector(`[name="${firstErrorField}"]`) || document.querySelector('.error')
+      errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      
+      // Show general error message summarizing validation issues
+      setErrors(prev => ({
+        ...prev,
+        general: 'Please fill in all required fields correctly before submitting.'
+      }))
       return
     }
 
     setIsLoading(true)
     
     try {
-      // Here you would typically send the data to your backend
-      console.log('Form data:', formData)
+      console.log('🚀 Starting sitter signup...')
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Step 1: Create Firebase account first (without documents)
+      console.log('👤 Creating sitter signup...')
       
-      alert('Account created successfully!')
+      // Convert sitterType array to single character: B (baby), P (pet), T (both)
+      let sitterTypeChar = 'T'
+      if (formData.sitterType.length === 1) {
+        sitterTypeChar = formData.sitterType[0] === 'baby-sitter' ? 'B' : 'P'
+      } else if (formData.sitterType.length === 2) {
+        sitterTypeChar = 'T' // Both types selected
+      }
+      
+      const profileDataWithoutDocs = {
+        fullName: formData.fullName,
+        dateOfBirth: formData.dateOfBirth,
+        area: formData.area,
+        city: formData.location,
+        phone: formData.phone,
+        hoursPerWeek: formData.hoursPerWeek,
+        sitterType: sitterTypeChar, // B, P, or T
+        experience: 'Not specified',
+        description: formData.description,
+        skills: formData.skills
+      }
+      
+      const signupResult = await authService.signup({
+        email: formData.email,
+        password: formData.password,
+        userType: 'sitter',
+        profileData: profileDataWithoutDocs
+      })
+      
+      if (!signupResult.success) {
+        console.error('❌ Account creation failed:', signupResult.error)
+        setErrors(prev => ({
+          ...prev,
+          general: signupResult.error || 'Account creation failed. Please try again.'
+        }))
+        setIsLoading(false)
+        return
+      }
+      
+      console.log('✅ Firebase account created successfully')
+      
+      // Step 2: Now upload documents to Firebase Storage
+      console.log('📤 Uploading documents...')
+      let uploadedCvUrl = ''
+      let uploadedIdUrl = ''
+      
+      if (formData.cv) {
+        setUploadingCV(true)
+        const cvResult = await storageService.uploadCV(formData.cv, formData.fullName)
+        setUploadingCV(false)
+        
+        if (!cvResult.success) {
+          console.error('❌ CV upload failed:', cvResult.error)
+          // Account is created but document upload failed - log this
+          setErrors(prev => ({
+            ...prev,
+            general: 'Account created but CV upload failed. You can update it later from your profile.'
+          }))
+          setIsLoading(false)
+          return
+        }
+        uploadedCvUrl = cvResult.url || ''
+        console.log('✅ CV uploaded:', uploadedCvUrl)
+      }
+      
+      if (formData.identityDocument) {
+        setUploadingID(true)
+        const idResult = await storageService.uploadIdentityDocument(formData.identityDocument, formData.fullName)
+        setUploadingID(false)
+        
+        if (!idResult.success) {
+          console.error('❌ Identity document upload failed:', idResult.error)
+          // Account is created but document upload failed - log this
+          setErrors(prev => ({
+            ...prev,
+            general: 'Account created but identity document upload failed. You can update it later from your profile.'
+          }))
+          setIsLoading(false)
+          return
+        }
+        uploadedIdUrl = idResult.url || ''
+        console.log('✅ Identity Document uploaded:', uploadedIdUrl)
+      }
+      
+      // Step 3: Update the user profile with document URLs in the database
+      console.log('📝 Updating database with document URLs...')
+      const updateResult = await authService.updateSitterDocuments(uploadedCvUrl, uploadedIdUrl)
+      
+      if (!updateResult.success) {
+        console.error('❌ Failed to update documents in database:', updateResult.error)
+        setErrors(prev => ({
+          ...prev,
+          general: 'Account created but failed to save document links. Please contact support.'
+        }))
+        setIsLoading(false)
+        return
+      }
+      
+      console.log('✅ Documents saved to database')
+      
+      const result = signupResult
+      
+      if (result.success) {
+        console.log('✅ Signup successful:', result.data)
+        // Redirect to homepage with success message
+        navigate('/?signup=success')
+      } else {
+        // Show error in the UI instead of alert
+        setErrors(prev => ({
+          ...prev,
+          general: result.error || 'Account creation failed'
+        }))
+        console.error('❌ Signup failed:', result.error)
+      }
+      
     } catch (error) {
       console.error('Error creating account:', error)
-      alert('Error creating account. Please try again.')
+      setErrors(prev => ({
+        ...prev,
+        general: 'Error creating account. Please try again.'
+      }))
     } finally {
       setIsLoading(false)
     }
@@ -166,41 +516,20 @@ const SignupPage: React.FC = () => {
                   {errors.fullName && <span className="error-message">{errors.fullName}</span>}
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="age">Age *</label>
-                    <div className="input-group">
-                      <i className="fas fa-calendar-alt"></i>
-                      <input
-                        type="number"
-                        id="age"
-                        name="age"
-                        value={formData.age}
-                        onChange={handleInputChange}
-                        className={errors.age ? 'error' : ''}
-                        placeholder="Your age"
-                        min="18"
-                        max="65"
-                      />
-                    </div>
-                    {errors.age && <span className="error-message">{errors.age}</span>}
+                <div className="form-group">
+                  <label htmlFor="dateOfBirth">Date of Birth *</label>
+                  <div className="input-group">
+                    <i className="fas fa-birthday-cake"></i>
+                    <input
+                      type="date"
+                      id="dateOfBirth"
+                      name="dateOfBirth"
+                      value={formData.dateOfBirth}
+                      onChange={handleInputChange}
+                      className={errors.dateOfBirth ? 'error' : ''}
+                    />
                   </div>
-
-                  <div className="form-group">
-                    <label htmlFor="dateOfBirth">Date of Birth *</label>
-                    <div className="input-group">
-                      <i className="fas fa-birthday-cake"></i>
-                      <input
-                        type="date"
-                        id="dateOfBirth"
-                        name="dateOfBirth"
-                        value={formData.dateOfBirth}
-                        onChange={handleInputChange}
-                        className={errors.dateOfBirth ? 'error' : ''}
-                      />
-                    </div>
-                    {errors.dateOfBirth && <span className="error-message">{errors.dateOfBirth}</span>}
-                  </div>
+                  {errors.dateOfBirth && <span className="error-message">{errors.dateOfBirth}</span>}
                 </div>
 
                 <div className="form-group">
@@ -215,17 +544,38 @@ const SignupPage: React.FC = () => {
                       className={errors.area ? 'error' : ''}
                     >
                       <option value="">Select your area</option>
-                      <option value="beirut">Beirut</option>
-                      <option value="mount-lebanon">Mount Lebanon</option>
-                      <option value="north-lebanon">North Lebanon</option>
-                      <option value="south-lebanon">South Lebanon</option>
-                      <option value="beqaa">Beqaa</option>
-                      <option value="nabatieh">Nabatieh</option>
-                      <option value="akkar">Akkar</option>
-                      <option value="baalbek-hermel">Baalbek-Hermel</option>
+                      <option value="Beirut">Beirut</option>
+                      <option value="Mount Lebanon">Mount Lebanon</option>
+                      <option value="North Lebanon">North Lebanon</option>
+                      <option value="South Lebanon">South Lebanon</option>
+                      <option value="Bekaa">Bekaa</option>
+                      <option value="Nabatieh">Nabatieh</option>
                     </select>
                   </div>
                   {errors.area && <span className="error-message">{errors.area}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="location">Location *</label>
+                  <div className="input-group">
+                    <i className="fas fa-location-dot"></i>
+                    <select
+                      id="location"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      className={errors.location ? 'error' : ''}
+                      disabled={!formData.area}
+                    >
+                      <option value="">Select your location</option>
+                      {formData.area && lebanonAreas[formData.area as keyof typeof lebanonAreas]?.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.location && <span className="error-message">{errors.location}</span>}
                 </div>
               </div>
 
@@ -257,8 +607,8 @@ const SignupPage: React.FC = () => {
 
                 <div className="form-group">
                   <label>What type of sitter are you? *</label>
-                  <div className="checkbox-group">
-                    <label className="checkbox-container">
+                  <div className="radio-group">
+                    <label className="radio-container">
                       <input
                         type="checkbox"
                         name="sitterType"
@@ -266,13 +616,13 @@ const SignupPage: React.FC = () => {
                         checked={formData.sitterType.includes('pet-sitter')}
                         onChange={handleCheckboxChange}
                       />
-                      <span className="checkmark"></span>
-                      <div className="checkbox-content">
+                      <span className="radio-mark"></span>
+                      <div className="radio-content">
                         <i className="fas fa-paw"></i>
                         <span>Pet Sitter</span>
                       </div>
                     </label>
-                    <label className="checkbox-container">
+                    <label className="radio-container">
                       <input
                         type="checkbox"
                         name="sitterType"
@@ -280,14 +630,80 @@ const SignupPage: React.FC = () => {
                         checked={formData.sitterType.includes('baby-sitter')}
                         onChange={handleCheckboxChange}
                       />
-                      <span className="checkmark"></span>
-                      <div className="checkbox-content">
+                      <span className="radio-mark"></span>
+                      <div className="radio-content">
                         <i className="fas fa-baby"></i>
                         <span>Baby Sitter</span>
                       </div>
                     </label>
                   </div>
                   {errors.sitterType && <span className="error-message">{errors.sitterType}</span>}
+                </div>
+
+                {/* Skills Section */}
+                <div className="form-group">
+                  <label>Skills</label>
+                  <p className="help-text">Add skills that make you a great sitter (e.g., First Aid, CPR, Cooking, etc.)</p>
+                  
+                  <div className="skills-input-container">
+                    <div className="input-group">
+                      <i className="fas fa-star"></i>
+                      <input
+                        type="text"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyPress={handleKeyPressSkill}
+                        placeholder="Type a skill and press Enter or click +"
+                        maxLength={50}
+                      />
+                      <button 
+                        type="button" 
+                        className="btn-add-skill"
+                        onClick={handleAddSkill}
+                        disabled={!newSkill.trim()}
+                      >
+                        <i className="fas fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {formData.skills.length > 0 && (
+                    <div className="skills-list">
+                      {formData.skills.map((skill, index) => (
+                        <div key={index} className="skill-tag">
+                          <span>{skill}</span>
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveSkill(skill)}
+                            className="btn-remove-skill"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {errors.skills && <span className="error-message">{errors.skills}</span>}
+                </div>
+
+                {/* Description Section */}
+                <div className="form-group">
+                  <label htmlFor="description">Describe Yourself</label>
+                  <p className="help-text">Tell families about yourself, your experience, and why you'd be a great sitter</p>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className={errors.description ? 'error' : ''}
+                    placeholder="Share your experience, personality, and what makes you special..."
+                    rows={6}
+                    maxLength={1000}
+                  />
+                  <div className="char-count">
+                    {formData.description.length}/1000 characters
+                  </div>
+                  {errors.description && <span className="error-message">{errors.description}</span>}
                 </div>
               </div>
 
@@ -334,7 +750,7 @@ const SignupPage: React.FC = () => {
                   <div className="input-group">
                     <i className="fas fa-lock"></i>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       id="password"
                       name="password"
                       value={formData.password}
@@ -342,8 +758,8 @@ const SignupPage: React.FC = () => {
                       className={errors.password ? 'error' : ''}
                       placeholder="Create a password"
                     />
-                    <button type="button" className="password-toggle">
-                      <i className="fas fa-eye"></i>
+                    <button type="button" className="password-toggle" onClick={togglePassword}>
+                      <i className={`fas fa-${showPassword ? 'eye-slash' : 'eye'}`}></i>
                     </button>
                   </div>
                   {errors.password && <span className="error-message">{errors.password}</span>}
@@ -354,7 +770,7 @@ const SignupPage: React.FC = () => {
                   <div className="input-group">
                     <i className="fas fa-lock"></i>
                     <input
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       id="confirmPassword"
                       name="confirmPassword"
                       value={formData.confirmPassword}
@@ -362,8 +778,8 @@ const SignupPage: React.FC = () => {
                       className={errors.confirmPassword ? 'error' : ''}
                       placeholder="Confirm your password"
                     />
-                    <button type="button" className="password-toggle">
-                      <i className="fas fa-eye"></i>
+                    <button type="button" className="password-toggle" onClick={toggleConfirmPassword}>
+                      <i className={`fas fa-${showConfirmPassword ? 'eye-slash' : 'eye'}`}></i>
                     </button>
                   </div>
                   {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
@@ -372,7 +788,7 @@ const SignupPage: React.FC = () => {
 
               {/* Document Upload */}
               <div className="form-section">
-                <h3>Required Documents</h3>
+                <h3>Required Documents *</h3>
                 
                 <div className="form-group">
                   <label htmlFor="cv">CV/Resume (PDF) *</label>
@@ -384,11 +800,22 @@ const SignupPage: React.FC = () => {
                       accept=".pdf"
                       onChange={handleFileChange}
                       className={errors.cv ? 'error' : ''}
+                      disabled={uploadingCV}
                     />
                     <label htmlFor="cv" className="file-upload-label">
-                      <i className="fas fa-file-pdf"></i>
-                      <span className="file-text">Choose CV file</span>
-                      <span className="file-info">PDF format only</span>
+                      {formData.cv ? (
+                        <>
+                          <i className="fas fa-check-circle" style={{ color: '#2ecc71' }}></i>
+                          <span className="file-text">File Selected</span>
+                          <span className="file-info">{formData.cv.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-file-pdf"></i>
+                          <span className="file-text">Choose CV file</span>
+                          <span className="file-info">PDF format only (Max 5MB)</span>
+                        </>
+                      )}
                     </label>
                   </div>
                   {errors.cv && <span className="error-message">{errors.cv}</span>}
@@ -404,11 +831,22 @@ const SignupPage: React.FC = () => {
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={handleFileChange}
                       className={errors.identityDocument ? 'error' : ''}
+                      disabled={uploadingID}
                     />
                     <label htmlFor="identityDocument" className="file-upload-label">
-                      <i className="fas fa-id-card"></i>
-                      <span className="file-text">Choose Identity Document</span>
-                      <span className="file-info">PDF, JPG, PNG formats accepted</span>
+                      {formData.identityDocument ? (
+                        <>
+                          <i className="fas fa-check-circle" style={{ color: '#2ecc71' }}></i>
+                          <span className="file-text">File Selected</span>
+                          <span className="file-info">{formData.identityDocument.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-id-card"></i>
+                          <span className="file-text">Choose Identity Document</span>
+                          <span className="file-info">PDF, JPG, PNG formats accepted (Max 10MB)</span>
+                        </>
+                      )}
                     </label>
                   </div>
                   {errors.identityDocument && <span className="error-message">{errors.identityDocument}</span>}
@@ -418,20 +856,44 @@ const SignupPage: React.FC = () => {
 
               {/* Terms and Conditions */}
               <div className="form-group">
-                <label className="checkbox-container terms-checkbox">
-                  <input
-                    type="checkbox"
-                    name="termsAccepted"
-                    checked={formData.termsAccepted}
-                    onChange={handleCheckboxChange}
-                  />
-                  <span className="checkmark"></span>
-                  <span className="checkbox-text">
-                    I agree to the <a href="#" className="terms-link">Terms and Conditions</a> and <a href="#" className="terms-link">Privacy Policy</a> *
-                  </span>
-                </label>
+                <div className="terms-agreement">
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', fontSize: '14px', color: '#2c3e50' }}>
+                    <input
+                      type="checkbox"
+                      name="termsAccepted"
+                      checked={formData.termsAccepted}
+                      onChange={handleCheckboxChange}
+                      style={{ 
+                        width: '18px', 
+                        height: '18px', 
+                        marginTop: '2px',
+                        accentColor: '#e74c3c',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <span>
+                      I agree to the <a href="#" className="terms-link">Terms and Conditions</a> and <a href="#" className="terms-link">Privacy Policy</a> *
+                    </span>
+                  </label>
+                </div>
                 {errors.termsAccepted && <span className="error-message">{errors.termsAccepted}</span>}
               </div>
+
+                {/* Success Message Display */}
+                {successMessage && (
+                  <div className="success-message">
+                    <i className="fas fa-check-circle"></i>
+                    {successMessage}
+                  </div>
+                )}
+
+                {/* General Error Display */}
+                {errors.general && (
+                  <div className="error-message general-error">
+                    <i className="fas fa-exclamation-triangle"></i>
+                    {errors.general}
+                  </div>
+                )}
 
               <button type="submit" className="btn-auth" disabled={isLoading}>
                 <span className="btn-text">Create Account</span>

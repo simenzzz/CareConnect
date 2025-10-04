@@ -1,4 +1,3 @@
-import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -7,6 +6,8 @@ import SignupPage from './pages/SignupPage'
 import CustomerSignupPage from './pages/CustomerSignupPage'
 import SittersPage from './pages/SittersPage'
 import PortalPage from './pages/PortalPage'
+import UserPortalPage from './pages/UserPortalPage'
+import SitterPortalPage from './pages/SitterPortalPage'
 import './App.css'
 
 function App() {
@@ -21,6 +22,8 @@ function App() {
           <Route path="/customer-signup" element={<CustomerSignupPage />} />
           <Route path="/sitters" element={<SittersPage />} />
           <Route path="/portal" element={<PortalPage />} />
+          <Route path="/user-portal" element={<UserPortalPage />} />
+          <Route path="/sitter-portal" element={<SitterPortalPage />} />
         </Routes>
       </div>
     </Router>

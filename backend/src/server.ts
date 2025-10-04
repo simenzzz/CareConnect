@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import { initializeFirebase } from './config/firebase';
 import { connectDatabase } from './config/database';
 import authRoutes from './routes/auth';
+import sittersRoutes from './routes/sitters';
+import bookingsRoutes from './routes/bookings';
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +43,8 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/sitters', sittersRoutes);
+app.use('/api/bookings', bookingsRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -166,20 +166,72 @@ router.post('/register', async (req, res): Promise<express.Response> => {
           fullName, 
           dateOfBirth, 
           area, 
-          city, 
+          city,
+          phone,
           hoursPerWeek, 
           sitterType, 
-          experience 
+          experience,
+          description,
+          skills,
+          cvUrl,
+          identityDocumentUrl
         } = profileData;
         
-        if (!fullName || !dateOfBirth || !area || !city || !hoursPerWeek || !sitterType) {
+        if (!fullName || !dateOfBirth || !area || !city || !phone || !hoursPerWeek || !sitterType) {
           throw new Error('Missing required sitter fields');
         }
         
-        await query(
-          'INSERT INTO sitters (user_id, full_name, date_of_birth, area, city, hours_per_week, sitter_type, experience) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [userId, fullName, dateOfBirth, area, city, hoursPerWeek, sitterType, experience]
+        // Insert sitter with optional document URLs and description
+        // sitterType should be 'B' (baby-sitter), 'P' (pet-sitter), or 'T' (both)
+        const sitterResult = await query(
+          `INSERT INTO sitters 
+          (user_id, full_name, date_of_birth, area, city, phone, hours_per_week, sitter_type, experience, description, cv_url, identity_document_url, cv_uploaded_at, identity_document_uploaded_at) 
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          RETURNING id`,
+          [
+            userId, 
+            fullName, 
+            dateOfBirth, 
+            area, 
+            city,
+            phone,
+            hoursPerWeek, 
+            sitterType, 
+            experience,
+            description || null,
+            cvUrl || null,
+            identityDocumentUrl || null,
+            cvUrl ? new Date() : null,
+            identityDocumentUrl ? new Date() : null
+          ]
         );
+        
+        const sitterId = sitterResult.rows[0].id;
+        console.log(`✅ Sitter profile created with ID: ${sitterId}`);
+        
+        // Insert skills if provided
+        if (skills && Array.isArray(skills) && skills.length > 0) {
+          console.log(`🎯 Inserting ${skills.length} skills...`);
+          for (const skill of skills) {
+            if (skill && skill.trim()) {
+              try {
+                await query(
+                  'INSERT INTO sitter_skills (sitter_id, skill_name) VALUES ($1, $2)',
+                  [sitterId, skill.trim()]
+                );
+                console.log(`  ✅ Skill added: ${skill.trim()}`);
+              } catch (skillError: any) {
+                console.error(`  ❌ Failed to add skill "${skill}":`, skillError.message);
+              }
+            }
+          }
+        }
+        
+        if (cvUrl || identityDocumentUrl) {
+          console.log('📄 Sitter documents uploaded:');
+          if (cvUrl) console.log('  ✅ CV:', cvUrl);
+          if (identityDocumentUrl) console.log('  ✅ Identity Document:', identityDocumentUrl);
+        }
       }
       
       await query('COMMIT');
@@ -209,6 +261,7 @@ router.post('/login', verifyToken, async (req: AuthenticatedRequest, res): Promi
   try {
     const firebaseUid = req.user?.uid;
     const email = req.user?.email;
+    const { expectedUserType } = req.body;
     
     // Get user data
     const userResult = await query(
@@ -221,6 +274,15 @@ router.post('/login', verifyToken, async (req: AuthenticatedRequest, res): Promi
     }
     
     const user = userResult.rows[0];
+    
+    // Validate user type if expectedUserType is provided
+    if (expectedUserType && user.user_type !== expectedUserType) {
+      console.log(`❌ User type mismatch: Expected ${expectedUserType}, got ${user.user_type}`);
+      return res.status(403).json({ 
+        error: `This account is registered as a ${user.user_type}. Please use the ${user.user_type} login page.`
+      });
+    }
+    
     let profile = null;
     
     // Get profile data based on user type
@@ -237,6 +299,8 @@ router.post('/login', verifyToken, async (req: AuthenticatedRequest, res): Promi
       );
       profile = sitterResult.rows[0];
     }
+    
+    console.log(`✅ Login successful for ${user.user_type}: ${email}`);
     
     return res.json({
       message: 'Login successful',
@@ -388,4 +452,62 @@ router.put('/profile', verifyToken, async (req: AuthenticatedRequest, res): Prom
   }
 });
 
+// Update sitter documents (CV and Identity Document URLs)
+router.put('/sitter/documents', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+  try {
+    const firebaseUid = req.user?.uid;
+    const { cvUrl, identityDocumentUrl } = req.body;
+    
+    // Get user ID from Firebase UID
+    const userResult = await query(
+      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
+      [firebaseUid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    if (user.user_type !== 'sitter') {
+      return res.status(403).json({ error: 'Only sitters can update documents' });
+    }
+    
+    // Update sitter documents
+    await query(
+      `UPDATE sitters 
+       SET cv_url = $1, 
+           identity_document_url = $2,
+           cv_uploaded_at = $3,
+           identity_document_uploaded_at = $4
+       WHERE user_id = $5`,
+      [
+        cvUrl || null,
+        identityDocumentUrl || null,
+        cvUrl ? new Date() : null,
+        identityDocumentUrl ? new Date() : null,
+        user.id
+      ]
+    );
+    
+    console.log('✅ Sitter documents updated:', { cvUrl, identityDocumentUrl });
+    
+    return res.json({
+      message: 'Documents updated successfully',
+      cvUrl,
+      identityDocumentUrl
+    });
+    
+  } catch (error) {
+    console.error('Update documents error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to update documents',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
+export { verifyToken };
+export type { AuthenticatedRequest };

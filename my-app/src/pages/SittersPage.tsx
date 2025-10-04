@@ -1,92 +1,80 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import Footer from '../components/Footer'
 import PetSitterCard from '../components/PetSitterCard'
 import BabySitterCard from '../components/BabySitterCard'
+import sittersService from '../services/sittersService'
+import type { Sitter } from '../services/sittersService'
 import './SittersPage.css'
 
 const SittersPage: React.FC = () => {
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState<'pet' | 'baby'>('pet')
-  const [searchLocation, setSearchLocation] = useState('')
+  const [searchName, setSearchName] = useState('')
+  const [searchArea, setSearchArea] = useState('')
+  const [searchCity, setSearchCity] = useState('')
+  const [petSitters, setPetSitters] = useState<Sitter[]>([])
+  const [babySitters, setBabySitters] = useState<Sitter[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Mock data for Pet Sitters
-  const petSitters = [
-    {
-      id: 1,
-      name: "Jessica Williams",
-      area: "Beirut",
-      experience: "Veterinary assistant with 4 years experience. Loves all animals and specializes in dog care.",
-      rating: 4.9,
-      specialties: ["Dog Walking", "Pet Grooming", "Medication Admin"]
-    },
-    {
-      id: 2,
-      name: "David Kim",
-      area: "Tripoli",
-      experience: "Professional dog trainer and pet sitter. Specializes in large breeds and behavioral training.",
-      rating: 4.8,
-      specialties: ["Dog Training", "Large Breeds", "Behavioral Issues"]
-    },
-    {
-      id: 3,
-      name: "Lisa Thompson",
-      area: "Sidon",
-      experience: "Cat behavior specialist with 6 years experience. Great with shy pets and exotic animals.",
-      rating: 4.7,
-      specialties: ["Cat Care", "Exotic Pets", "Senior Pet Care"]
-    },
-    {
-      id: 4,
-      name: "Ahmed Hassan",
-      area: "Tyre",
-      experience: "Animal lover with 3 years experience. Available for overnight pet sitting and emergency care.",
-      rating: 4.6,
-      specialties: ["Overnight Care", "Emergency Care", "Multi-Pet Households"]
+  // Fetch sitters from API
+  useEffect(() => {
+    const loadSitters = async () => {
+      try {
+        setIsLoading(true)
+        const result = await sittersService.fetchSitters()
+        
+        if (result.success && result.data) {
+          setPetSitters(result.data.petSitters)
+          setBabySitters(result.data.babySitters)
+          console.log('✅ Sitters loaded:', {
+            pet: result.data.petSitters.length,
+            baby: result.data.babySitters.length
+          })
+        } else {
+          setError(result.error || 'Failed to load sitters')
+        }
+      } catch (err) {
+        console.error('Error loading sitters:', err)
+        setError('Failed to load sitters')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ]
+    
+    loadSitters()
+  }, [])
 
-  // Mock data for Baby Sitters
-  const babySitters = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      area: "Beirut",
-      experience: "5 years of experience with children aged 2-12. CPR certified and early childhood education background.",
-      rating: 4.8,
-      specialties: ["Toddler Care", "CPR Certified", "Educational Activities"]
-    },
-    {
-      id: 2,
-      name: "Emily Chen",
-      area: "Jounieh",
-      experience: "Specialized in caring for children with special needs. Early childhood education degree and 6 years experience.",
-      rating: 4.9,
-      specialties: ["Special Needs", "Early Education", "Therapeutic Activities"]
-    },
-    {
-      id: 3,
-      name: "Michael Rodriguez",
-      area: "Zahle",
-      experience: "Former teacher with 7 years experience. Great with active kids and sports activities.",
-      rating: 4.7,
-      specialties: ["Sports Activities", "Homework Help", "Outdoor Play"]
-    },
-    {
-      id: 4,
-      name: "Fatima Al-Rashid",
-      area: "Baalbek",
-      experience: "Mother of three with 8 years babysitting experience. Fluent in Arabic and English.",
-      rating: 4.8,
-      specialties: ["Bilingual Care", "Infant Care", "Cultural Activities"]
+  // Handle hash navigation on component mount and location change
+  useEffect(() => {
+    const hash = location.hash.replace('#', '')
+    if (hash === 'baby-sitters') {
+      setActiveTab('baby')
+    } else if (hash === 'pet-sitters') {
+      setActiveTab('pet')
     }
-  ]
+    
+    // Scroll to top of page when navigating with hash
+    window.scrollTo(0, 0)
+  }, [location])
 
+  // Get current sitters based on active tab
   const currentSitters = activeTab === 'pet' ? petSitters : babySitters
   
+  // Filter sitters by name, area, and city
   const filteredSitters = currentSitters.filter(sitter => {
-    const locationMatch = !searchLocation || 
-      sitter.area.toLowerCase().includes(searchLocation.toLowerCase())
-    return locationMatch
+    const nameMatch = !searchName || 
+      sitter.fullName.toLowerCase().includes(searchName.toLowerCase())
+    
+    const areaMatch = !searchArea || 
+      sitter.area.toLowerCase().includes(searchArea.toLowerCase())
+    
+    const cityMatch = !searchCity || 
+      sitter.city.toLowerCase().includes(searchCity.toLowerCase())
+    
+    return nameMatch && areaMatch && cityMatch
   })
 
   return (
@@ -125,49 +113,137 @@ const SittersPage: React.FC = () => {
           <div className="container">
             <div className="filters-container">
               <div className="filter-group">
-                <label htmlFor="location">Location in Lebanon</label>
+                <label htmlFor="search-name">
+                  <i className="fas fa-search"></i>
+                  Search by Name
+                </label>
                 <input
                   type="text"
-                  id="location"
-                  value={searchLocation}
-                  onChange={(e) => setSearchLocation(e.target.value)}
-                  placeholder="Enter area (e.g., Beirut, Tripoli, Sidon)"
+                  id="search-name"
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  placeholder="Enter sitter name..."
                 />
               </div>
+
+              <div className="filter-group">
+                <label htmlFor="search-area">
+                  <i className="fas fa-map"></i>
+                  Area
+                </label>
+                <input
+                  type="text"
+                  id="search-area"
+                  value={searchArea}
+                  onChange={(e) => setSearchArea(e.target.value)}
+                  placeholder="e.g., Beirut, Mount Lebanon"
+                />
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="search-city">
+                  <i className="fas fa-map-marker-alt"></i>
+                  Location
+                </label>
+                <input
+                  type="text"
+                  id="search-city"
+                  value={searchCity}
+                  onChange={(e) => setSearchCity(e.target.value)}
+                  placeholder="e.g., Hamra, Jounieh"
+                />
+              </div>
+
+              {(searchName || searchArea || searchCity) && (
+                <button 
+                  className="clear-filters-btn"
+                  onClick={() => {
+                    setSearchName('')
+                    setSearchArea('')
+                    setSearchCity('')
+                  }}
+                >
+                  <i className="fas fa-times"></i>
+                  Clear Filters
+                </button>
+              )}
             </div>
           </div>
         </div>
 
         <div className="sitters-results">
           <div className="container">
-            <div className="results-header">
-              <h2>
-                {activeTab === 'pet' ? 'Pet Sitters' : 'Baby Sitters'} 
-                ({filteredSitters.length})
-              </h2>
-              <p>
-                {activeTab === 'pet' 
-                  ? 'Professional pet care specialists ready to care for your furry friends'
-                  : 'Experienced childcare providers ready to care for your little ones'
-                }
-              </p>
-            </div>
-            
-            <div className="sitters-grid">
-              {filteredSitters.map(sitter => (
-                activeTab === 'pet' ? (
-                  <PetSitterCard key={sitter.id} sitter={sitter} />
-                ) : (
-                  <BabySitterCard key={sitter.id} sitter={sitter} />
-                )
-              ))}
-            </div>
-
-            {filteredSitters.length === 0 && (
-              <div className="no-results">
-                <h3>No {activeTab === 'pet' ? 'pet sitters' : 'baby sitters'} found</h3>
-                <p>Try adjusting your search criteria or check back later for new sitters.</p>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="loading-state">
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Loading sitters...</p>
               </div>
+            )}
+
+            {/* Error State */}
+            {error && !isLoading && (
+              <div className="error-state">
+                <i className="fas fa-exclamation-circle"></i>
+                <p>{error}</p>
+              </div>
+            )}
+
+            {/* Results */}
+            {!isLoading && !error && (
+              <>
+                <div className="results-header">
+                  <h2>
+                    {activeTab === 'pet' ? 'Pet Sitters' : 'Baby Sitters'} 
+                    ({filteredSitters.length})
+                  </h2>
+                  <p>
+                    {activeTab === 'pet' 
+                      ? 'Professional pet care specialists ready to care for your furry friends'
+                      : 'Experienced childcare providers ready to care for your little ones'
+                    }
+                  </p>
+                </div>
+                
+                <div className="sitters-grid">
+                  {filteredSitters.map(sitter => (
+                    activeTab === 'pet' ? (
+                      <PetSitterCard 
+                        key={sitter.id} 
+                        sitter={{
+                          id: sitter.id,
+                          name: sitter.fullName,
+                          area: `${sitter.city}, ${sitter.area}`,
+                          phone: sitter.phone,
+                          experience: sitter.description || sitter.experience,
+                          rating: sitter.rating,
+                          specialties: sitter.skills
+                        }} 
+                      />
+                    ) : (
+                      <BabySitterCard 
+                        key={sitter.id} 
+                        sitter={{
+                          id: sitter.id,
+                          name: sitter.fullName,
+                          area: `${sitter.city}, ${sitter.area}`,
+                          phone: sitter.phone,
+                          experience: sitter.description || sitter.experience,
+                          rating: sitter.rating,
+                          specialties: sitter.skills
+                        }} 
+                      />
+                    )
+                  ))}
+                </div>
+
+                {filteredSitters.length === 0 && (
+                  <div className="no-results">
+                    <h3>No {activeTab === 'pet' ? 'pet sitters' : 'baby sitters'} found</h3>
+                    <p>Try adjusting your search criteria or check back later for new sitters.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

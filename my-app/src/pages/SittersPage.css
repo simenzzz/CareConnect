@@ -90,20 +90,32 @@
 
 .filters-container {
   display: flex;
-  gap: 30px;
+  gap: 20px;
   align-items: end;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
 }
 
 .filter-group label {
   font-weight: 500;
   color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.filter-group label i {
+  color: #667eea;
 }
 
 .filter-group select,
@@ -118,7 +130,36 @@
 .filter-group select:focus,
 .filter-group input:focus {
   outline: none;
-  border-color: #2c5aa0;
+  border-color: #667eea;
+}
+
+/* Clear Filters Button */
+.clear-filters-btn {
+  padding: 12px 20px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  height: fit-content;
+  align-self: flex-end;
+}
+
+.clear-filters-btn:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.clear-filters-btn i {
+  font-size: 12px;
 }
 
 .sitters-results {
@@ -160,6 +201,44 @@
 .no-results p {
   color: #7f8c8d;
   font-size: 16px;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #667eea;
+}
+
+.loading-state i {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.loading-state p {
+  font-size: 18px;
+  color: #7f8c8d;
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: #fee;
+  border: 2px solid #fcc;
+  border-radius: 15px;
+  margin: 20px 0;
+}
+
+.error-state i {
+  font-size: 48px;
+  color: #e74c3c;
+  margin-bottom: 20px;
+}
+
+.error-state p {
+  font-size: 18px;
+  color: #c33;
 }
 
 @media (max-width: 768px) {

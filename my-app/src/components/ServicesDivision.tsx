@@ -31,7 +31,7 @@ const ServicesDivision: React.FC = () => {
               <div className="service-pricing">
                 <span className="price">Starting at $25/hour</span>
               </div>
-              <Link to="#contact" className="btn-service">Book Pet Care</Link>
+              <Link to="/sitters#pet-sitters" className="btn-service">Book Pet Care</Link>
             </div>
           </div>
 
@@ -55,7 +55,7 @@ const ServicesDivision: React.FC = () => {
               <div className="service-pricing">
                 <span className="price">Starting at $20/hour</span>
               </div>
-              <Link to="#contact" className="btn-service">Book Childcare</Link>
+              <Link to="/sitters#baby-sitters" className="btn-service">Book Childcare</Link>
             </div>
           </div>
         </div>

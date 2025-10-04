@@ -1,7 +1,10 @@
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut
+  signOut,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -18,6 +21,8 @@ export interface SignupData {
 export interface LoginData {
   email: string;
   password: string;
+  expectedUserType?: 'customer' | 'sitter';
+  rememberMe?: boolean;
 }
 
 export interface ApiResponse {
@@ -83,18 +88,31 @@ class AuthService {
     } catch (error: any) {
       console.error('❌ Signup failed:', error);
       
-      // Handle specific Firebase errors
-      let errorMessage = 'Signup failed';
+      // Convert Firebase errors to user-friendly messages
+      let errorMessage = 'Registration failed. Please try again.';
       
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email address is already in use. Please use a different email or try logging in.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please choose a stronger password.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'This email address is already in use. Please use a different email or try logging in.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak. Please choose a stronger password.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Account creation is currently unavailable. Please contact support.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection.';
+            break;
+          default:
+            errorMessage = error.message || 'Registration failed. Please try again.';
+        }
       } else if (error.message) {
+        // If it's not a Firebase error, use the message directly (like backend validation errors)
         errorMessage = error.message;
       }
       
@@ -109,6 +127,14 @@ class AuthService {
   async login(loginData: LoginData): Promise<ApiResponse> {
     try {
       console.log('🚀 Starting login process...');
+      
+      // Step 0: Set persistence based on "Remember Me"
+      const persistence = loginData.rememberMe 
+        ? browserLocalPersistence  // Stay logged in across browser sessions
+        : browserSessionPersistence; // Logout when browser closes
+      
+      console.log(`🔐 Setting persistence: ${loginData.rememberMe ? 'LOCAL (Remember Me)' : 'SESSION (This session only)'}`);
+      await setPersistence(auth, persistence);
       
       // Step 1: Sign in with Firebase
       console.log('1️⃣ Signing in with Firebase...');
@@ -130,12 +156,17 @@ class AuthService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
-        }
+        },
+        body: JSON.stringify({
+          expectedUserType: loginData.expectedUserType
+        })
       });
       
       const result = await response.json();
       
       if (!response.ok) {
+        // Sign out from Firebase if backend validation fails
+        await signOut(auth);
         throw new Error(result.error || 'Login failed');
       }
       
@@ -148,9 +179,40 @@ class AuthService {
       
     } catch (error: any) {
       console.error('❌ Login failed:', error);
+      
+      // Convert Firebase errors to user-friendly messages
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/invalid-credential':
+          case 'auth/wrong-password':
+          case 'auth/user-not-found':
+            errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address format.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'This account has been disabled. Please contact support.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many failed login attempts. Please try again later.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection.';
+            break;
+          default:
+            errorMessage = error.message || 'Login failed. Please try again.';
+        }
+      } else if (error.message) {
+        // If it's not a Firebase error, use the message directly (like backend validation errors)
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.message || 'Login failed'
+        error: errorMessage
       };
     }
   }
@@ -207,6 +269,52 @@ class AuthService {
   getCurrentUser(): User | null {
     return auth.currentUser;
   }
+  
+  // Update sitter documents
+  async updateSitterDocuments(cvUrl: string, identityDocumentUrl: string): Promise<ApiResponse> {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('No user logged in');
+      }
+      
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch(`${API_BASE_URL}/auth/sitter/documents`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          cvUrl,
+          identityDocumentUrl
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update documents');
+      }
+      
+      console.log('✅ Documents updated successfully');
+      
+      return {
+        success: true,
+        data: result
+      };
+      
+    } catch (error: any) {
+      console.error('❌ Update documents failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to update documents'
+      };
+    }
+  }
 }
 
-export const authService = new AuthService();
+const authService = new AuthService();
+export default authService;
+export { authService };

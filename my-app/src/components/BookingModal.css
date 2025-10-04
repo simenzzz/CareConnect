@@ -1,21 +1,27 @@
 /* Modal Overlay */
 .booking-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7) !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 99999;
   padding: 20px;
+  overflow: hidden;
+  margin: 0;
+  transform: translateZ(0);
+  will-change: opacity;
 }
 
 /* Modal Container */
 .booking-modal {
-  background: white;
+  background: white !important;
   border-radius: 15px;
   width: 500px;
   max-width: 90vw;
@@ -23,6 +29,11 @@
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   position: relative;
+  margin: auto;
+  pointer-events: auto;
+  z-index: 100000;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Modal Header */
@@ -66,6 +77,10 @@
 .login-section {
   text-align: center;
   padding: 20px 0;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .login-icon {

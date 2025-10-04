@@ -11,6 +11,8 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const firebase_1 = require("./config/firebase");
 const database_1 = require("./config/database");
 const auth_1 = __importDefault(require("./routes/auth"));
+const sitters_1 = __importDefault(require("./routes/sitters"));
+const bookings_1 = __importDefault(require("./routes/bookings"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -35,6 +37,8 @@ app.get('/health', (req, res) => {
     });
 });
 app.use('/api/auth', auth_1.default);
+app.use('/api/sitters', sitters_1.default);
+app.use('/api/bookings', bookings_1.default);
 app.use((req, res) => {
     res.status(404).json({
         error: 'Route not found',
@@ -48,11 +52,23 @@ app.use((err, req, res, next) => {
         message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
     });
 });
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`🚀 CareConnect Backend API running on port ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
     console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+});
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        console.log('HTTP server closed');
+    });
 });
 exports.default = app;
 //# sourceMappingURL=server.js.map

@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
+import authService from '../services/authService'
 import './AuthPage.css'
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -48,13 +50,31 @@ const LoginPage: React.FC = () => {
     if (!validateForm()) return
     
     setIsLoading(true)
+    setErrors({}) // Clear any previous errors
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Call the login API
+      const result = await authService.login({
+        email: formData.email,
+        password: formData.password,
+        expectedUserType: 'sitter',
+        rememberMe: formData.rememberMe
+      })
+      
+      if (result.success) {
+        console.log('✅ Sitter login successful:', result.data)
+        console.log(`🔐 Remember Me: ${formData.rememberMe ? 'Enabled - will stay logged in' : 'Disabled - will logout when browser closes'}`)
+        // Redirect to home page
+        navigate('/')
+      } else {
+        setErrors({ general: result.error || 'Login failed. Please try again.' })
+      }
+    } catch (error: any) {
+      console.error('Login error:', error)
+      setErrors({ general: error.message || 'An unexpected error occurred. Please try again.' })
+    } finally {
       setIsLoading(false)
-      // Handle successful login
-      console.log('Login successful:', formData)
-    }, 2000)
+    }
   }
 
   const togglePassword = (fieldName: string) => {
@@ -70,12 +90,37 @@ const LoginPage: React.FC = () => {
       <main className="auth-main">
         <div className="auth-container">
           <div className="auth-form-container">
+            <div className="login-type-tabs">
+              <Link to="/customer-login" className="tab-link">
+                <i className="fas fa-home"></i>
+                Customer
+              </Link>
+              <Link to="/login" className="tab-link active">
+                <i className="fas fa-user-tie"></i>
+                Sitter
+              </Link>
+            </div>
+
             <div className="auth-header">
               <h1>Welcome Back</h1>
               <p>Sign in to your sitter account</p>
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
+              {errors.general && (
+                <div className="error-message" style={{ 
+                  display: 'block', 
+                  marginBottom: '20px', 
+                  padding: '12px', 
+                  background: '#fee', 
+                  border: '1px solid #fcc', 
+                  borderRadius: '8px',
+                  color: '#c33'
+                }}>
+                  {errors.general}
+                </div>
+              )}
+
               <div className="form-group">
                 <label htmlFor="email">Email Address</label>
                 <input

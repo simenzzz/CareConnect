@@ -32,6 +32,47 @@
   justify-content: center;
 }
 
+/* Login Type Tabs */
+.login-type-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  padding: 5px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.tab-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #7f8c8d;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.tab-link:hover {
+  color: #2c3e50;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.tab-link.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab-link i {
+  font-size: 1rem;
+}
+
 .auth-header {
   text-align: center;
   margin-bottom: 30px;
@@ -96,7 +137,14 @@
   border: none;
   color: #7f8c8d;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  margin: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
 }
 
 .error-message {

@@ -8,9 +8,7 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "clean": "rimraf dist",
-    "init-db": "ts-node src/scripts/init-db.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rimraf dist"
   },
   "keywords": [],
   "author": "",

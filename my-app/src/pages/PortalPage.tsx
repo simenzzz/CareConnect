@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
+import Footer from '../components/Footer'
 import './PortalPage.css'
 
 const PortalPage: React.FC = () => {
@@ -75,6 +76,7 @@ const PortalPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }
