@@ -194,6 +194,347 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
   }
 });
 
+// GET /api/bookings/pets - Get all pet bookings for the authenticated user
+router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
+  try {
+    const firebaseUid = req.user?.uid;
+    
+    if (!firebaseUid) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Get user info to determine if customer or sitter
+    const userResult = await query(
+      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
+      [firebaseUid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    let bookings;
+    
+    if (user.user_type === 'customer') {
+      const customerResult = await query(
+        'SELECT id FROM customers WHERE user_id = $1',
+        [user.id]
+      );
+      
+      if (customerResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Customer profile not found' });
+      }
+      
+      const customerId = customerResult.rows[0].id;
+      
+      // Get bookings that have pets
+      const bookingsResult = await query(
+        `SELECT DISTINCT
+          b.id,
+          b.sitter_id,
+          b.customer_id,
+          b.booking_from,
+          b.booking_to,
+          b.payment_method,
+          b.price_usd,
+          b.discount,
+          b.status,
+          b.created_at,
+          b.updated_at,
+          s.full_name as sitter_name,
+          s.phone as sitter_phone,
+          s.area as sitter_area,
+          s.city as sitter_city
+        FROM bookings b
+        JOIN sitters s ON b.sitter_id = s.id
+        JOIN booking_pets bp ON b.id = bp.booking_id
+        WHERE b.customer_id = $1
+        ORDER BY b.booking_from DESC`,
+        [customerId]
+      );
+      
+      bookings = bookingsResult.rows;
+      
+    } else if (user.user_type === 'sitter') {
+      const sitterResult = await query(
+        'SELECT id FROM sitters WHERE user_id = $1',
+        [user.id]
+      );
+      
+      if (sitterResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Sitter profile not found' });
+      }
+      
+      const sitterId = sitterResult.rows[0].id;
+      
+      // Get bookings that have pets
+      const bookingsResult = await query(
+        `SELECT DISTINCT
+          b.id,
+          b.sitter_id,
+          b.customer_id,
+          b.booking_from,
+          b.booking_to,
+          b.payment_method,
+          b.price_usd,
+          b.discount,
+          b.status,
+          b.created_at,
+          b.updated_at,
+          c.full_name as customer_name,
+          c.phone as customer_phone,
+          c.area as customer_area,
+          c.city as customer_city
+        FROM bookings b
+        JOIN customers c ON b.customer_id = c.id
+        JOIN booking_pets bp ON b.id = bp.booking_id
+        WHERE b.sitter_id = $1
+        ORDER BY b.booking_from DESC`,
+        [sitterId]
+      );
+      
+      bookings = bookingsResult.rows;
+      
+    } else {
+      return res.status(400).json({ error: 'Invalid user type' });
+    }
+    
+    // Get pets for each booking
+    const bookingsWithDetails = await Promise.all(
+      bookings.map(async (booking) => {
+        const petsResult = await query(
+          `SELECT p.id, p.name, p.type, p.breed, p.date_of_birth
+           FROM booking_pets bp
+           JOIN pets p ON bp.pet_id = p.id
+           WHERE bp.booking_id = $1`,
+          [booking.id]
+        );
+        
+        return {
+          id: booking.id,
+          sitterId: booking.sitter_id,
+          customerId: booking.customer_id,
+          bookingFrom: booking.booking_from,
+          bookingTo: booking.booking_to,
+          paymentMethod: booking.payment_method,
+          priceUsd: parseFloat(booking.price_usd),
+          discount: parseFloat(booking.discount),
+          status: booking.status,
+          createdAt: booking.created_at,
+          updatedAt: booking.updated_at,
+          ...(user.user_type === 'customer' ? {
+            sitter: {
+              name: booking.sitter_name,
+              phone: booking.sitter_phone,
+              area: booking.sitter_area,
+              city: booking.sitter_city
+            }
+          } : {
+            customer: {
+              name: booking.customer_name,
+              phone: booking.customer_phone,
+              area: booking.customer_area,
+              city: booking.customer_city
+            }
+          }),
+          pets: petsResult.rows.map(pet => ({
+            id: pet.id,
+            name: pet.name,
+            type: pet.type,
+            breed: pet.breed,
+            dateOfBirth: pet.date_of_birth
+          }))
+        };
+      })
+    );
+    
+    return res.json({
+      success: true,
+      userType: user.user_type,
+      bookings: bookingsWithDetails
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching pet bookings:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch pet bookings',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// GET /api/bookings/children - Get all child bookings for the authenticated user
+router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
+  try {
+    const firebaseUid = req.user?.uid;
+    
+    if (!firebaseUid) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Get user info to determine if customer or sitter
+    const userResult = await query(
+      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
+      [firebaseUid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    let bookings;
+    
+    if (user.user_type === 'customer') {
+      const customerResult = await query(
+        'SELECT id FROM customers WHERE user_id = $1',
+        [user.id]
+      );
+      
+      if (customerResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Customer profile not found' });
+      }
+      
+      const customerId = customerResult.rows[0].id;
+      
+      // Get bookings that have children
+      const bookingsResult = await query(
+        `SELECT DISTINCT
+          b.id,
+          b.sitter_id,
+          b.customer_id,
+          b.booking_from,
+          b.booking_to,
+          b.payment_method,
+          b.price_usd,
+          b.discount,
+          b.status,
+          b.created_at,
+          b.updated_at,
+          s.full_name as sitter_name,
+          s.phone as sitter_phone,
+          s.area as sitter_area,
+          s.city as sitter_city
+        FROM bookings b
+        JOIN sitters s ON b.sitter_id = s.id
+        JOIN booking_children bc ON b.id = bc.booking_id
+        WHERE b.customer_id = $1
+        ORDER BY b.booking_from DESC`,
+        [customerId]
+      );
+      
+      bookings = bookingsResult.rows;
+      
+    } else if (user.user_type === 'sitter') {
+      const sitterResult = await query(
+        'SELECT id FROM sitters WHERE user_id = $1',
+        [user.id]
+      );
+      
+      if (sitterResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Sitter profile not found' });
+      }
+      
+      const sitterId = sitterResult.rows[0].id;
+      
+      // Get bookings that have children
+      const bookingsResult = await query(
+        `SELECT DISTINCT
+          b.id,
+          b.sitter_id,
+          b.customer_id,
+          b.booking_from,
+          b.booking_to,
+          b.payment_method,
+          b.price_usd,
+          b.discount,
+          b.status,
+          b.created_at,
+          b.updated_at,
+          c.full_name as customer_name,
+          c.phone as customer_phone,
+          c.area as customer_area,
+          c.city as customer_city
+        FROM bookings b
+        JOIN customers c ON b.customer_id = c.id
+        JOIN booking_children bc ON b.id = bc.booking_id
+        WHERE b.sitter_id = $1
+        ORDER BY b.booking_from DESC`,
+        [sitterId]
+      );
+      
+      bookings = bookingsResult.rows;
+      
+    } else {
+      return res.status(400).json({ error: 'Invalid user type' });
+    }
+    
+    // Get children for each booking
+    const bookingsWithDetails = await Promise.all(
+      bookings.map(async (booking) => {
+        const childrenResult = await query(
+          `SELECT c.id, c.full_name, c.date_of_birth, c.gender
+           FROM booking_children bc
+           JOIN children c ON bc.child_id = c.id
+           WHERE bc.booking_id = $1`,
+          [booking.id]
+        );
+        
+        return {
+          id: booking.id,
+          sitterId: booking.sitter_id,
+          customerId: booking.customer_id,
+          bookingFrom: booking.booking_from,
+          bookingTo: booking.booking_to,
+          paymentMethod: booking.payment_method,
+          priceUsd: parseFloat(booking.price_usd),
+          discount: parseFloat(booking.discount),
+          status: booking.status,
+          createdAt: booking.created_at,
+          updatedAt: booking.updated_at,
+          ...(user.user_type === 'customer' ? {
+            sitter: {
+              name: booking.sitter_name,
+              phone: booking.sitter_phone,
+              area: booking.sitter_area,
+              city: booking.sitter_city
+            }
+          } : {
+            customer: {
+              name: booking.customer_name,
+              phone: booking.customer_phone,
+              area: booking.customer_area,
+              city: booking.customer_city
+            }
+          }),
+          children: childrenResult.rows.map(child => ({
+            id: child.id,
+            fullName: child.full_name,
+            dateOfBirth: child.date_of_birth,
+            gender: child.gender
+          }))
+        };
+      })
+    );
+    
+    return res.json({
+      success: true,
+      userType: user.user_type,
+      bookings: bookingsWithDetails
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching child bookings:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch child bookings',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // GET /api/bookings/:id - Get a specific booking by ID
 router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
   try {
@@ -815,6 +1156,17 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
       });
     }
     
+    // Check if booking_from is in the future
+    const bookingFromDate = new Date(booking.booking_from);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    
+    if (bookingFromDate < today) {
+      return res.status(400).json({ 
+        error: 'Cannot delete bookings that have already started or are in the past.' 
+      });
+    }
+    
     // Delete booking (this will cascade to booking_children and booking_pets)
     await query('DELETE FROM bookings WHERE id = $1', [bookingId]);
     
@@ -836,4 +1188,3 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
 });
 
 export default router;
-

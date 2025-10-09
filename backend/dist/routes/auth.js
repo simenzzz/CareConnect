@@ -100,8 +100,16 @@ router.post('/register', async (req, res) => {
                     console.log(`🐕 Inserting ${pets.length} pets...`);
                     for (const pet of pets) {
                         try {
-                            console.log(`  - Inserting pet: ${pet.name} (${pet.type})`);
-                            const result = await (0, database_1.query)('INSERT INTO pets (customer_id, name, type, breed, personality, care_instructions, special_needs) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id', [customerId, pet.name, pet.type, pet.breed || '', pet.personality || '', pet.careInstructions || '', pet.specialNeeds || '']);
+                            console.log(`  - Inserting pet: ${pet.name} (${pet.type}), age: ${pet.age || 'not specified'}`);
+                            let ageInt = null;
+                            if (pet.age) {
+                                ageInt = parseInt(pet.age);
+                                if (isNaN(ageInt)) {
+                                    console.warn(`  ⚠️ Invalid age for pet ${pet.name}: ${pet.age}, skipping age`);
+                                    ageInt = null;
+                                }
+                            }
+                            const result = await (0, database_1.query)('INSERT INTO pets (customer_id, name, age, type, breed, personality, care_instructions, special_needs) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id', [customerId, pet.name, ageInt, pet.type, pet.breed || '', pet.personality || '', pet.careInstructions || '', pet.specialNeeds || '']);
                             console.log(`    ✅ Pet inserted successfully with ID: ${result.rows[0].id}`);
                         }
                         catch (petError) {
@@ -239,8 +247,8 @@ router.get('/profile', verifyToken, async (req, res) => {
         if (user.user_type === 'customer') {
             const customerResult = await (0, database_1.query)('SELECT * FROM customers WHERE user_id = $1', [user.id]);
             profile = customerResult.rows[0];
-            const childrenResult = await (0, database_1.query)('SELECT * FROM children WHERE customer_id = $1', [profile?.id]);
-            const petsResult = await (0, database_1.query)('SELECT * FROM pets WHERE customer_id = $1', [profile?.id]);
+            const childrenResult = await (0, database_1.query)('SELECT * FROM children WHERE customer_id = $1 AND is_active = TRUE', [profile?.id]);
+            const petsResult = await (0, database_1.query)('SELECT * FROM pets WHERE customer_id = $1 AND is_active = TRUE', [profile?.id]);
             profile = {
                 ...profile,
                 children: childrenResult.rows,
@@ -286,8 +294,12 @@ router.put('/profile', verifyToken, async (req, res) => {
             await (0, database_1.query)('UPDATE customers SET full_name = $1, date_of_birth = $2, area = $3, city = $4, updated_at = CURRENT_TIMESTAMP WHERE user_id = $5', [fullName, dateOfBirth, area, city, user.id]);
         }
         else if (user.user_type === 'sitter') {
-            const { fullName, age, dateOfBirth, area, city, hoursPerWeek, sitterType, experience } = profileData;
-            await (0, database_1.query)('UPDATE sitters SET full_name = $1, age = $2, date_of_birth = $3, area = $4, city = $5, hours_per_week = $6, sitter_type = $7, experience = $8, updated_at = CURRENT_TIMESTAMP WHERE user_id = $9', [fullName, age, dateOfBirth, area, city, hoursPerWeek, sitterType, experience, user.id]);
+            const { full_name, fullName, age, date_of_birth, dateOfBirth, area, city, phone, hours_per_week, hoursPerWeek, sitter_type, sitterType, experience, description } = profileData;
+            const finalFullName = full_name || fullName;
+            const finalDateOfBirth = date_of_birth || dateOfBirth;
+            const finalHoursPerWeek = hours_per_week || hoursPerWeek;
+            const finalSitterType = sitter_type || sitterType;
+            await (0, database_1.query)('UPDATE sitters SET full_name = $1, age = $2, date_of_birth = $3, area = $4, city = $5, phone = $6, hours_per_week = $7, sitter_type = $8, experience = $9, description = $10, updated_at = CURRENT_TIMESTAMP WHERE user_id = $11', [finalFullName, age, finalDateOfBirth, area, city, phone, finalHoursPerWeek, finalSitterType, experience, description, user.id]);
         }
         return res.json({ message: 'Profile updated successfully' });
     }
@@ -334,6 +346,324 @@ router.put('/sitter/documents', verifyToken, async (req, res) => {
         console.error('Update documents error:', error);
         return res.status(500).json({
             error: 'Failed to update documents',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.get('/children', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage children' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        const childrenResult = await (0, database_1.query)('SELECT * FROM children WHERE customer_id = $1 AND is_active = TRUE ORDER BY created_at DESC', [customerId]);
+        return res.json({
+            success: true,
+            children: childrenResult.rows
+        });
+    }
+    catch (error) {
+        console.error('Get children error:', error);
+        return res.status(500).json({
+            error: 'Failed to fetch children',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.post('/children', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const { name, age, hobbies, schoolType, specialNeeds } = req.body;
+        if (!name || !age || !schoolType) {
+            return res.status(400).json({
+                error: 'Missing required fields: name, age, schoolType'
+            });
+        }
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage children' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        const ageInt = parseInt(age);
+        if (isNaN(ageInt)) {
+            return res.status(400).json({ error: 'Invalid age value' });
+        }
+        const childResult = await (0, database_1.query)('INSERT INTO children (customer_id, name, age, hobbies, school_type, special_needs) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [customerId, name, ageInt, hobbies || '', schoolType, specialNeeds || '']);
+        return res.status(201).json({
+            success: true,
+            message: 'Child added successfully',
+            child: childResult.rows[0]
+        });
+    }
+    catch (error) {
+        console.error('Add child error:', error);
+        return res.status(500).json({
+            error: 'Failed to add child',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.put('/children/:id', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const childId = parseInt(req.params.id);
+        const { name, age, hobbies, schoolType, specialNeeds } = req.body;
+        if (isNaN(childId)) {
+            return res.status(400).json({ error: 'Invalid child ID' });
+        }
+        if (!name || !age || !schoolType) {
+            return res.status(400).json({
+                error: 'Missing required fields: name, age, schoolType'
+            });
+        }
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage children' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        const ageInt = parseInt(age);
+        if (isNaN(ageInt)) {
+            return res.status(400).json({ error: 'Invalid age value' });
+        }
+        const updateResult = await (0, database_1.query)('UPDATE children SET name = $1, age = $2, hobbies = $3, school_type = $4, special_needs = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 AND customer_id = $7 RETURNING *', [name, ageInt, hobbies || '', schoolType, specialNeeds || '', childId, customerId]);
+        if (updateResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Child not found or access denied' });
+        }
+        return res.json({
+            success: true,
+            message: 'Child updated successfully',
+            child: updateResult.rows[0]
+        });
+    }
+    catch (error) {
+        console.error('Update child error:', error);
+        return res.status(500).json({
+            error: 'Failed to update child',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.delete('/children/:id', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const childId = parseInt(req.params.id);
+        if (isNaN(childId)) {
+            return res.status(400).json({ error: 'Invalid child ID' });
+        }
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage children' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        const deleteResult = await (0, database_1.query)('UPDATE children SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND customer_id = $2 AND is_active = TRUE RETURNING id', [childId, customerId]);
+        if (deleteResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Child not found or access denied' });
+        }
+        return res.json({
+            success: true,
+            message: 'Child deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('Delete child error:', error);
+        return res.status(500).json({
+            error: 'Failed to delete child',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.get('/pets', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage pets' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        const petsResult = await (0, database_1.query)('SELECT * FROM pets WHERE customer_id = $1 AND is_active = TRUE ORDER BY created_at DESC', [customerId]);
+        return res.json({
+            success: true,
+            pets: petsResult.rows
+        });
+    }
+    catch (error) {
+        console.error('Get pets error:', error);
+        return res.status(500).json({
+            error: 'Failed to fetch pets',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.post('/pets', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const { name, age, type, breed, personality, careInstructions, specialNeeds } = req.body;
+        if (!name || !type) {
+            return res.status(400).json({
+                error: 'Missing required fields: name, type'
+            });
+        }
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage pets' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        let ageInt = null;
+        if (age) {
+            ageInt = parseInt(age);
+            if (isNaN(ageInt)) {
+                return res.status(400).json({ error: 'Invalid age value' });
+            }
+        }
+        const petResult = await (0, database_1.query)('INSERT INTO pets (customer_id, name, age, type, breed, personality, care_instructions, special_needs) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', [customerId, name, ageInt, type, breed || '', personality || '', careInstructions || '', specialNeeds || '']);
+        return res.status(201).json({
+            success: true,
+            message: 'Pet added successfully',
+            pet: petResult.rows[0]
+        });
+    }
+    catch (error) {
+        console.error('Add pet error:', error);
+        return res.status(500).json({
+            error: 'Failed to add pet',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.put('/pets/:id', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const petId = parseInt(req.params.id);
+        const { name, age, type, breed, personality, careInstructions, specialNeeds } = req.body;
+        if (isNaN(petId)) {
+            return res.status(400).json({ error: 'Invalid pet ID' });
+        }
+        if (!name || !type) {
+            return res.status(400).json({
+                error: 'Missing required fields: name, type'
+            });
+        }
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage pets' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        let ageInt = null;
+        if (age) {
+            ageInt = parseInt(age);
+            if (isNaN(ageInt)) {
+                return res.status(400).json({ error: 'Invalid age value' });
+            }
+        }
+        const updateResult = await (0, database_1.query)('UPDATE pets SET name = $1, age = $2, type = $3, breed = $4, personality = $5, care_instructions = $6, special_needs = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $8 AND customer_id = $9 RETURNING *', [name, ageInt, type, breed || '', personality || '', careInstructions || '', specialNeeds || '', petId, customerId]);
+        if (updateResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Pet not found or access denied' });
+        }
+        return res.json({
+            success: true,
+            message: 'Pet updated successfully',
+            pet: updateResult.rows[0]
+        });
+    }
+    catch (error) {
+        console.error('Update pet error:', error);
+        return res.status(500).json({
+            error: 'Failed to update pet',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+router.delete('/pets/:id', verifyToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user?.uid;
+        const petId = parseInt(req.params.id);
+        if (isNaN(petId)) {
+            return res.status(400).json({ error: 'Invalid pet ID' });
+        }
+        const userResult = await (0, database_1.query)('SELECT id, user_type FROM users WHERE firebase_uid = $1', [firebaseUid]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        if (user.user_type !== 'customer') {
+            return res.status(403).json({ error: 'Only customers can manage pets' });
+        }
+        const customerResult = await (0, database_1.query)('SELECT id FROM customers WHERE user_id = $1', [user.id]);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer profile not found' });
+        }
+        const customerId = customerResult.rows[0].id;
+        const deleteResult = await (0, database_1.query)('UPDATE pets SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND customer_id = $2 AND is_active = TRUE RETURNING id', [petId, customerId]);
+        if (deleteResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Pet not found or access denied' });
+        }
+        return res.json({
+            success: true,
+            message: 'Pet deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('Delete pet error:', error);
+        return res.status(500).json({
+            error: 'Failed to delete pet',
             details: error instanceof Error ? error.message : 'Unknown error'
         });
     }
