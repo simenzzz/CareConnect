@@ -1,0 +1,270 @@
+.profile-section {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 15px;
+  color: #667eea;
+}
+
+.profile-loading i {
+  font-size: 2.5rem;
+}
+
+.profile-loading p {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+}
+
+/* Alert Styles */
+.alert {
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert i {
+  font-size: 1.2rem;
+}
+
+.alert-error {
+  background: #fee;
+  color: #c33;
+  border: 1px solid #fcc;
+}
+
+.alert-success {
+  background: #efe;
+  color: #3c3;
+  border: 1px solid #cfc;
+}
+
+/* Profile Fields Container */
+.profile-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Individual Profile Field */
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #ecf0f1;
+  transition: border-color 0.2s ease;
+}
+
+.profile-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.profile-field:hover {
+  border-color: #ddd;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.field-label i {
+  width: 20px;
+  text-align: center;
+  color: #667eea;
+}
+
+/* Field Display Mode */
+.field-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.field-value {
+  flex: 1;
+  color: #34495e;
+  font-size: 1rem;
+  padding: 8px 0;
+}
+
+.field-value.readonly {
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.btn-edit {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.btn-edit:hover {
+  background: #f0f3ff;
+  color: #5568d3;
+}
+
+.btn-edit i {
+  pointer-events: none;
+}
+
+/* Field Edit Mode */
+.field-edit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #2c3e50;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+.field-input:focus {
+  border-color: #5568d3;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+textarea.field-input {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+select.field-input {
+  cursor: pointer;
+}
+
+.field-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-save,
+.btn-cancel {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-save {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #229954;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(39, 174, 96, 0.3);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-field {
+    padding: 15px;
+  }
+
+  .field-edit {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .field-actions {
+    width: 100%;
+  }
+
+  .btn-save,
+  .btn-cancel {
+    flex: 1;
+    padding: 12px;
+  }
+
+  .field-display {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-edit {
+    align-self: flex-end;
+  }
+}
+

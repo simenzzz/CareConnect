@@ -31,7 +31,13 @@ class SittersService {
     try {
       console.log('📋 Fetching sitters from API...');
       
-      const response = await fetch(`${API_BASE_URL}/sitters/fetchSitters`);
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/sitters/fetchSitters`);
+      } catch (fetchError) {
+        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
+      }
+      
       const result = await response.json();
       
       if (!response.ok) {
@@ -66,7 +72,13 @@ class SittersService {
       
       console.log(`🔍 Searching for sitters with name: "${name}"...`);
       
-      const response = await fetch(`${API_BASE_URL}/sitters/searchByName?name=${encodeURIComponent(name)}`);
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/sitters/searchByName?name=${encodeURIComponent(name)}`);
+      } catch (fetchError) {
+        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
+      }
+      
       const result = await response.json();
       
       if (!response.ok) {

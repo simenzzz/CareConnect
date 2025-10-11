@@ -4,6 +4,7 @@ import { auth } from '../config/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
+import SitterProfileSection from '../components/SitterProfileSection'
 import './UserPortalPage.css'
 
 const SitterPortalPage: React.FC = () => {
@@ -89,19 +90,7 @@ const SitterPortalPage: React.FC = () => {
           {/* Main Content Area */}
           <div className="portal-content">
             {activeSection === 'profile' && (
-              <div className="content-section">
-                <div className="section-header">
-                  <h1>Profile</h1>
-                  <p>Manage your sitter profile and information</p>
-                </div>
-                
-                <div className="content-card">
-                  <div className="card-section">
-                    <h3>Personal Information</h3>
-                    <p className="coming-soon">Profile management coming soon...</p>
-                  </div>
-                </div>
-              </div>
+              <SitterProfileSection />
             )}
 
             {activeSection === 'bookings' && (

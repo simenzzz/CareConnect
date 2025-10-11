@@ -105,6 +105,7 @@
   display: flex;
   align-items: center;
   position: relative;
+  z-index: 1001;
 }
 
 .user-icon-link {
@@ -147,10 +148,12 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  min-width: 220px;
-  overflow: hidden;
-  z-index: 1000;
+  min-width: 240px;
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 10000;
   animation: dropdownFadeIn 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 @keyframes dropdownFadeIn {
@@ -217,4 +220,39 @@
 
 .sign-out-btn:hover i {
   color: #c0392b;
+}
+
+/* Custom scrollbar for dropdown */
+.user-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.user-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+.user-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0 20px;
+  }
+
+  .nav-list {
+    gap: 15px;
+  }
+
+  .user-dropdown {
+    right: -10px;
+    min-width: 200px;
+  }
 }

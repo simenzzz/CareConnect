@@ -18,12 +18,8 @@ interface BabySitterCardProps {
 const BabySitterCard: React.FC<BabySitterCardProps> = ({ sitter }) => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
   
-  // Mock data - in real app this would come from context/API
-  const isLoggedIn = false // TODO: Get from auth context
-  const userChildren = [
-    { id: '1', name: 'Emma', age: '5' },
-    { id: '2', name: 'Liam', age: '3' }
-  ]
+  // Note: isLoggedIn is checked inside BookingModal via Firebase
+  const isLoggedIn = false
 
   const handleBookSession = () => {
     setIsBookingModalOpen(true)
@@ -73,9 +69,9 @@ const BabySitterCard: React.FC<BabySitterCardProps> = ({ sitter }) => {
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
         sitterName={sitter.name}
+        sitterId={sitter.id}
         sitterType="baby"
         isLoggedIn={isLoggedIn}
-        userChildren={userChildren}
       />
     </div>
   )

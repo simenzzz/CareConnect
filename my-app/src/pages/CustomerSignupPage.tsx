@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import { authService } from '../services/authService'
 import './CustomerSignupPage.css'
@@ -45,6 +45,8 @@ interface FormErrors {
 }
 
 const CustomerSignupPage: React.FC = () => {
+  const navigate = useNavigate()
+  
   const [formData, setFormData] = useState<FormData>({
     customerName: '',
     customerDOB: '',
@@ -479,7 +481,7 @@ const CustomerSignupPage: React.FC = () => {
       })
       
       if (result.success) {
-        setSuccessMessage('Customer account created successfully! You can now log in with your credentials.')
+        setSuccessMessage('Customer account created successfully! Redirecting to login...')
         console.log('✅ Signup successful:', result.data)
         // Clear form on success
         setFormData({
@@ -495,7 +497,10 @@ const CustomerSignupPage: React.FC = () => {
           pets: [],
           termsAccepted: false
         })
-        // You could redirect to login page or dashboard here
+        // Redirect to customer login page after 2 seconds
+        setTimeout(() => {
+          navigate('/customer-login')
+        }, 2000)
       } else {
         // Show error in the UI instead of alert
         setErrors(prev => ({

@@ -99,21 +99,39 @@ const Header: React.FC = () => {
                         </Link>
                         
                         <Link 
-                          to="/user-portal?section=pet-bookings" 
-                          className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <i className="fas fa-paw"></i>
-                          <span>Pet Bookings</span>
-                        </Link>
-                        
-                        <Link 
-                          to="/user-portal?section=child-bookings" 
+                          to="/user-portal?section=manage-children" 
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
                           <i className="fas fa-baby"></i>
-                          <span>Child Bookings</span>
+                          <span>Manage Children</span>
+                        </Link>
+                        
+                        <Link 
+                          to="/user-portal?section=manage-pets" 
+                          className="dropdown-item"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <i className="fas fa-paw"></i>
+                          <span>Manage Pets</span>
+                        </Link>
+                        
+                        <Link 
+                          to="/user-portal?section=my-locations" 
+                          className="dropdown-item"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <i className="fas fa-map-marker-alt"></i>
+                          <span>My Locations</span>
+                        </Link>
+                        
+                        <Link 
+                          to="/user-portal?section=my-bookings" 
+                          className="dropdown-item"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <i className="fas fa-calendar-check"></i>
+                          <span>My Bookings</span>
                         </Link>
                         
                         <Link 

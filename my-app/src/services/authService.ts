@@ -64,13 +64,23 @@ class AuthService {
       
       console.log('🔍 authService - Full request body:', JSON.stringify(requestBody, null, 2));
       
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+      } catch (fetchError) {
+        // Network error - backend is not running or unreachable
+        // Delete the Firebase account we just created since registration failed
+        if (user) {
+          await user.delete();
+        }
+        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
+      }
       
       const result = await response.json();
       
@@ -151,16 +161,23 @@ class AuthService {
       
       // Step 2: Get profile from our API
       console.log('2️⃣ Getting profile from API...');
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          expectedUserType: loginData.expectedUserType
-        })
-      });
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            expectedUserType: loginData.expectedUserType
+          })
+        });
+      } catch (fetchError) {
+        // Network error - backend is not running or unreachable
+        await signOut(auth);
+        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
+      }
       
       const result = await response.json();
       
@@ -227,12 +244,17 @@ class AuthService {
       
       const idToken = await user.getIdToken();
       
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${idToken}`
-        }
-      });
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/auth/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+      } catch (fetchError) {
+        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
+      }
       
       const result = await response.json();
       
@@ -280,17 +302,22 @@ class AuthService {
       
       const idToken = await user.getIdToken();
       
-      const response = await fetch(`${API_BASE_URL}/auth/sitter/documents`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          cvUrl,
-          identityDocumentUrl
-        })
-      });
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/auth/sitter/documents`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            cvUrl,
+            identityDocumentUrl
+          })
+        });
+      } catch (fetchError) {
+        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
+      }
       
       const result = await response.json();
       
@@ -310,6 +337,52 @@ class AuthService {
       return {
         success: false,
         error: error.message || 'Failed to update documents'
+      };
+    }
+  }
+  
+  // Update user profile
+  async updateProfile(profileData: any): Promise<ApiResponse> {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('No user logged in');
+      }
+      
+      const idToken = await user.getIdToken();
+      
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({ profileData })
+        });
+      } catch (fetchError) {
+        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
+      }
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update profile');
+      }
+      
+      console.log('✅ Profile updated successfully');
+      
+      return {
+        success: true,
+        data: result
+      };
+      
+    } catch (error: any) {
+      console.error('❌ Update profile failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to update profile'
       };
     }
   }

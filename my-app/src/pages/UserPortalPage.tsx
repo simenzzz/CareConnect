@@ -4,6 +4,11 @@ import { auth } from '../config/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
+import ProfileSection from '../components/ProfileSection'
+import ManageChildren from '../components/ManageChildren'
+import ManagePets from '../components/ManagePets'
+import MyLocations from '../components/MyLocations'
+import MyBookings from '../components/MyBookings'
 import './UserPortalPage.css'
 
 const UserPortalPage: React.FC = () => {
@@ -69,19 +74,35 @@ const UserPortalPage: React.FC = () => {
               </button>
               
               <button
-                className={`sidebar-item ${activeSection === 'pet-bookings' ? 'active' : ''}`}
-                onClick={() => handleSectionChange('pet-bookings')}
+                className={`sidebar-item ${activeSection === 'manage-children' ? 'active' : ''}`}
+                onClick={() => handleSectionChange('manage-children')}
               >
-                <i className="fas fa-paw"></i>
-                <span>Pet Bookings</span>
+                <i className="fas fa-baby"></i>
+                <span>Manage Children</span>
               </button>
               
               <button
-                className={`sidebar-item ${activeSection === 'child-bookings' ? 'active' : ''}`}
-                onClick={() => handleSectionChange('child-bookings')}
+                className={`sidebar-item ${activeSection === 'manage-pets' ? 'active' : ''}`}
+                onClick={() => handleSectionChange('manage-pets')}
               >
-                <i className="fas fa-baby"></i>
-                <span>Child Bookings</span>
+                <i className="fas fa-paw"></i>
+                <span>Manage Pets</span>
+              </button>
+              
+              <button
+                className={`sidebar-item ${activeSection === 'my-locations' ? 'active' : ''}`}
+                onClick={() => handleSectionChange('my-locations')}
+              >
+                <i className="fas fa-map-marker-alt"></i>
+                <span>My Locations</span>
+              </button>
+              
+              <button
+                className={`sidebar-item ${activeSection === 'my-bookings' ? 'active' : ''}`}
+                onClick={() => handleSectionChange('my-bookings')}
+              >
+                <i className="fas fa-calendar-check"></i>
+                <span>My Bookings</span>
               </button>
               
               <button
@@ -97,51 +118,23 @@ const UserPortalPage: React.FC = () => {
           {/* Main Content Area */}
           <div className="portal-content">
             {activeSection === 'profile' && (
-              <div className="content-section">
-                <div className="section-header">
-                  <h1>Profile</h1>
-                  <p>Manage your personal information</p>
-                </div>
-                
-                <div className="content-card">
-                  <div className="card-section">
-                    <h3>Personal Information</h3>
-                    <p className="coming-soon">Profile management coming soon...</p>
-                  </div>
-                </div>
-              </div>
+              <ProfileSection />
             )}
 
-            {activeSection === 'pet-bookings' && (
-              <div className="content-section">
-                <div className="section-header">
-                  <h1>Pet Bookings</h1>
-                  <p>View and manage your pet sitting bookings</p>
-                </div>
-                
-                <div className="content-card">
-                  <div className="card-section">
-                    <h3>Upcoming Bookings</h3>
-                    <p className="coming-soon">Pet bookings coming soon...</p>
-                  </div>
-                </div>
-              </div>
+            {activeSection === 'manage-children' && (
+              <ManageChildren />
             )}
 
-            {activeSection === 'child-bookings' && (
-              <div className="content-section">
-                <div className="section-header">
-                  <h1>Child Bookings</h1>
-                  <p>View and manage your childcare bookings</p>
-                </div>
-                
-                <div className="content-card">
-                  <div className="card-section">
-                    <h3>Upcoming Bookings</h3>
-                    <p className="coming-soon">Child bookings coming soon...</p>
-                  </div>
-                </div>
-              </div>
+            {activeSection === 'manage-pets' && (
+              <ManagePets />
+            )}
+
+            {activeSection === 'my-locations' && (
+              <MyLocations />
+            )}
+
+            {activeSection === 'my-bookings' && (
+              <MyBookings />
             )}
 
             {activeSection === 'payment-methods' && (

@@ -214,7 +214,6 @@ const SittersPage: React.FC = () => {
                           id: sitter.id,
                           name: sitter.fullName,
                           area: `${sitter.city}, ${sitter.area}`,
-                          phone: sitter.phone,
                           experience: sitter.description || sitter.experience,
                           rating: sitter.rating,
                           specialties: sitter.skills
@@ -227,7 +226,6 @@ const SittersPage: React.FC = () => {
                           id: sitter.id,
                           name: sitter.fullName,
                           area: `${sitter.city}, ${sitter.area}`,
-                          phone: sitter.phone,
                           experience: sitter.description || sitter.experience,
                           rating: sitter.rating,
                           specialties: sitter.skills

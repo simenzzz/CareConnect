@@ -18,12 +18,8 @@ interface PetSitterCardProps {
 const PetSitterCard: React.FC<PetSitterCardProps> = ({ sitter }) => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
   
-  // Mock data - in real app this would come from context/API
-  const isLoggedIn = false // TODO: Get from auth context
-  const userPets = [
-    { id: '1', name: 'Buddy', type: 'Dog' },
-    { id: '2', name: 'Whiskers', type: 'Cat' }
-  ]
+  // Note: isLoggedIn is checked inside BookingModal via Firebase
+  const isLoggedIn = false
 
   const handleBookSession = () => {
     setIsBookingModalOpen(true)
@@ -73,9 +69,9 @@ const PetSitterCard: React.FC<PetSitterCardProps> = ({ sitter }) => {
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
         sitterName={sitter.name}
+        sitterId={sitter.id}
         sitterType="pet"
         isLoggedIn={isLoggedIn}
-        userPets={userPets}
       />
     </div>
   )
