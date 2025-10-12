@@ -117,7 +117,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
       bookings.map(async (booking) => {
         // Get children for this booking
         const childrenResult = await query(
-          `SELECT c.id, c.full_name, c.date_of_birth, c.gender
+          `SELECT c.id, c.name as full_name, c.age, c.gender
            FROM booking_children bc
            JOIN children c ON bc.child_id = c.id
            WHERE bc.booking_id = $1`,
@@ -126,7 +126,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
         
         // Get pets for this booking
         const petsResult = await query(
-          `SELECT p.id, p.name, p.type, p.breed, p.date_of_birth
+          `SELECT p.id, p.name, p.type, p.breed, p.age
            FROM booking_pets bp
            JOIN pets p ON bp.pet_id = p.id
            WHERE bp.booking_id = $1`,
@@ -164,7 +164,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
           children: childrenResult.rows.map(child => ({
             id: child.id,
             fullName: child.full_name,
-            dateOfBirth: child.date_of_birth,
+            age: child.age,
             gender: child.gender
           })),
           pets: petsResult.rows.map(pet => ({
@@ -172,7 +172,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
             name: pet.name,
             type: pet.type,
             breed: pet.breed,
-            dateOfBirth: pet.date_of_birth
+            age: pet.age
           }))
         };
       })
@@ -245,10 +245,15 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
           s.full_name as sitter_name,
           s.phone as sitter_phone,
           s.area as sitter_area,
-          s.city as sitter_city
+          s.city as sitter_city,
+          ul.location_name,
+          ul.address_line,
+          ul.area as location_area,
+          ul.city as location_city
         FROM bookings b
         JOIN sitters s ON b.sitter_id = s.id
         JOIN booking_pets bp ON b.id = bp.booking_id
+        LEFT JOIN user_locations ul ON b.location_id = ul.id
         WHERE b.customer_id = $1
         ORDER BY b.booking_from DESC`,
         [customerId]
@@ -285,10 +290,15 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
           c.full_name as customer_name,
           c.phone as customer_phone,
           c.area as customer_area,
-          c.city as customer_city
+          c.city as customer_city,
+          ul.location_name,
+          ul.address_line,
+          ul.area as location_area,
+          ul.city as location_city
         FROM bookings b
         JOIN customers c ON b.customer_id = c.id
         JOIN booking_pets bp ON b.id = bp.booking_id
+        LEFT JOIN user_locations ul ON b.location_id = ul.id
         WHERE b.sitter_id = $1
         ORDER BY b.booking_from DESC`,
         [sitterId]
@@ -304,7 +314,7 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
     const bookingsWithDetails = await Promise.all(
       bookings.map(async (booking) => {
         const petsResult = await query(
-          `SELECT p.id, p.name, p.type, p.breed, p.date_of_birth
+          `SELECT p.id, p.name, p.type, p.breed, p.age
            FROM booking_pets bp
            JOIN pets p ON bp.pet_id = p.id
            WHERE bp.booking_id = $1`,
@@ -338,12 +348,18 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
               city: booking.customer_city
             }
           }),
+          location: {
+            name: booking.location_name,
+            addressLine: booking.address_line,
+            area: booking.location_area,
+            city: booking.location_city
+          },
           pets: petsResult.rows.map(pet => ({
             id: pet.id,
             name: pet.name,
             type: pet.type,
             breed: pet.breed,
-            dateOfBirth: pet.date_of_birth
+            age: pet.age
           }))
         };
       })
@@ -416,10 +432,15 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
           s.full_name as sitter_name,
           s.phone as sitter_phone,
           s.area as sitter_area,
-          s.city as sitter_city
+          s.city as sitter_city,
+          ul.location_name,
+          ul.address_line,
+          ul.area as location_area,
+          ul.city as location_city
         FROM bookings b
         JOIN sitters s ON b.sitter_id = s.id
         JOIN booking_children bc ON b.id = bc.booking_id
+        LEFT JOIN user_locations ul ON b.location_id = ul.id
         WHERE b.customer_id = $1
         ORDER BY b.booking_from DESC`,
         [customerId]
@@ -456,10 +477,15 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
           c.full_name as customer_name,
           c.phone as customer_phone,
           c.area as customer_area,
-          c.city as customer_city
+          c.city as customer_city,
+          ul.location_name,
+          ul.address_line,
+          ul.area as location_area,
+          ul.city as location_city
         FROM bookings b
         JOIN customers c ON b.customer_id = c.id
         JOIN booking_children bc ON b.id = bc.booking_id
+        LEFT JOIN user_locations ul ON b.location_id = ul.id
         WHERE b.sitter_id = $1
         ORDER BY b.booking_from DESC`,
         [sitterId]
@@ -475,7 +501,7 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
     const bookingsWithDetails = await Promise.all(
       bookings.map(async (booking) => {
         const childrenResult = await query(
-          `SELECT c.id, c.full_name, c.date_of_birth, c.gender
+          `SELECT c.id, c.name as full_name, c.age, c.gender
            FROM booking_children bc
            JOIN children c ON bc.child_id = c.id
            WHERE bc.booking_id = $1`,
@@ -509,10 +535,16 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
               city: booking.customer_city
             }
           }),
+          location: {
+            name: booking.location_name,
+            addressLine: booking.address_line,
+            area: booking.location_area,
+            city: booking.location_city
+          },
           children: childrenResult.rows.map(child => ({
             id: child.id,
             fullName: child.full_name,
-            dateOfBirth: child.date_of_birth,
+            age: child.age,
             gender: child.gender
           }))
         };
@@ -645,7 +677,7 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
     
     // Get children for this booking
     const childrenResult = await query(
-      `SELECT c.id, c.full_name, c.date_of_birth, c.gender
+      `SELECT c.id, c.name as full_name, c.age, c.gender
        FROM booking_children bc
        JOIN children c ON bc.child_id = c.id
        WHERE bc.booking_id = $1`,
@@ -654,7 +686,7 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
     
     // Get pets for this booking
     const petsResult = await query(
-      `SELECT p.id, p.name, p.type, p.breed, p.date_of_birth
+      `SELECT p.id, p.name, p.type, p.breed, p.age
        FROM booking_pets bp
        JOIN pets p ON bp.pet_id = p.id
        WHERE bp.booking_id = $1`,
@@ -691,7 +723,7 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
       children: childrenResult.rows.map(child => ({
         id: child.id,
         fullName: child.full_name,
-        dateOfBirth: child.date_of_birth,
+        age: child.age,
         gender: child.gender
       })),
       pets: petsResult.rows.map(pet => ({
@@ -699,7 +731,7 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
         name: pet.name,
         type: pet.type,
         breed: pet.breed,
-        dateOfBirth: pet.date_of_birth
+        age: pet.age
       }))
     };
     
@@ -724,11 +756,16 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): 
     const firebaseUid = req.user?.uid;
     const {
       sitterId,
+      locationId,
       bookingFrom,
       bookingTo,
       paymentMethod,
       priceUsd,
       discount,
+      typeOfBooking,
+      petId,
+      childId,
+      additionalNotes,
       childrenIds,
       petIds
     } = req.body;
@@ -737,17 +774,30 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): 
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
+    // Convert single IDs to arrays for compatibility
+    let childrenIdsArray = childrenIds || [];
+    let petIdsArray = petIds || [];
+    
+    if (typeOfBooking === 'CHILD' && childId) {
+      childrenIdsArray = [childId];
+    }
+    if (typeOfBooking === 'PET' && petId) {
+      petIdsArray = [petId];
+    }
+    
     // Validate required fields
-    if (!sitterId || !bookingFrom || !bookingTo || !priceUsd) {
+    if (!sitterId || !locationId || !bookingFrom || !bookingTo || !priceUsd) {
       return res.status(400).json({ 
-        error: 'Missing required fields: sitterId, bookingFrom, bookingTo, priceUsd' 
+        error: 'Missing required fields: sitterId, locationId, bookingFrom, bookingTo, priceUsd' 
       });
     }
     
     // Validate that at least one child or pet is provided
-    if ((!childrenIds || childrenIds.length === 0) && (!petIds || petIds.length === 0)) {
+    if (childrenIdsArray.length === 0 && petIdsArray.length === 0) {
       return res.status(400).json({ 
-        error: 'At least one child or pet must be included in the booking' 
+        error: typeOfBooking === 'PET' ? 'petId is required for PET bookings' : 
+               typeOfBooking === 'CHILD' ? 'childId is required for CHILD bookings' :
+               'At least one child or pet must be included in the booking'
       });
     }
     
@@ -790,52 +840,68 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): 
     }
     
     // Validate children belong to customer
-    if (childrenIds && childrenIds.length > 0) {
+    if (childrenIdsArray.length > 0) {
       const childrenCheck = await query(
-        'SELECT COUNT(*) as count FROM children WHERE id = ANY($1) AND customer_id = $2',
-        [childrenIds, customerId]
+        'SELECT COUNT(*) as count FROM children WHERE id = ANY($1) AND customer_id = $2 AND is_active = TRUE',
+        [childrenIdsArray, customerId]
       );
       
-      if (parseInt(childrenCheck.rows[0].count) !== childrenIds.length) {
-        return res.status(400).json({ error: 'Some children do not belong to this customer' });
+      if (parseInt(childrenCheck.rows[0].count) !== childrenIdsArray.length) {
+        return res.status(400).json({ error: 'Some children do not belong to this customer or are inactive' });
       }
     }
     
     // Validate pets belong to customer
-    if (petIds && petIds.length > 0) {
+    if (petIdsArray.length > 0) {
       const petsCheck = await query(
-        'SELECT COUNT(*) as count FROM pets WHERE id = ANY($1) AND customer_id = $2',
-        [petIds, customerId]
+        'SELECT COUNT(*) as count FROM pets WHERE id = ANY($1) AND customer_id = $2 AND is_active = TRUE',
+        [petIdsArray, customerId]
       );
       
-      if (parseInt(petsCheck.rows[0].count) !== petIds.length) {
-        return res.status(400).json({ error: 'Some pets do not belong to this customer' });
+      if (parseInt(petsCheck.rows[0].count) !== petIdsArray.length) {
+        return res.status(400).json({ error: 'Some pets do not belong to this customer or are inactive' });
       }
     }
+    
+    // Validate location belongs to customer
+    const locationCheck = await query(
+      'SELECT id FROM user_locations WHERE id = $1 AND customer_id = $2 AND is_active = TRUE',
+      [locationId, customerId]
+    );
+    
+    if (locationCheck.rows.length === 0) {
+      return res.status(400).json({ error: 'Location does not belong to this customer or is inactive' });
+    }
+    
+    // Determine type of booking if not provided
+    const bookingType = typeOfBooking || (petIdsArray.length > 0 ? 'PET' : 'CHILD');
     
     // Create the booking
     const bookingResult = await query(
       `INSERT INTO bookings 
-       (sitter_id, customer_id, booking_from, booking_to, payment_method, price_usd, discount, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (sitter_id, customer_id, location_id, booking_from, booking_to, payment_method, price_usd, discount, status, type_of_booking, additional_notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         sitterId,
         customerId,
+        locationId,
         bookingFrom,
         bookingTo,
         paymentMethod || null,
         priceUsd,
         discount || 0,
-        'UPCOMING'
+        'UPCOMING',
+        bookingType,
+        additionalNotes || null
       ]
     );
     
     const newBooking = bookingResult.rows[0];
     
     // Add children to booking
-    if (childrenIds && childrenIds.length > 0) {
-      for (const childId of childrenIds) {
+    if (childrenIdsArray.length > 0) {
+      for (const childId of childrenIdsArray) {
         await query(
           'INSERT INTO booking_children (booking_id, child_id) VALUES ($1, $2)',
           [newBooking.id, childId]
@@ -844,8 +910,8 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): 
     }
     
     // Add pets to booking
-    if (petIds && petIds.length > 0) {
-      for (const petId of petIds) {
+    if (petIdsArray.length > 0) {
+      for (const petId of petIdsArray) {
         await query(
           'INSERT INTO booking_pets (booking_id, pet_id) VALUES ($1, $2)',
           [newBooking.id, petId]
@@ -853,7 +919,7 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): 
       }
     }
     
-    console.log(`✅ Booking created: ID ${newBooking.id}`);
+    console.log(`✅ Booking created: ID ${newBooking.id}, Type: ${bookingType}`);
     
     return res.status(201).json({
       success: true,
@@ -862,15 +928,18 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): 
         id: newBooking.id,
         sitterId: newBooking.sitter_id,
         customerId: newBooking.customer_id,
+        locationId: newBooking.location_id,
         bookingFrom: newBooking.booking_from,
         bookingTo: newBooking.booking_to,
         paymentMethod: newBooking.payment_method,
         priceUsd: parseFloat(newBooking.price_usd),
         discount: parseFloat(newBooking.discount),
         status: newBooking.status,
+        typeOfBooking: newBooking.type_of_booking,
+        additionalNotes: newBooking.additional_notes,
         createdAt: newBooking.created_at,
-        childrenIds: childrenIds || [],
-        petIds: petIds || []
+        childrenIds: childrenIdsArray,
+        petIds: petIdsArray
       }
     });
     
@@ -1188,3 +1257,4 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
 });
 
 export default router;
+

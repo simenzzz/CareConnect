@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
 import SitterProfileSection from '../components/SitterProfileSection'
+import SitterMyBookings from '../components/SitterMyBookings'
 import './UserPortalPage.css'
 
 const SitterPortalPage: React.FC = () => {
@@ -94,19 +95,7 @@ const SitterPortalPage: React.FC = () => {
             )}
 
             {activeSection === 'bookings' && (
-              <div className="content-section">
-                <div className="section-header">
-                  <h1>Bookings</h1>
-                  <p>View and manage your upcoming and past bookings</p>
-                </div>
-                
-                <div className="content-card">
-                  <div className="card-section">
-                    <h3>Upcoming Sessions</h3>
-                    <p className="coming-soon">Bookings management coming soon...</p>
-                  </div>
-                </div>
-              </div>
+              <SitterMyBookings />
             )}
 
             {activeSection === 'balance' && (

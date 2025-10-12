@@ -82,11 +82,12 @@ router.post('/register', async (req, res): Promise<express.Response> => {
       
       // Insert profile based on user type
       if (userType === 'customer') {
-        const { fullName, dateOfBirth, area, city, children, pets } = profileData;
+        const { fullName, dateOfBirth, area, city, phone, children, pets } = profileData;
         
         console.log('📥 Received customer profile data:');
         console.log('  - Full Name:', fullName);
         console.log('  - Date of Birth:', dateOfBirth);
+        console.log('  - Phone:', phone);
         console.log('  - Area:', area);
         console.log('  - City:', city);
         console.log('  - Children:', children ? `${children.length} children` : 'No children');
@@ -100,14 +101,14 @@ router.post('/register', async (req, res): Promise<express.Response> => {
           console.log('🐕 Pets details:', JSON.stringify(pets, null, 2));
         }
         
-        if (!fullName || !dateOfBirth || !area || !city) {
-          throw new Error('Missing required customer fields: fullName, dateOfBirth, area, city');
+        if (!fullName || !dateOfBirth || !area || !city || !phone) {
+          throw new Error('Missing required customer fields: fullName, dateOfBirth, phone, area, city');
         }
         
         // Insert customer
         const customerResult = await query(
-          'INSERT INTO customers (user_id, full_name, date_of_birth, area, city) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-          [userId, fullName, dateOfBirth, area, city]
+          'INSERT INTO customers (user_id, full_name, date_of_birth, phone, area, city) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+          [userId, fullName, dateOfBirth, phone, area, city]
         );
         
         const customerId = customerResult.rows[0].id;
@@ -427,11 +428,16 @@ router.put('/profile', verifyToken, async (req: AuthenticatedRequest, res): Prom
     
     // Update profile based on user type
     if (user.user_type === 'customer') {
-      const { fullName, dateOfBirth, area, city } = profileData;
+      // Support both camelCase and snake_case from frontend
+      const fullName = profileData.fullName || profileData.full_name;
+      const phone = profileData.phone;
+      const dateOfBirth = profileData.dateOfBirth || profileData.date_of_birth;
+      const area = profileData.area;
+      const city = profileData.city;
       
       await query(
-        'UPDATE customers SET full_name = $1, date_of_birth = $2, area = $3, city = $4, updated_at = CURRENT_TIMESTAMP WHERE user_id = $5',
-        [fullName, dateOfBirth, area, city, user.id]
+        'UPDATE customers SET full_name = $1, phone = $2, date_of_birth = $3, area = $4, city = $5, updated_at = CURRENT_TIMESTAMP WHERE user_id = $6',
+        [fullName, phone, dateOfBirth, area, city, user.id]
       );
       
     } else if (user.user_type === 'sitter') {
@@ -1044,6 +1050,328 @@ router.delete('/pets/:id', verifyToken, async (req: AuthenticatedRequest, res): 
     console.error('Delete pet error:', error);
     return res.status(500).json({ 
       error: 'Failed to delete pet',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ==================== USER LOCATIONS MANAGEMENT ====================
+
+// GET /api/auth/locations - Get all locations for the authenticated customer
+router.get('/locations', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+  try {
+    const firebaseUid = req.user?.uid;
+    
+    // Get user and customer ID
+    const userResult = await query(
+      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
+      [firebaseUid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    if (user.user_type !== 'customer') {
+      return res.status(403).json({ error: 'Only customers can manage locations' });
+    }
+    
+    const customerResult = await query(
+      'SELECT id FROM customers WHERE user_id = $1',
+      [user.id]
+    );
+    
+    if (customerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer profile not found' });
+    }
+    
+    const customerId = customerResult.rows[0].id;
+    
+    // Get all active locations
+    const locationsResult = await query(
+      'SELECT * FROM user_locations WHERE customer_id = $1 AND is_active = TRUE ORDER BY is_default DESC, created_at DESC',
+      [customerId]
+    );
+    
+    return res.json({
+      success: true,
+      locations: locationsResult.rows
+    });
+    
+  } catch (error) {
+    console.error('Get locations error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to fetch locations',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// POST /api/auth/locations - Add a new location
+router.post('/locations', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+  try {
+    const firebaseUid = req.user?.uid;
+    const { 
+      locationName, 
+      addressName, 
+      streetName, 
+      buildingName, 
+      floor, 
+      addressLine, 
+      area, 
+      city, 
+      postalCode, 
+      latitude, 
+      longitude, 
+      isDefault 
+    } = req.body;
+    
+    if (!locationName || !area || !city || latitude === undefined || longitude === undefined) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: locationName, area, city, latitude, longitude' 
+      });
+    }
+    
+    // Get user and customer ID
+    const userResult = await query(
+      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
+      [firebaseUid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    if (user.user_type !== 'customer') {
+      return res.status(403).json({ error: 'Only customers can manage locations' });
+    }
+    
+    const customerResult = await query(
+      'SELECT id FROM customers WHERE user_id = $1',
+      [user.id]
+    );
+    
+    if (customerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer profile not found' });
+    }
+    
+    const customerId = customerResult.rows[0].id;
+    
+    // Check if this is the first location for this customer
+    const existingLocationsResult = await query(
+      'SELECT COUNT(*) as count FROM user_locations WHERE customer_id = $1 AND is_active = TRUE',
+      [customerId]
+    );
+    
+    const isFirstLocation = existingLocationsResult.rows[0].count === '0';
+    
+    // If this is the first location, automatically set it as default
+    // OR if explicitly set as default, unset all other active defaults
+    let shouldBeDefault = isDefault || isFirstLocation;
+    
+    if (shouldBeDefault) {
+      await query(
+        'UPDATE user_locations SET is_default = FALSE WHERE customer_id = $1 AND is_active = TRUE',
+        [customerId]
+      );
+    }
+    
+    // Insert new location
+    const locationResult = await query(
+      'INSERT INTO user_locations (customer_id, location_name, address_name, street_name, building_name, floor, address_line, area, city, postal_code, latitude, longitude, is_default) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
+      [customerId, locationName, addressName || null, streetName || null, buildingName || null, floor || null, addressLine, area, city, postalCode || null, latitude, longitude, shouldBeDefault]
+    );
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Location added successfully',
+      location: locationResult.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('Add location error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to add location',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// PUT /api/auth/locations/:id - Update a location
+router.put('/locations/:id', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+  try {
+    const firebaseUid = req.user?.uid;
+    const locationId = parseInt(req.params.id);
+    const { 
+      locationName, 
+      addressName, 
+      streetName, 
+      buildingName, 
+      floor, 
+      addressLine, 
+      area, 
+      city, 
+      postalCode, 
+      latitude, 
+      longitude, 
+      isDefault 
+    } = req.body;
+    
+    if (isNaN(locationId)) {
+      return res.status(400).json({ error: 'Invalid location ID' });
+    }
+    
+    if (!locationName || !area || !city || latitude === undefined || longitude === undefined) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: locationName, area, city, latitude, longitude' 
+      });
+    }
+    
+    // Get user and customer ID
+    const userResult = await query(
+      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
+      [firebaseUid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    if (user.user_type !== 'customer') {
+      return res.status(403).json({ error: 'Only customers can manage locations' });
+    }
+    
+    const customerResult = await query(
+      'SELECT id FROM customers WHERE user_id = $1',
+      [user.id]
+    );
+    
+    if (customerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer profile not found' });
+    }
+    
+    const customerId = customerResult.rows[0].id;
+    
+    // If this is set as default, unset all other active defaults
+    if (isDefault) {
+      await query(
+        'UPDATE user_locations SET is_default = FALSE WHERE customer_id = $1 AND id != $2 AND is_active = TRUE',
+        [customerId, locationId]
+      );
+    }
+    
+    // Update location (verify ownership)
+    const updateResult = await query(
+      'UPDATE user_locations SET location_name = $1, address_name = $2, street_name = $3, building_name = $4, floor = $5, address_line = $6, area = $7, city = $8, postal_code = $9, latitude = $10, longitude = $11, is_default = $12, updated_at = CURRENT_TIMESTAMP WHERE id = $13 AND customer_id = $14 AND is_active = TRUE RETURNING *',
+      [locationName, addressName || null, streetName || null, buildingName || null, floor || null, addressLine, area, city, postalCode || null, latitude, longitude, isDefault || false, locationId, customerId]
+    );
+    
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Location not found or access denied' });
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Location updated successfully',
+      location: updateResult.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('Update location error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to update location',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// DELETE /api/auth/locations/:id - Soft delete a location
+router.delete('/locations/:id', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+  try {
+    const firebaseUid = req.user?.uid;
+    const locationId = parseInt(req.params.id);
+    
+    if (isNaN(locationId)) {
+      return res.status(400).json({ error: 'Invalid location ID' });
+    }
+    
+    // Get user and customer ID
+    const userResult = await query(
+      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
+      [firebaseUid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    if (user.user_type !== 'customer') {
+      return res.status(403).json({ error: 'Only customers can manage locations' });
+    }
+    
+    const customerResult = await query(
+      'SELECT id FROM customers WHERE user_id = $1',
+      [user.id]
+    );
+    
+    if (customerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer profile not found' });
+    }
+    
+    const customerId = customerResult.rows[0].id;
+    
+    // Check if the location to be deleted is the default
+    const locationToDeleteResult = await query(
+      'SELECT is_default FROM user_locations WHERE id = $1 AND customer_id = $2 AND is_active = TRUE',
+      [locationId, customerId]
+    );
+    
+    if (locationToDeleteResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Location not found or access denied' });
+    }
+    
+    const wasDefault = locationToDeleteResult.rows[0].is_default;
+    
+    // Soft delete (set is_active to FALSE)
+    await query(
+      'UPDATE user_locations SET is_active = FALSE, is_default = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND customer_id = $2',
+      [locationId, customerId]
+    );
+    
+    // If the deleted location was the default, set another active location as default
+    if (wasDefault) {
+      // Get the oldest active location
+      const nextDefaultResult = await query(
+        'SELECT id FROM user_locations WHERE customer_id = $1 AND is_active = TRUE ORDER BY created_at ASC LIMIT 1',
+        [customerId]
+      );
+      
+      if (nextDefaultResult.rows.length > 0) {
+        const nextDefaultId = nextDefaultResult.rows[0].id;
+        await query(
+          'UPDATE user_locations SET is_default = TRUE WHERE id = $1',
+          [nextDefaultId]
+        );
+      }
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Location deleted successfully'
+    });
+    
+  } catch (error) {
+    console.error('Delete location error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to delete location',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }

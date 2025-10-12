@@ -4,6 +4,7 @@ import './ProfileSection.css';
 
 interface ProfileData {
   full_name: string;
+  phone: string;
   date_of_birth: string;
   area: string;
   city: string;
@@ -22,6 +23,7 @@ const ProfileSection: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [profileData, setProfileData] = useState<ProfileData>({
     full_name: '',
+    phone: '',
     date_of_birth: '',
     area: '',
     city: ''
@@ -62,9 +64,21 @@ const ProfileSection: React.FC = () => {
     setEditValue('');
   };
 
+  const isValidLebanesePhone = (phone: string): boolean => {
+    // Lebanese phone number patterns: +961XXXXXXXXX or 961XXXXXXXXX or 0XXXXXXXXX
+    const phoneRegex = /^(\+961|961|0)?[0-9]{8}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
+
   const handleSave = async (field: string) => {
     if (!editValue.trim()) {
       setError('Field cannot be empty');
+      return;
+    }
+
+    // Validate phone number if it's the phone field
+    if (field === 'phone' && !isValidLebanesePhone(editValue)) {
+      setError('Please enter a valid Lebanese phone number (e.g., +961 XX XXX XXX)');
       return;
     }
 
@@ -205,6 +219,57 @@ const ProfileSection: React.FC = () => {
                   <div className="field-value">{profileData.full_name}</div>
                   <button 
                     onClick={() => handleEdit('full_name', profileData.full_name)}
+                    className="btn-edit"
+                    title="Edit"
+                  >
+                    <i className="fas fa-pen"></i>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Phone Number */}
+            <div className="profile-field">
+              <div className="field-label">
+                <i className="fas fa-phone"></i>
+                Phone Number
+              </div>
+              {editingField === 'phone' ? (
+                <div className="field-edit">
+                  <input
+                    type="tel"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="field-input"
+                    placeholder="+961 XX XXX XXX"
+                    autoFocus
+                  />
+                  <div className="field-actions">
+                    <button 
+                      onClick={() => handleSave('phone')}
+                      className="btn-save"
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <i className="fas fa-spinner fa-spin"></i>
+                      ) : (
+                        <i className="fas fa-check"></i>
+                      )}
+                    </button>
+                    <button 
+                      onClick={handleCancel}
+                      className="btn-cancel"
+                      disabled={isSaving}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="field-display">
+                  <div className="field-value">{profileData.phone || 'Not provided'}</div>
+                  <button 
+                    onClick={() => handleEdit('phone', profileData.phone || '')}
                     className="btn-edit"
                     title="Edit"
                   >

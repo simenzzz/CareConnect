@@ -57,12 +57,23 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [isLoadingData, setIsLoadingData] = useState(false)
   
   // Form state
-  const [selectedEntityId, setSelectedEntityId] = useState('')
+  const [selectedEntityIds, setSelectedEntityIds] = useState<number[]>([])
   const [selectedLocationId, setSelectedLocationId] = useState('')
   const [bookingDate, setBookingDate] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [notes, setNotes] = useState('')
+
+  // Handle entity selection toggle
+  const toggleEntitySelection = (entityId: number) => {
+    setSelectedEntityIds(prev => {
+      if (prev.includes(entityId)) {
+        return prev.filter(id => id !== entityId)
+      } else {
+        return [...prev, entityId]
+      }
+    })
+  }
 
   // Handle start time change and reset end time if needed
   const handleStartTimeChange = (newStartTime: string) => {
@@ -176,7 +187,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       document.body.classList.add('modal-open')
       
       // Reset form when opening
-      setSelectedEntityId('')
+      setSelectedEntityIds([])
       setSelectedLocationId('')
       setBookingDate('')
       setStartTime('')
@@ -455,7 +466,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         if (response.data) {
           const newId = sitterType === 'pet' ? response.data.pet?.id : response.data.child?.id
           if (newId) {
-            setSelectedEntityId(newId.toString())
+            setSelectedEntityIds(prev => [...prev, newId])
           }
         }
       } else {
@@ -474,8 +485,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setError(null)
     
     // Validation
-    if (!selectedEntityId) {
-      setError(`Please select or add a ${sitterType === 'pet' ? 'pet' : 'child'}`)
+    if (selectedEntityIds.length === 0) {
+      setError(`Please select at least one ${sitterType === 'pet' ? 'pet' : 'child'}`)
       return
     }
     
@@ -517,8 +528,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
         additionalNotes: notes || null,
         typeOfBooking: (sitterType === 'pet' ? 'PET' : 'CHILD') as 'PET' | 'CHILD',
         ...(sitterType === 'pet' 
-          ? { petId: parseInt(selectedEntityId) }
-          : { childId: parseInt(selectedEntityId) }
+          ? { petIds: selectedEntityIds }
+          : { childrenIds: selectedEntityIds }
         )
       }
       
@@ -634,33 +645,87 @@ const BookingModal: React.FC<BookingModalProps> = ({
               {/* Entity Selection or Add Form */}
               {!showAddForm ? (
               <div className="form-group">
-                  <label htmlFor="entity-select">
+                <label>
                   <i className={`fas fa-${sitterType === 'baby' ? 'baby' : 'paw'}`}></i>
-                    Select Your {entityLabel}
+                  Select Your {entityLabel}(s) *
                 </label>
-                <select
-                    id="entity-select"
-                    value={selectedEntityId}
-                    onChange={(e) => {
-                      if (e.target.value === 'add-new') {
-                        handleAddEntityClick()
-                      } else {
-                        setSelectedEntityId(e.target.value)
-                      }
-                    }}
-                  required
-                    disabled={isLoadingData}
+                <div style={{ 
+                  border: '1px solid #ddd', 
+                  borderRadius: '8px', 
+                  padding: '10px',
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  backgroundColor: '#f9f9f9'
+                }}>
+                  {availableItems.length > 0 ? (
+                    availableItems.map((item) => (
+                      <label 
+                        key={item.id} 
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          padding: '8px',
+                          cursor: 'pointer',
+                          borderRadius: '4px',
+                          transition: 'background 0.2s',
+                          backgroundColor: selectedEntityIds.includes(item.id) ? '#e8f4f8' : 'transparent'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!selectedEntityIds.includes(item.id)) {
+                            e.currentTarget.style.backgroundColor = '#f0f0f0'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!selectedEntityIds.includes(item.id)) {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                          }
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEntityIds.includes(item.id)}
+                          onChange={() => toggleEntitySelection(item.id)}
+                          style={{ marginRight: '10px', cursor: 'pointer', width: '18px', height: '18px' }}
+                          disabled={isLoadingData}
+                        />
+                        <span style={{ flex: 1 }}>
+                          {getEntityDisplayText(item)}
+                        </span>
+                        {selectedEntityIds.includes(item.id) && (
+                          <i className="fas fa-check" style={{ color: '#667eea', marginLeft: '8px' }}></i>
+                        )}
+                      </label>
+                    ))
+                  ) : (
+                    <p style={{ textAlign: 'center', color: '#999', padding: '10px' }}>
+                      No {entityLabel.toLowerCase()}s available
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddEntityClick}
+                  style={{
+                    marginTop: '10px',
+                    padding: '8px 16px',
+                    border: '2px dashed #667eea',
+                    background: 'white',
+                    color: '#667eea',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    width: '100%',
+                    fontWeight: 600,
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f0f0ff'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white'
+                  }}
                 >
-                    <option value="">Choose {entityLabel.toLowerCase()}</option>
-                  {availableItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                        {getEntityDisplayText(item)}
-                      </option>
-                    ))}
-                    <option value="add-new" className="add-new-option">
-                      ➕ Add a {entityLabel}
-                    </option>
-                </select>
+                  <i className="fas fa-plus-circle"></i> Add a {entityLabel}
+                </button>
               </div>
               ) : (
                 <div className="add-entity-form">

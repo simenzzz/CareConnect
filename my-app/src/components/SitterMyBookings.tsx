@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import bookingService from '../services/bookingService'
 import './ManageEntities.css'
 
@@ -22,32 +21,31 @@ interface Booking {
   id: number
   sitterId: number
   customerId: number
-  locationId: number
   bookingFrom: string
   bookingTo: string
   paymentMethod: string | null
   priceUsd: number
   discount: number
   status: string
-  typeOfBooking: 'PET' | 'CHILD'
   createdAt: string
   updatedAt: string
-  sitter: {
+  customer: {
     name: string
-    age: number
+    phone?: string
+    area: string
+    city: string
   }
-  pets?: Pet[]
-  children?: Child[]
-  location: {
+  location?: {
     name: string
     addressLine: string
     area: string
     city: string
   }
+  pets?: Pet[]
+  children?: Child[]
 }
 
-const MyBookings: React.FC = () => {
-  const navigate = useNavigate()
+const SitterMyBookings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'pet' | 'child'>('pet')
   const [petBookings, setPetBookings] = useState<Booking[]>([])
   const [childBookings, setChildBookings] = useState<Booking[]>([])
@@ -70,14 +68,19 @@ const MyBookings: React.FC = () => {
         bookingService.getChildBookings()
       ])
 
+      console.log('Sitter Pet bookings response:', petResponse)
+      console.log('Sitter Child bookings response:', childResponse)
+
       if (petResponse.success && petResponse.data) {
-        console.log('Pet bookings response:', petResponse.data)
         setPetBookings(petResponse.data)
+      } else if (petResponse.error) {
+        console.error('Pet bookings error:', petResponse.error)
       }
 
       if (childResponse.success && childResponse.data) {
-        console.log('Child bookings response:', childResponse.data)
         setChildBookings(childResponse.data)
+      } else if (childResponse.error) {
+        console.error('Child bookings error:', childResponse.error)
       }
     } catch (err) {
       setError('Failed to load bookings')
@@ -100,7 +103,7 @@ const MyBookings: React.FC = () => {
   }
 
   const isUpcoming = (booking: Booking) => {
-    return new Date(booking.bookingFrom) > new Date()
+    return new Date(booking.bookingTo) > new Date()
   }
 
   const calculateFinalPrice = (price: number, discount: number) => {
@@ -109,9 +112,10 @@ const MyBookings: React.FC = () => {
 
   const currentBookings = activeTab === 'pet' ? petBookings : childBookings
   const upcomingBookings = currentBookings.filter(isUpcoming)
-  const completedBookings = currentBookings.filter(b => !isUpcoming(b))
+  const finishedBookings = currentBookings.filter(b => !isUpcoming(b))
 
   const renderBookingCard = (booking: Booking) => {
+    const finalPrice = calculateFinalPrice(booking.priceUsd, booking.discount)
     const pets = booking.pets || []
     const children = booking.children || []
 
@@ -136,14 +140,14 @@ const MyBookings: React.FC = () => {
             </div>
           </div>
 
-          {/* Sitter Info */}
+          {/* Customer Info */}
           <div className="info-item" style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <i className="fas fa-user-nurse" style={{ fontSize: '1.1rem', color: '#667eea' }}></i>
-              <span style={{ fontWeight: 600 }}>Sitter</span>
+              <i className="fas fa-user" style={{ fontSize: '1.1rem', color: '#667eea' }}></i>
+              <span style={{ fontWeight: 600 }}>Customer</span>
             </label>
             <div style={{ paddingLeft: '30px' }}>
-              {booking.sitter.name}, {booking.sitter.age} years old
+              {booking.customer.name}
             </div>
           </div>
 
@@ -208,11 +212,11 @@ const MyBookings: React.FC = () => {
             </div>
           )}
 
-          {/* Price */}
+          {/* Earnings */}
           <div className="info-item" style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <i className="fas fa-dollar-sign" style={{ fontSize: '1.1rem', color: '#27ae60' }}></i>
-              <span style={{ fontWeight: 600 }}>Price</span>
+              <span style={{ fontWeight: 600 }}>Earnings</span>
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '30px' }}>
               {booking.discount > 0 ? (
@@ -229,7 +233,7 @@ const MyBookings: React.FC = () => {
                     fontWeight: 600,
                     fontSize: '1.1rem'
                   }}>
-                    ${calculateFinalPrice(booking.priceUsd, booking.discount).toFixed(2)}
+                    + ${finalPrice.toFixed(2)} USD
                   </span>
                   <span style={{ 
                     backgroundColor: '#e74c3c',
@@ -243,8 +247,12 @@ const MyBookings: React.FC = () => {
                   </span>
                 </>
               ) : (
-                <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>
-                  ${booking.priceUsd.toFixed(2)}
+                <span style={{ 
+                  color: '#27ae60', 
+                  fontWeight: 600, 
+                  fontSize: '1.1rem' 
+                }}>
+                  + ${booking.priceUsd.toFixed(2)} USD
                 </span>
               )}
             </div>
@@ -268,8 +276,8 @@ const MyBookings: React.FC = () => {
   return (
     <div className="content-section">
       <div className="section-header">
-        <h1>My Bookings</h1>
-        <p>View and manage your booking history</p>
+        <h1>Bookings</h1>
+        <p>View and manage your upcoming and past bookings</p>
       </div>
 
       {error && (
@@ -279,60 +287,55 @@ const MyBookings: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs for Pet/Child Bookings - Centered */}
+      {/* Tabs for Pet/Child Bookings */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'center',
         gap: '10px', 
-        marginBottom: '20px',
+        marginBottom: '30px',
         borderBottom: '2px solid #ecf0f1'
       }}>
         <button
           onClick={() => setActiveTab('pet')}
           style={{
-            padding: '12px 24px',
+            padding: '12px 32px',
             border: 'none',
             background: activeTab === 'pet' ? '#667eea' : 'transparent',
             color: activeTab === 'pet' ? 'white' : '#7f8c8d',
             fontWeight: 600,
-            fontSize: '1rem',
+            fontSize: '1.05rem',
             cursor: 'pointer',
             borderRadius: '8px 8px 0 0',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            bottom: '-2px'
           }}
         >
           <i className="fas fa-paw" style={{ marginRight: '8px' }}></i>
-          Pet Bookings ({petBookings.length})
+          Pet Sittings ({petBookings.length})
         </button>
         <button
           onClick={() => setActiveTab('child')}
           style={{
-            padding: '12px 24px',
+            padding: '12px 32px',
             border: 'none',
             background: activeTab === 'child' ? '#667eea' : 'transparent',
             color: activeTab === 'child' ? 'white' : '#7f8c8d',
             fontWeight: 600,
-            fontSize: '1rem',
+            fontSize: '1.05rem',
             cursor: 'pointer',
             borderRadius: '8px 8px 0 0',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            bottom: '-2px'
           }}
         >
           <i className="fas fa-baby" style={{ marginRight: '8px' }}></i>
-          Child Bookings ({childBookings.length})
+          Child Sittings ({childBookings.length})
         </button>
       </div>
 
       <div className="content-card">
-        {/* Create Booking Button */}
-        <button 
-          className="add-section-btn"
-          onClick={() => navigate(`/sitters#${activeTab === 'pet' ? 'pet' : 'baby'}-sitters`)}
-        >
-          <i className="fas fa-plus-circle"></i>
-          Create New Booking
-        </button>
-
         {/* Upcoming Bookings Dropdown */}
         <div style={{ marginBottom: '20px' }}>
           <button
@@ -373,7 +376,7 @@ const MyBookings: React.FC = () => {
               ) : (
                 <div style={{ textAlign: 'center', padding: '30px 20px', color: '#7f8c8d' }}>
                   <i className="fas fa-calendar-times" style={{ fontSize: '2rem', marginBottom: '10px', opacity: 0.3 }}></i>
-                  <p>No upcoming bookings</p>
+                  <p>No upcoming sessions</p>
                 </div>
               )}
             </div>
@@ -409,18 +412,18 @@ const MyBookings: React.FC = () => {
           >
             <span>
               <i className="fas fa-check-circle" style={{ color: '#27ae60', marginRight: '10px' }}></i>
-              Finished Bookings ({completedBookings.length})
+              Finished Bookings ({finishedBookings.length})
             </span>
             <i className={`fas fa-chevron-${finishedExpanded ? 'up' : 'down'}`} style={{ color: '#27ae60' }}></i>
           </button>
           {finishedExpanded && (
             <div className="children-list">
-              {completedBookings.length > 0 ? (
-                completedBookings.map(renderBookingCard)
+              {finishedBookings.length > 0 ? (
+                finishedBookings.map(renderBookingCard)
               ) : (
                 <div style={{ textAlign: 'center', padding: '30px 20px', color: '#7f8c8d' }}>
                   <i className="fas fa-history" style={{ fontSize: '2rem', marginBottom: '10px', opacity: 0.3 }}></i>
-                  <p>No finished bookings</p>
+                  <p>No finished sessions</p>
                 </div>
               )}
             </div>
@@ -431,16 +434,16 @@ const MyBookings: React.FC = () => {
         {currentBookings.length === 0 && (
           <div style={{
             textAlign: 'center',
-            padding: '40px 20px',
+            padding: '60px 20px',
             color: '#7f8c8d'
           }}>
             <i className={`fas ${activeTab === 'pet' ? 'fa-paw' : 'fa-baby'}`} 
-               style={{ fontSize: '3rem', marginBottom: '15px', opacity: 0.3 }}></i>
-            <p style={{ fontSize: '1.1rem', marginBottom: '10px' }}>
-              No {activeTab === 'pet' ? 'pet' : 'child'} bookings yet
+               style={{ fontSize: '4rem', marginBottom: '20px', opacity: 0.3 }}></i>
+            <p style={{ fontSize: '1.2rem', marginBottom: '10px', fontWeight: 600 }}>
+              No {activeTab === 'pet' ? 'pet' : 'child'} sitting sessions yet
             </p>
-            <p style={{ fontSize: '0.9rem' }}>
-              Click "Create New Booking" to book your first session
+            <p style={{ fontSize: '0.95rem' }}>
+              Your bookings will appear here once customers book your services
             </p>
           </div>
         )}
@@ -449,6 +452,5 @@ const MyBookings: React.FC = () => {
   )
 }
 
-export default MyBookings
-
+export default SitterMyBookings
 
