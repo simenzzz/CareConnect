@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 import { getEnv } from './env';
 
 let pool: Pool;
@@ -34,6 +34,40 @@ export const query = async (text: string, params?: any[]) => {
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
+  }
+};
+
+/**
+ * Run `fn` inside a single transaction on a dedicated pooled client.
+ *
+ * Use this for any multi-statement write that must be atomic. Unlike calling
+ * `query('BEGIN')` / `query('COMMIT')` through the shared helper — which can run
+ * each statement on a DIFFERENT pooled connection and is therefore NOT a real
+ * transaction — this pins one client for the whole unit of work, commits on
+ * success, and rolls back on any thrown error.
+ */
+export const withTransaction = async <T>(
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> => {
+  if (!pool) {
+    throw new Error('Database not initialized. Call connectDatabase() first.');
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Transaction rollback failed:', rollbackError);
+    }
+    throw error;
+  } finally {
+    client.release();
   }
 };
 

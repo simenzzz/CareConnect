@@ -1,9 +1,9 @@
 import express from 'express';
 import type { Request, Response } from 'express';
-import { query } from '../config/database';
+import { query, withTransaction } from '../config/database';
 import { verifyToken } from './auth';
 import type { AuthenticatedRequest } from './auth';
-import { errorDetails } from '../utils/errors';
+import { errorDetails, BookingConflictError } from '../utils/errors';
 import { validateBody } from '../middleware/validate';
 import { bookingCreateSchema, bookingUpdateSchema } from '../validation/booking.schemas';
 
@@ -878,50 +878,73 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
     
     // Determine type of booking if not provided
     const bookingType = typeOfBooking || (petIdsArray.length > 0 ? 'PET' : 'CHILD');
-    
-    // Create the booking
-    const bookingResult = await query(
-      `INSERT INTO bookings 
-       (sitter_id, customer_id, location_id, booking_from, booking_to, payment_method, price_usd, discount, status, type_of_booking, additional_notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       RETURNING *`,
-      [
-        sitterId,
-        customerId,
-        locationId,
-        bookingFrom,
-        bookingTo,
-        paymentMethod || null,
-        priceUsd,
-        discount || 0,
-        'UPCOMING',
-        bookingType,
-        additionalNotes || null
-      ]
-    );
-    
-    const newBooking = bookingResult.rows[0];
-    
-    // Add children to booking
-    if (childrenIdsArray.length > 0) {
-      for (const childId of childrenIdsArray) {
-        await query(
-          'INSERT INTO booking_children (booking_id, child_id) VALUES ($1, $2)',
-          [newBooking.id, childId]
+
+    // Create the booking + junction rows atomically. The whole unit runs in one
+    // transaction so a failure mid-way can never leave an orphaned booking, and the
+    // sitter row is locked (FOR UPDATE) to serialize concurrent bookings for that
+    // sitter — closing the double-booking race before the overlap check.
+    const newBooking = await withTransaction(async (client) => {
+      await client.query('SELECT id FROM sitters WHERE id = $1 FOR UPDATE', [sitterId]);
+
+      // Reject overlapping bookings for the same sitter. Two intervals overlap iff
+      // existing.from < new.to AND existing.to > new.from. CANCELED bookings don't count
+      // (spelling must match the status written by the update handler — single 'L').
+      const overlap = await client.query(
+        `SELECT id FROM bookings
+         WHERE sitter_id = $1
+           AND status <> 'CANCELED'
+           AND booking_from < $3
+           AND booking_to > $2
+         LIMIT 1`,
+        [sitterId, bookingFrom, bookingTo]
+      );
+
+      if (overlap.rows.length > 0) {
+        throw new BookingConflictError();
+      }
+
+      const bookingResult = await client.query(
+        `INSERT INTO bookings
+         (sitter_id, customer_id, location_id, booking_from, booking_to, payment_method, price_usd, discount, status, type_of_booking, additional_notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         RETURNING *`,
+        [
+          sitterId,
+          customerId,
+          locationId,
+          bookingFrom,
+          bookingTo,
+          paymentMethod || null,
+          priceUsd,
+          discount || 0,
+          'UPCOMING',
+          bookingType,
+          additionalNotes || null
+        ]
+      );
+
+      const booking = bookingResult.rows[0];
+
+      // Multi-row inserts into the junction tables (one statement each).
+      if (childrenIdsArray.length > 0) {
+        const placeholders = childrenIdsArray.map((_: number, i: number) => `($1, $${i + 2})`).join(', ');
+        await client.query(
+          `INSERT INTO booking_children (booking_id, child_id) VALUES ${placeholders}`,
+          [booking.id, ...childrenIdsArray]
         );
       }
-    }
-    
-    // Add pets to booking
-    if (petIdsArray.length > 0) {
-      for (const petId of petIdsArray) {
-        await query(
-          'INSERT INTO booking_pets (booking_id, pet_id) VALUES ($1, $2)',
-          [newBooking.id, petId]
+
+      if (petIdsArray.length > 0) {
+        const placeholders = petIdsArray.map((_: number, i: number) => `($1, $${i + 2})`).join(', ');
+        await client.query(
+          `INSERT INTO booking_pets (booking_id, pet_id) VALUES ${placeholders}`,
+          [booking.id, ...petIdsArray]
         );
       }
-    }
-    
+
+      return booking;
+    });
+
     console.log(`✅ Booking created: ID ${newBooking.id}, Type: ${bookingType}`);
     
     return res.status(201).json({
@@ -947,6 +970,14 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
     });
     
   } catch (error) {
+    // 23P01 = exclusion_violation: the DB-level overlap constraint (migration 004)
+    // caught a double-booking that slipped past the app check under concurrency.
+    if (error instanceof BookingConflictError || (error as { code?: string })?.code === '23P01') {
+      return res.status(409).json({
+        success: false,
+        error: error instanceof BookingConflictError ? error.message : 'Sitter is already booked for an overlapping time slot'
+      });
+    }
     console.error('❌ Error creating booking:', error);
     return res.status(500).json({
       success: false,
