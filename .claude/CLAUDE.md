@@ -28,7 +28,7 @@ cd backend && npm install && npm run dev      # API on http://localhost:5000  (G
 # Frontend (terminal 2) — needs my-app/.env with VITE_API_URL + VITE_FIREBASE_*
 cd my-app && npm install && npm run dev        # Vite dev server (see terminal for URL)
 ```
-> No `.env.example` files exist yet — see §10 for the required vars (adding them is a tracked follow-up).
+> Copy `backend/.env.example` and `my-app/.env.example` to `.env` and fill them in — see §10 for the full var list.
 
 Monorepo with two independently-built apps:
 
@@ -150,7 +150,8 @@ and HIGH before reporting done.
     `FIREBASE_CLIENT_ID`, `WHISH_API_URL`, `WHISH_CHANNEL`, `WHISH_SECRET`,
     `WHISH_WEBSITE_URL`, `PAYMENT_CURRENCY`.
   - Frontend: `VITE_API_URL`, plus `VITE_FIREBASE_*` for the web config.
-- **Follow-up:** add a committed `.env.example` (names only, no values) for both apps.
+- Committed `.env.example` templates (names only, no values) exist for both apps:
+  `backend/.env.example`, `my-app/.env.example`.
 - **Never commit** `.env` files or Firebase service-account JSON (already in `.gitignore`).
 
 ## 11. Security must-knows & do-not-regress list
