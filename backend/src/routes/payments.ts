@@ -1,20 +1,32 @@
 import express, { Response } from 'express'
 import { query } from '../config/database'
 import { verifyToken, AuthenticatedRequest } from './auth'
+import { getEnv } from '../config/env'
+import { errorDetails } from '../utils/errors'
+import { validateBody } from '../middleware/validate'
+import { paymentInitiateSchema } from '../validation/payment.schemas'
 
 const router = express.Router()
 
-// Whish API Configuration
-const WHISH_API_URL = process.env.WHISH_API_URL || 'https://lb.sandbox.whish.money/itel-service/api'
-const WHISH_CHANNEL = process.env.WHISH_CHANNEL || 'placeholder_channel'
-const WHISH_SECRET = process.env.WHISH_SECRET || 'placeholder_secret'
-const WHISH_WEBSITE_URL = process.env.WHISH_WEBSITE_URL || 'http://localhost:5173'
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
-const PAYMENT_CURRENCY = process.env.PAYMENT_CURRENCY || 'USD'
+// Whish API configuration is read at request time from the validated env (no
+// insecure placeholder fallbacks — the process refuses to boot without real creds).
+const whishConfig = () => {
+  const env = getEnv()
+  return {
+    apiUrl: env.WHISH_API_URL,
+    channel: env.WHISH_CHANNEL,
+    secret: env.WHISH_SECRET,
+    websiteUrl: env.WHISH_WEBSITE_URL,
+    frontendUrl: env.FRONTEND_URL,
+    backendUrl: env.BACKEND_URL,
+    currency: env.PAYMENT_CURRENCY,
+  }
+}
 
 // Initialize payment with Whish (for both card and mobile money)
-router.post('/whish/initiate', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/whish/initiate', verifyToken, validateBody(paymentInitiateSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const { apiUrl, channel, secret, websiteUrl, frontendUrl, backendUrl, currency } = whishConfig()
     const firebaseUid = req.user?.uid
     
     if (!firebaseUid) {
@@ -83,8 +95,9 @@ router.post('/whish/initiate', verifyToken, async (req: AuthenticatedRequest, re
       })
     }
 
-    // Calculate final amount (apply discount)
-    const finalAmount = booking.price_usd * (1 - booking.discount / 100)
+    // Calculate final amount (apply discount). Coerce defensively in case a legacy
+    // row has a NULL discount.
+    const finalAmount = Number(booking.price_usd) * (1 - (Number(booking.discount) || 0) / 100)
 
     // Check if payment already exists
     const existingPayment = await query(
@@ -99,94 +112,71 @@ router.post('/whish/initiate', verifyToken, async (req: AuthenticatedRequest, re
       })
     }
 
-    // Call Whish Collect API
-    try {
-      const whishResponse = await fetch(`${WHISH_API_URL}/payment/collect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'channel': WHISH_CHANNEL,
-          'secret': WHISH_SECRET,
-          'websiteurl': WHISH_WEBSITE_URL
-        },
-        body: JSON.stringify({
-          amount: finalAmount,
-          currency: PAYMENT_CURRENCY,
-          invoice: `Booking #${bookingId}`,
-          externalId: bookingId,
-          successCallbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/whish/callback?status=success`,
-          failureCallbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/whish/callback?status=failed`,
-          successRedirectUrl: `${FRONTEND_URL}/customer-portal?payment=success&bookingId=${bookingId}`,
-          failureRedirectUrl: `${FRONTEND_URL}/customer-portal?payment=failed&bookingId=${bookingId}`
-        })
+    // Call Whish Collect API. Any failure here propagates to the 500 handler —
+    // there is deliberately NO test-mode fallback that fabricates a payment URL.
+    const whishResponse = await fetch(`${apiUrl}/payment/collect`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'channel': channel,
+        'secret': secret,
+        'websiteurl': websiteUrl
+      },
+      body: JSON.stringify({
+        amount: finalAmount,
+        currency,
+        invoice: `Booking #${bookingId}`,
+        externalId: bookingId,
+        successCallbackUrl: `${backendUrl}/api/payments/whish/callback?status=success`,
+        failureCallbackUrl: `${backendUrl}/api/payments/whish/callback?status=failed`,
+        successRedirectUrl: `${frontendUrl}/customer-portal?payment=success&bookingId=${bookingId}`,
+        failureRedirectUrl: `${frontendUrl}/customer-portal?payment=failed&bookingId=${bookingId}`
       })
+    })
 
-      const whishData: any = await whishResponse.json()
+    const whishData: any = await whishResponse.json()
 
-      console.log('Whish API Response:', whishData)
-
-      if (!whishData.status || !whishData.data?.collectUrl) {
-        throw new Error('Failed to get payment URL from Whish')
-      }
-
-      // Create pending payment record
-      const paymentResult = await query(
-        `INSERT INTO payments (
-          booking_id,
-          amount,
-          payment_method,
-          payment_status,
-          transaction_id,
-          created_at,
-          updated_at
-        ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING *`,
-        [
-          bookingId,
-          finalAmount,
-          'WISHMONEY',
-          'PENDING',
-          `WHISH_${bookingId}_${Date.now()}`
-        ]
-      )
-
-      return res.json({
-        success: true,
-        message: 'Payment initiated successfully',
-        data: {
-          paymentUrl: whishData.data.collectUrl,
-          paymentId: paymentResult.rows[0].id,
-          amount: finalAmount,
-          currency: PAYMENT_CURRENCY
-        }
-      })
-    } catch (whishError) {
-      console.error('Whish API Error:', whishError)
-      
-      // If Whish credentials are placeholders, return a test URL
-      if (WHISH_CHANNEL === 'placeholder_channel') {
-        return res.json({
-          success: true,
-          message: 'TEST MODE: Payment initiated (using placeholder credentials)',
-          data: {
-            paymentUrl: 'https://whish.money/pay/TEST_PLACEHOLDER',
-            paymentId: 'test_payment_id',
-            amount: finalAmount,
-            currency: PAYMENT_CURRENCY,
-            testMode: true,
-            note: 'Update WHISH_CHANNEL and WHISH_SECRET in .env to use real Whish API'
-          }
-        })
-      }
-
-      throw whishError
+    if (!whishData.status || !whishData.data?.collectUrl) {
+      throw new Error('Failed to get payment URL from Whish')
     }
+
+    // Create pending payment record
+    const paymentResult = await query(
+      `INSERT INTO payments (
+        booking_id,
+        amount,
+        payment_method,
+        payment_status,
+        transaction_id,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      RETURNING *`,
+      [
+        bookingId,
+        finalAmount,
+        'WISHMONEY',
+        'PENDING',
+        `WHISH_${bookingId}_${Date.now()}`
+      ]
+    )
+
+    return res.json({
+      success: true,
+      message: 'Payment initiated successfully',
+      data: {
+        paymentUrl: whishData.data.collectUrl,
+        paymentId: paymentResult.rows[0].id,
+        amount: finalAmount,
+        currency
+      }
+    })
   } catch (error) {
     console.error('Payment initiation error:', error)
     return res.status(500).json({
       success: false,
       message: 'Failed to initiate payment',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     })
   }
 })
@@ -207,6 +197,15 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
 
     const bookingId = parseInt(externalId as string)
 
+    if (Number.isNaN(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid externalId in callback'
+      })
+    }
+
+    const { apiUrl, channel, secret, websiteUrl, currency } = whishConfig()
+
     // Get booking to verify payment status with Whish
     const bookingResult = await query(
       'SELECT * FROM bookings WHERE id = $1',
@@ -220,40 +219,55 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
       })
     }
 
-    // Verify payment status with Whish
-    try {
-      const statusResponse = await fetch(`${WHISH_API_URL}/payment/collect/status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'channel': WHISH_CHANNEL,
-          'secret': WHISH_SECRET,
-          'websiteurl': WHISH_WEBSITE_URL
-        },
-        body: JSON.stringify({
-          currency: PAYMENT_CURRENCY,
-          externalId: bookingId
-        })
+    const booking = bookingResult.rows[0]
+
+    // The `status` query param is NOT proof of payment — it is attacker-controllable.
+    // The ONLY source of truth is re-verifying server-side with Whish. If that call
+    // fails, the error propagates to the 500 handler and the booking is left untouched.
+    const statusResponse = await fetch(`${apiUrl}/payment/collect/status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'channel': channel,
+        'secret': secret,
+        'websiteurl': websiteUrl
+      },
+      body: JSON.stringify({
+        currency,
+        externalId: bookingId
       })
+    })
 
-      const statusData: any = await statusResponse.json()
+    const statusData: any = await statusResponse.json()
 
-      console.log('Whish Status Check:', statusData)
+    const isPaid = statusData.status && statusData.data?.collectStatus === 'success'
 
-      if (statusData.status && statusData.data?.collectStatus === 'success') {
-        // Update payment record
+    // Re-verify the charged amount against the server-computed booking amount.
+    // Never trust an amount from the client; if Whish reports an amount, it must match.
+    const expectedAmount = Number(booking.price_usd) * (1 - Number(booking.discount) / 100)
+    const reportedAmount = statusData.data?.amount
+    const amountMismatch =
+      reportedAmount !== undefined &&
+      reportedAmount !== null &&
+      Math.abs(Number(reportedAmount) - expectedAmount) > 0.01
+
+    if (isPaid && !amountMismatch) {
+      // Only confirm a booking that actually has a PENDING payment awaiting this
+      // callback. Completing the payment is the gate: if no PENDING row is updated
+      // (never initiated via /whish/initiate, or already processed), we confirm
+      // nothing. This makes the callback idempotent and rejects out-of-band ids.
+      const paymentUpdate = await query(
+        `UPDATE payments
+         SET payment_status = $1, updated_at = NOW()
+         WHERE booking_id = $2 AND payment_status = $3`,
+        ['COMPLETED', bookingId, 'PENDING']
+      )
+
+      if (paymentUpdate.rowCount && paymentUpdate.rowCount > 0) {
         await query(
-          `UPDATE payments 
-           SET payment_status = $1, updated_at = NOW()
-           WHERE booking_id = $2 AND payment_status = $3`,
-          ['COMPLETED', bookingId, 'PENDING']
-        )
-
-        // Update booking status
-        await query(
-          `UPDATE bookings 
+          `UPDATE bookings
            SET status = $1, payment_method = $2, updated_at = NOW()
-           WHERE id = $3`,
+           WHERE id = $3 AND status <> $1`,
           ['CONFIRMED', 'WISHMONEY', bookingId]
         )
 
@@ -261,54 +275,49 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
           success: true,
           message: 'Payment confirmed successfully'
         })
-      } else {
-        // Payment failed
-        await query(
-          `UPDATE payments 
-           SET payment_status = $1, updated_at = NOW()
-           WHERE booking_id = $2 AND payment_status = $3`,
-          ['FAILED', bookingId, 'PENDING']
-        )
-
-        return res.json({
-          success: false,
-          message: 'Payment verification failed'
-        })
       }
-    } catch (whishError) {
-      console.error('Whish status check error:', whishError)
-      
-      // If using placeholder credentials, simulate success for testing
-      if (WHISH_CHANNEL === 'placeholder_channel' && status === 'success') {
-        await query(
-          `UPDATE payments 
-           SET payment_status = $1, updated_at = NOW()
-           WHERE booking_id = $2 AND payment_status = $3`,
-          ['COMPLETED', bookingId, 'PENDING']
-        )
 
-        await query(
-          `UPDATE bookings 
-           SET status = $1, payment_method = $2, updated_at = NOW()
-           WHERE id = $3`,
-          ['CONFIRMED', 'WISHMONEY', bookingId]
-        )
-
+      // No PENDING payment to complete: a duplicate callback for an already-confirmed
+      // booking is an idempotent success; anything else is rejected (nothing initiated).
+      if (booking.status === 'CONFIRMED') {
         return res.json({
           success: true,
-          message: 'TEST MODE: Payment confirmed (simulated)',
-          testMode: true
+          message: 'Payment already confirmed'
         })
       }
 
-      throw whishError
+      return res.status(409).json({
+        success: false,
+        message: 'No pending payment found for this booking'
+      })
     }
+
+    if (amountMismatch) {
+      console.error('Whish payment amount mismatch', {
+        bookingId,
+        expectedAmount,
+        reportedAmount
+      })
+    }
+
+    // Not paid (or amount mismatch): mark the pending payment failed, confirm nothing.
+    await query(
+      `UPDATE payments
+       SET payment_status = $1, updated_at = NOW()
+       WHERE booking_id = $2 AND payment_status = $3`,
+      ['FAILED', bookingId, 'PENDING']
+    )
+
+    return res.json({
+      success: false,
+      message: 'Payment verification failed'
+    })
   } catch (error) {
     console.error('Callback processing error:', error)
     return res.status(500).json({
       success: false,
       message: 'Failed to process payment callback',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     })
   }
 })
@@ -404,7 +413,7 @@ router.get('/:bookingId', verifyToken, async (req: AuthenticatedRequest, res: Re
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve payment details',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     })
   }
 })

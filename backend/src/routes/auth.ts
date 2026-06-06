@@ -1,6 +1,18 @@
 import express from 'express';
 import { verifyIdToken } from '../config/firebase';
 import { query } from '../config/database';
+import { errorDetails } from '../utils/errors';
+import { validateBody } from '../middleware/validate';
+import {
+  registerSchema,
+  profileUpdateSchema,
+  childCreateSchema,
+  childUpdateSchema,
+  petCreateSchema,
+  petUpdateSchema,
+  locationCreateSchema,
+  locationUpdateSchema,
+} from '../validation/auth.schemas';
 
 const router = express.Router();
 
@@ -33,7 +45,7 @@ const verifyToken = async (req: AuthenticatedRequest, res: express.Response, nex
 };
 
 // Register new user
-router.post('/register', async (req, res): Promise<express.Response> => {
+router.post('/register', validateBody(registerSchema), async (req, res): Promise<express.Response> => {
   try {
     const { idToken, userType, profileData } = req.body;
     
@@ -263,7 +275,7 @@ router.post('/register', async (req, res): Promise<express.Response> => {
     console.error('Registration error:', error);
     return res.status(500).json({ 
       error: 'Registration failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -329,7 +341,7 @@ router.post('/login', verifyToken, async (req: AuthenticatedRequest, res): Promi
     console.error('Login error:', error);
     return res.status(500).json({ 
       error: 'Login failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -399,13 +411,13 @@ router.get('/profile', verifyToken, async (req: AuthenticatedRequest, res): Prom
     console.error('Profile fetch error:', error);
     return res.status(500).json({ 
       error: 'Failed to fetch profile',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // Update user profile
-router.put('/profile', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+router.put('/profile', verifyToken, validateBody(profileUpdateSchema), async (req: AuthenticatedRequest, res): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const { profileData } = req.body;
@@ -476,7 +488,7 @@ router.put('/profile', verifyToken, async (req: AuthenticatedRequest, res): Prom
     console.error('Profile update error:', error);
     return res.status(500).json({ 
       error: 'Failed to update profile',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -532,7 +544,7 @@ router.put('/sitter/documents', verifyToken, async (req: AuthenticatedRequest, r
     console.error('Update documents error:', error);
     return res.status(500).json({ 
       error: 'Failed to update documents',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -586,13 +598,13 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res): Pro
     console.error('Get children error:', error);
     return res.status(500).json({ 
       error: 'Failed to fetch children',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // POST /api/auth/children - Add a new child
-router.post('/children', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+router.post('/children', verifyToken, validateBody(childCreateSchema), async (req: AuthenticatedRequest, res): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const { name, age, hobbies, schoolType, specialNeeds } = req.body;
@@ -652,13 +664,13 @@ router.post('/children', verifyToken, async (req: AuthenticatedRequest, res): Pr
     console.error('Add child error:', error);
     return res.status(500).json({ 
       error: 'Failed to add child',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // PUT /api/auth/children/:id - Update a child
-router.put('/children/:id', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+router.put('/children/:id', verifyToken, validateBody(childUpdateSchema), async (req: AuthenticatedRequest, res): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const childId = parseInt(req.params.id);
@@ -727,7 +739,7 @@ router.put('/children/:id', verifyToken, async (req: AuthenticatedRequest, res):
     console.error('Update child error:', error);
     return res.status(500).json({ 
       error: 'Failed to update child',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -788,7 +800,7 @@ router.delete('/children/:id', verifyToken, async (req: AuthenticatedRequest, re
     console.error('Delete child error:', error);
     return res.status(500).json({ 
       error: 'Failed to delete child',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -842,13 +854,13 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res): Promise
     console.error('Get pets error:', error);
     return res.status(500).json({ 
       error: 'Failed to fetch pets',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // POST /api/auth/pets - Add a new pet
-router.post('/pets', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+router.post('/pets', verifyToken, validateBody(petCreateSchema), async (req: AuthenticatedRequest, res): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const { name, age, type, breed, personality, careInstructions, specialNeeds } = req.body;
@@ -911,13 +923,13 @@ router.post('/pets', verifyToken, async (req: AuthenticatedRequest, res): Promis
     console.error('Add pet error:', error);
     return res.status(500).json({ 
       error: 'Failed to add pet',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // PUT /api/auth/pets/:id - Update a pet
-router.put('/pets/:id', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+router.put('/pets/:id', verifyToken, validateBody(petUpdateSchema), async (req: AuthenticatedRequest, res): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const petId = parseInt(req.params.id);
@@ -989,7 +1001,7 @@ router.put('/pets/:id', verifyToken, async (req: AuthenticatedRequest, res): Pro
     console.error('Update pet error:', error);
     return res.status(500).json({ 
       error: 'Failed to update pet',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -1050,7 +1062,7 @@ router.delete('/pets/:id', verifyToken, async (req: AuthenticatedRequest, res): 
     console.error('Delete pet error:', error);
     return res.status(500).json({ 
       error: 'Failed to delete pet',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -1104,13 +1116,13 @@ router.get('/locations', verifyToken, async (req: AuthenticatedRequest, res): Pr
     console.error('Get locations error:', error);
     return res.status(500).json({ 
       error: 'Failed to fetch locations',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // POST /api/auth/locations - Add a new location
-router.post('/locations', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+router.post('/locations', verifyToken, validateBody(locationCreateSchema), async (req: AuthenticatedRequest, res): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const { 
@@ -1183,7 +1195,7 @@ router.post('/locations', verifyToken, async (req: AuthenticatedRequest, res): P
     // Insert new location
     const locationResult = await query(
       'INSERT INTO user_locations (customer_id, location_name, address_name, street_name, building_name, floor, address_line, area, city, postal_code, latitude, longitude, is_default) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
-      [customerId, locationName, addressName || null, streetName || null, buildingName || null, floor || null, addressLine, area, city, postalCode || null, latitude, longitude, shouldBeDefault]
+      [customerId, locationName, addressName || null, streetName || null, buildingName || null, floor || null, addressLine || null, area, city, postalCode || null, latitude, longitude, shouldBeDefault]
     );
     
     return res.status(201).json({
@@ -1196,13 +1208,13 @@ router.post('/locations', verifyToken, async (req: AuthenticatedRequest, res): P
     console.error('Add location error:', error);
     return res.status(500).json({ 
       error: 'Failed to add location',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // PUT /api/auth/locations/:id - Update a location
-router.put('/locations/:id', verifyToken, async (req: AuthenticatedRequest, res): Promise<express.Response> => {
+router.put('/locations/:id', verifyToken, validateBody(locationUpdateSchema), async (req: AuthenticatedRequest, res): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const locationId = parseInt(req.params.id);
@@ -1286,7 +1298,7 @@ router.put('/locations/:id', verifyToken, async (req: AuthenticatedRequest, res)
     console.error('Update location error:', error);
     return res.status(500).json({ 
       error: 'Failed to update location',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -1372,7 +1384,7 @@ router.delete('/locations/:id', verifyToken, async (req: AuthenticatedRequest, r
     console.error('Delete location error:', error);
     return res.status(500).json({ 
       error: 'Failed to delete location',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });

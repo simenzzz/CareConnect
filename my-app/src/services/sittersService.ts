@@ -1,11 +1,22 @@
+import { auth } from '../config/firebase';
+
 const API_BASE_URL = 'http://localhost:5000/api';
+
+// Resolve the current user's Firebase ID token. The sitter endpoints are gated
+// behind auth, so callers must be signed in.
+async function getAuthToken(): Promise<string> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('You must be signed in to view sitters.');
+  }
+  return user.getIdToken();
+}
 
 export interface Sitter {
   id: number;
   fullName: string;
   area: string;
   city: string;
-  phone: string;
   hoursPerWeek: string;
   sitterType: 'B' | 'P' | 'T'; // B = Baby Sitter, P = Pet Sitter, T = Both
   description: string | null;
@@ -31,9 +42,13 @@ class SittersService {
     try {
       console.log('📋 Fetching sitters from API...');
       
+      const idToken = await getAuthToken();
+
       let response;
       try {
-        response = await fetch(`${API_BASE_URL}/sitters/fetchSitters`);
+        response = await fetch(`${API_BASE_URL}/sitters/fetchSitters`, {
+          headers: { 'Authorization': `Bearer ${idToken}` }
+        });
       } catch (fetchError) {
         throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
       }
@@ -72,9 +87,13 @@ class SittersService {
       
       console.log(`🔍 Searching for sitters with name: "${name}"...`);
       
+      const idToken = await getAuthToken();
+
       let response;
       try {
-        response = await fetch(`${API_BASE_URL}/sitters/searchByName?name=${encodeURIComponent(name)}`);
+        response = await fetch(`${API_BASE_URL}/sitters/searchByName?name=${encodeURIComponent(name)}`, {
+          headers: { 'Authorization': `Bearer ${idToken}` }
+        });
       } catch (fetchError) {
         throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
       }

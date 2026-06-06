@@ -3,6 +3,9 @@ import type { Request, Response } from 'express';
 import { query } from '../config/database';
 import { verifyToken } from './auth';
 import type { AuthenticatedRequest } from './auth';
+import { errorDetails } from '../utils/errors';
+import { validateBody } from '../middleware/validate';
+import { bookingCreateSchema, bookingUpdateSchema } from '../validation/booking.schemas';
 
 const router = express.Router();
 
@@ -189,7 +192,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch bookings',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -376,7 +379,7 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch pet bookings',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -562,7 +565,7 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch child bookings',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -745,13 +748,13 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch booking',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // POST /api/bookings - Create a new booking (customers only)
-router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
+router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const {
@@ -948,13 +951,13 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res: Response): 
     return res.status(500).json({
       success: false,
       error: 'Failed to create booking',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
 
 // PUT /api/bookings/:id - Update a booking
-router.put('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
+router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
   try {
     const firebaseUid = req.user?.uid;
     const bookingId = parseInt(req.params.id);
@@ -1145,7 +1148,7 @@ router.put('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
     return res.status(500).json({
       success: false,
       error: 'Failed to update booking',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });
@@ -1251,7 +1254,7 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
     return res.status(500).json({
       success: false,
       error: 'Failed to delete booking',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...errorDetails(error)
     });
   }
 });

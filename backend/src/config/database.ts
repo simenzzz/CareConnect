@@ -1,16 +1,19 @@
 import { Pool } from 'pg';
+import { getEnv } from './env';
 
 let pool: Pool;
 
 export const connectDatabase = () => {
   try {
+    const env = getEnv();
     pool = new Pool({
-      user: process.env.DB_USER || 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      database: process.env.DB_NAME || 'careconnect',
-      password: process.env.DB_PASSWORD || 'password',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      ssl: false,
+      user: env.DB_USER,
+      host: env.DB_HOST,
+      database: env.DB_NAME,
+      password: env.DB_PASSWORD,
+      port: env.DB_PORT,
+      // Enforce TLS in production; verify the server certificate.
+      ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
     });
 
     console.log('✅ Database connection pool created');

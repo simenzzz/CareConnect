@@ -1,20 +1,26 @@
+// IMPORTANT: env must be the first local import. Its module body runs
+// `dotenv.config()` at load time, so `process.env` is populated before any other
+// local module (database, firebase, routes) is required.
+import { loadEnv } from './config/env';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import { initializeFirebase } from './config/firebase';
 import { connectDatabase } from './config/database';
+import { generalLimiter, strictLimiter } from './middleware/rateLimit';
+import { errorDetails } from './utils/errors';
 import authRoutes from './routes/auth';
 import sittersRoutes from './routes/sitters';
 import bookingsRoutes from './routes/bookings';
 import paymentsRoutes from './routes/payments';
 
-// Load environment variables
-dotenv.config();
+// Validate configuration and fail fast before binding the server.
+const env = loadEnv();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = env.PORT;
 
 // Initialize Firebase and Database BEFORE importing routes
 console.log('🔧 Initializing Firebase...');
@@ -26,12 +32,17 @@ console.log('✅ Firebase and Database initialized');
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: process.env.FRONTEND_URL ,
+  origin: env.FRONTEND_URL,
   credentials: true
 }));
 app.use(morgan('combined')); // Logging
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting: a strict limiter on sensitive surfaces, a general one elsewhere.
+app.use('/api', generalLimiter);
+app.use('/api/auth', strictLimiter);
+app.use('/api/payments', strictLimiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -56,12 +67,14 @@ app.use((req, res) => {
   });
 });
 
-// Error handler
+// Error handler — detail is gated through the single errorDetails() helper so the
+// dev/prod boundary lives in exactly one place.
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: 'Something went wrong',
+    ...errorDetails(err)
   });
 });
 
