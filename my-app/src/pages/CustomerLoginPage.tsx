@@ -62,16 +62,13 @@ const CustomerLoginPage: React.FC = () => {
       })
       
       if (result.success) {
-        console.log('✅ Customer login successful:', result.data)
-        console.log(`🔐 Remember Me: ${formData.rememberMe ? 'Enabled - will stay logged in' : 'Disabled - will logout when browser closes'}`)
-        // Redirect to home page
-        navigate('/')
+        // Send customers to their portal.
+        navigate('/user-portal')
       } else {
         // Show error message
         setErrors({ general: result.error || 'Login failed. Please try again.' })
       }
-    } catch (error) {
-      console.error('❌ Login error:', error)
+    } catch {
       setErrors({ general: 'An unexpected error occurred. Please try again.' })
     } finally {
       setIsLoading(false)

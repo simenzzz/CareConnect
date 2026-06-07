@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { auth } from '../config/firebase'
-import { onAuthStateChanged } from 'firebase/auth'
+import { useSearchParams } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
 import SitterProfileSection from '../components/SitterProfileSection'
@@ -10,23 +8,7 @@ import './UserPortalPage.css'
 
 const SitterPortalPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState(searchParams.get('section') || 'profile')
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    // Check if user is logged in
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // Redirect to login if not authenticated
-        navigate('/login')
-      } else {
-        setIsLoading(false)
-      }
-    })
-
-    return () => unsubscribe()
-  }, [navigate])
 
   useEffect(() => {
     // Update active section when URL params change
@@ -39,15 +21,6 @@ const SitterPortalPage: React.FC = () => {
   const handleSectionChange = (section: string) => {
     setActiveSection(section)
     setSearchParams({ section })
-  }
-
-  if (isLoading) {
-    return (
-      <div className="loading-screen">
-        <i className="fas fa-spinner fa-spin"></i>
-        <p>Loading...</p>
-      </div>
-    )
   }
 
   return (

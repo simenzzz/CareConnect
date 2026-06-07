@@ -62,16 +62,13 @@ const LoginPage: React.FC = () => {
       })
       
       if (result.success) {
-        console.log('✅ Sitter login successful:', result.data)
-        console.log(`🔐 Remember Me: ${formData.rememberMe ? 'Enabled - will stay logged in' : 'Disabled - will logout when browser closes'}`)
-        // Redirect to home page
-        navigate('/')
+        // Send sitters to their dashboard.
+        navigate('/sitter-portal')
       } else {
         setErrors({ general: result.error || 'Login failed. Please try again.' })
       }
-    } catch (error: any) {
-      console.error('Login error:', error)
-      setErrors({ general: error.message || 'An unexpected error occurred. Please try again.' })
+    } catch (error) {
+      setErrors({ general: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.' })
     } finally {
       setIsLoading(false)
     }

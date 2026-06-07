@@ -1,6 +1,6 @@
-import { auth } from '../config/firebase';
+import { apiRequest } from './apiClient';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_PATH = '/auth/locations';
 
 export interface Location {
   id?: number;
@@ -22,210 +22,73 @@ export interface Location {
   updated_at?: string;
 }
 
+type LocationInput = Omit<Location, 'id' | 'customer_id' | 'created_at' | 'updated_at' | 'is_active'>;
+
 interface ApiResponse {
   success: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   error?: string;
 }
 
+const toError = (error: unknown, fallback: string): ApiResponse => ({
+  success: false,
+  error: error instanceof Error ? error.message : fallback,
+});
+
+// The API expects camelCase keys; the client model uses snake_case.
+const toApiBody = (location: LocationInput) => ({
+  locationName: location.location_name,
+  addressName: location.address_name,
+  streetName: location.street_name,
+  buildingName: location.building_name,
+  floor: location.floor,
+  addressLine: location.address_line,
+  area: location.area,
+  city: location.city,
+  postalCode: location.postal_code,
+  latitude: location.latitude,
+  longitude: location.longitude,
+  isDefault: location.is_default,
+});
+
 class LocationService {
   async getLocations(): Promise<ApiResponse> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No user logged in');
-      }
-
-      const idToken = await user.getIdToken();
-
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/locations`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch locations');
-      }
-
-      return {
-        success: true,
-        data: result.locations
-      };
-
-    } catch (error: any) {
-      console.error('❌ Fetch locations failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to fetch locations'
-      };
+      const result = await apiRequest<{ locations: unknown }>(API_PATH);
+      return { success: true, data: result.locations };
+    } catch (error) {
+      return toError(error, 'Failed to fetch locations');
     }
   }
 
-  async addLocation(locationData: Omit<Location, 'id' | 'customer_id' | 'created_at' | 'updated_at' | 'is_active'>): Promise<ApiResponse> {
+  async addLocation(locationData: LocationInput): Promise<ApiResponse> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No user logged in');
-      }
-
-      const idToken = await user.getIdToken();
-
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/locations`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify({
-            locationName: locationData.location_name,
-            addressName: locationData.address_name,
-            streetName: locationData.street_name,
-            buildingName: locationData.building_name,
-            floor: locationData.floor,
-            addressLine: locationData.address_line,
-            area: locationData.area,
-            city: locationData.city,
-            postalCode: locationData.postal_code,
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-            isDefault: locationData.is_default
-          })
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to add location');
-      }
-
-      return {
-        success: true,
-        data: result
-      };
-
-    } catch (error: any) {
-      console.error('❌ Add location failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to add location'
-      };
+      const result = await apiRequest(API_PATH, { method: 'POST', body: toApiBody(locationData) });
+      return { success: true, data: result };
+    } catch (error) {
+      return toError(error, 'Failed to add location');
     }
   }
 
-  async updateLocation(locationId: number, locationData: Omit<Location, 'id' | 'customer_id' | 'created_at' | 'updated_at' | 'is_active'>): Promise<ApiResponse> {
+  async updateLocation(locationId: number, locationData: LocationInput): Promise<ApiResponse> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No user logged in');
-      }
-
-      const idToken = await user.getIdToken();
-
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/locations/${locationId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify({
-            locationName: locationData.location_name,
-            addressName: locationData.address_name,
-            streetName: locationData.street_name,
-            buildingName: locationData.building_name,
-            floor: locationData.floor,
-            addressLine: locationData.address_line,
-            area: locationData.area,
-            city: locationData.city,
-            postalCode: locationData.postal_code,
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-            isDefault: locationData.is_default
-          })
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update location');
-      }
-
-      return {
-        success: true,
-        data: result
-      };
-
-    } catch (error: any) {
-      console.error('❌ Update location failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to update location'
-      };
+      const result = await apiRequest(`${API_PATH}/${locationId}`, { method: 'PUT', body: toApiBody(locationData) });
+      return { success: true, data: result };
+    } catch (error) {
+      return toError(error, 'Failed to update location');
     }
   }
 
   async deleteLocation(locationId: number): Promise<ApiResponse> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No user logged in');
-      }
-
-      const idToken = await user.getIdToken();
-
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/locations/${locationId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete location');
-      }
-
-      return {
-        success: true,
-        data: result
-      };
-
-    } catch (error: any) {
-      console.error('❌ Delete location failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to delete location'
-      };
+      const result = await apiRequest(`${API_PATH}/${locationId}`, { method: 'DELETE' });
+      return { success: true, data: result };
+    } catch (error) {
+      return toError(error, 'Failed to delete location');
     }
   }
 }
 
 const locationService = new LocationService();
 export default locationService;
-

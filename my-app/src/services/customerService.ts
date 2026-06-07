@@ -1,308 +1,122 @@
-import { auth } from '../config/firebase';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import { apiRequest } from './apiClient';
 
 interface ApiResponse {
   success: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   error?: string;
   message?: string;
 }
 
-class CustomerService {
-  private async getAuthHeaders() {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('No user logged in');
-    }
-    const idToken = await user.getIdToken();
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${idToken}`
-    };
-  }
+interface ChildInput {
+  name: string;
+  age: string;
+  hobbies?: string;
+  schoolType: string;
+  specialNeeds?: string;
+}
 
-  // ==================== CHILDREN MANAGEMENT ====================
+interface PetInput {
+  name: string;
+  age?: string;
+  type: string;
+  breed?: string;
+  personality?: string;
+  careInstructions?: string;
+  specialNeeds?: string;
+}
+
+const toError = (error: unknown, fallback: string): ApiResponse => ({
+  success: false,
+  error: error instanceof Error ? error.message : fallback,
+});
+
+class CustomerService {
+  // ==================== CHILDREN ====================
 
   async getChildren(): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/children`, {
-          method: 'GET',
-          headers
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch children');
-      }
-      
-      return {
-        success: true,
-        data: result.children
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Get children failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to fetch children'
-      };
+      const result = await apiRequest<{ children: unknown }>('/auth/children');
+      return { success: true, data: result.children };
+    } catch (error) {
+      return toError(error, 'Failed to fetch children');
     }
   }
 
-  async addChild(childData: { name: string; age: string; hobbies?: string; schoolType: string; specialNeeds?: string }): Promise<ApiResponse> {
+  async addChild(childData: ChildInput): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/children`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(childData)
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to add child');
-      }
-      
-      return {
-        success: true,
-        data: result.child,
-        message: result.message
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Add child failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to add child'
-      };
+      const result = await apiRequest<{ child: unknown; message?: string }>('/auth/children', {
+        method: 'POST',
+        body: childData,
+      });
+      return { success: true, data: result.child, message: result.message };
+    } catch (error) {
+      return toError(error, 'Failed to add child');
     }
   }
 
-  async updateChild(childId: number, childData: { name: string; age: string; hobbies?: string; schoolType: string; specialNeeds?: string }): Promise<ApiResponse> {
+  async updateChild(childId: number, childData: ChildInput): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/children/${childId}`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify(childData)
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update child');
-      }
-      
-      return {
-        success: true,
-        data: result.child,
-        message: result.message
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Update child failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to update child'
-      };
+      const result = await apiRequest<{ child: unknown; message?: string }>(`/auth/children/${childId}`, {
+        method: 'PUT',
+        body: childData,
+      });
+      return { success: true, data: result.child, message: result.message };
+    } catch (error) {
+      return toError(error, 'Failed to update child');
     }
   }
 
   async deleteChild(childId: number): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/children/${childId}`, {
-          method: 'DELETE',
-          headers
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete child');
-      }
-      
-      return {
-        success: true,
-        message: result.message
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Delete child failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to delete child'
-      };
+      const result = await apiRequest<{ message?: string }>(`/auth/children/${childId}`, { method: 'DELETE' });
+      return { success: true, message: result.message };
+    } catch (error) {
+      return toError(error, 'Failed to delete child');
     }
   }
 
-  // ==================== PETS MANAGEMENT ====================
+  // ==================== PETS ====================
 
   async getPets(): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/pets`, {
-          method: 'GET',
-          headers
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch pets');
-      }
-      
-      return {
-        success: true,
-        data: result.pets
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Get pets failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to fetch pets'
-      };
+      const result = await apiRequest<{ pets: unknown }>('/auth/pets');
+      return { success: true, data: result.pets };
+    } catch (error) {
+      return toError(error, 'Failed to fetch pets');
     }
   }
 
-  async addPet(petData: { name: string; age?: string; type: string; breed?: string; personality?: string; careInstructions?: string; specialNeeds?: string }): Promise<ApiResponse> {
+  async addPet(petData: PetInput): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/pets`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(petData)
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to add pet');
-      }
-      
-      return {
-        success: true,
-        data: result.pet,
-        message: result.message
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Add pet failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to add pet'
-      };
+      const result = await apiRequest<{ pet: unknown; message?: string }>('/auth/pets', {
+        method: 'POST',
+        body: petData,
+      });
+      return { success: true, data: result.pet, message: result.message };
+    } catch (error) {
+      return toError(error, 'Failed to add pet');
     }
   }
 
-  async updatePet(petId: number, petData: { name: string; age?: string; type: string; breed?: string; personality?: string; careInstructions?: string; specialNeeds?: string }): Promise<ApiResponse> {
+  async updatePet(petId: number, petData: PetInput): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/pets/${petId}`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify(petData)
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update pet');
-      }
-      
-      return {
-        success: true,
-        data: result.pet,
-        message: result.message
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Update pet failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to update pet'
-      };
+      const result = await apiRequest<{ pet: unknown; message?: string }>(`/auth/pets/${petId}`, {
+        method: 'PUT',
+        body: petData,
+      });
+      return { success: true, data: result.pet, message: result.message };
+    } catch (error) {
+      return toError(error, 'Failed to update pet');
     }
   }
 
   async deletePet(petId: number): Promise<ApiResponse> {
     try {
-      const headers = await this.getAuthHeaders();
-      
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/auth/pets/${petId}`, {
-          method: 'DELETE',
-          headers
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete pet');
-      }
-      
-      return {
-        success: true,
-        message: result.message
-      };
-      
-    } catch (error: any) {
-      console.error('❌ Delete pet failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to delete pet'
-      };
+      const result = await apiRequest<{ message?: string }>(`/auth/pets/${petId}`, { method: 'DELETE' });
+      return { success: true, message: result.message };
+    } catch (error) {
+      return toError(error, 'Failed to delete pet');
     }
   }
 }
@@ -310,4 +124,3 @@ class CustomerService {
 const customerService = new CustomerService();
 export default customerService;
 export { customerService };
-

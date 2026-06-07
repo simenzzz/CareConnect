@@ -1,6 +1,6 @@
-import { auth } from '../config/firebase';
+import { apiRequest } from './apiClient';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_PATH = '/bookings';
 
 export interface CreateBookingData {
   sitterId: number;
@@ -18,141 +18,44 @@ export interface CreateBookingData {
 
 interface ApiResponse {
   success: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   error?: string;
 }
 
+const toError = (error: unknown, fallback: string): ApiResponse => ({
+  success: false,
+  error: error instanceof Error ? error.message : fallback,
+});
+
 class BookingService {
   async createBooking(bookingData: CreateBookingData): Promise<ApiResponse> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No user logged in');
-      }
-
-      const idToken = await user.getIdToken();
-
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/bookings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify(bookingData)
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create booking');
-      }
-
-      console.log('✅ Booking created successfully:', result);
-
-      return {
-        success: true,
-        data: result
-      };
-
-    } catch (error: any) {
-      console.error('❌ Create booking failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to create booking'
-      };
+      const result = await apiRequest(API_PATH, { method: 'POST', body: bookingData });
+      return { success: true, data: result };
+    } catch (error) {
+      return toError(error, 'Failed to create booking');
     }
   }
 
   async getPetBookings(): Promise<ApiResponse> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No user logged in');
-      }
-
-      const idToken = await user.getIdToken();
-
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/bookings/pets`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch pet bookings');
-      }
-
-      return {
-        success: true,
-        data: result.bookings
-      };
-
-    } catch (error: any) {
-      console.error('❌ Fetch pet bookings failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to fetch pet bookings'
-      };
+      const result = await apiRequest<{ bookings: unknown }>(`${API_PATH}/pets`);
+      return { success: true, data: result.bookings };
+    } catch (error) {
+      return toError(error, 'Failed to fetch pet bookings');
     }
   }
 
   async getChildBookings(): Promise<ApiResponse> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No user logged in');
-      }
-
-      const idToken = await user.getIdToken();
-
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/bookings/children`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-      } catch (fetchError) {
-        throw new Error('Unable to connect to server. Please make sure the backend server is running on port 5000.');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch child bookings');
-      }
-
-      return {
-        success: true,
-        data: result.bookings
-      };
-
-    } catch (error: any) {
-      console.error('❌ Fetch child bookings failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to fetch child bookings'
-      };
+      const result = await apiRequest<{ bookings: unknown }>(`${API_PATH}/children`);
+      return { success: true, data: result.bookings };
+    } catch (error) {
+      return toError(error, 'Failed to fetch child bookings');
     }
   }
 }
 
 const bookingService = new BookingService();
 export default bookingService;
-

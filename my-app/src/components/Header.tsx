@@ -1,36 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { auth } from '../config/firebase'
-import { onAuthStateChanged } from 'firebase/auth'
-import { authService } from '../services/authService'
+import { useAuth } from '../context/AuthContext'
 import './Header.css'
 
 const Header: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userType, setUserType] = useState<'customer' | 'sitter' | null>(null)
+  const { user, userType, signOut } = useAuth()
+  const isLoggedIn = !!user
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLLIElement>(null)
   const navigate = useNavigate()
-
-  useEffect(() => {
-    // Listen for authentication state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsLoggedIn(!!user)
-      
-      if (user) {
-        // Fetch user profile to determine type
-        const profileResult = await authService.getProfile()
-        if (profileResult.success && profileResult.data) {
-          setUserType(profileResult.data.user.userType)
-        }
-      } else {
-        setUserType(null)
-      }
-    })
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe()
-  }, [])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,11 +24,11 @@ const Header: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await authService.signOut()
+      await signOut()
       setShowDropdown(false)
       navigate('/')
-    } catch (error) {
-      console.error('Sign out failed:', error)
+    } catch {
+      // Sign-out failures are non-fatal; the user stays on the page.
     }
   }
 

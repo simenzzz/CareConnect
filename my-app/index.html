@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CareConnect - Find Trusted Baby & Pet Sitters in Lebanon</title>
     
-    <!-- Google Maps API - IMPORTANT: Replace YOUR_API_KEY with your actual Google Maps API key -->
-    <script 
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCd_k4oGw4pYBl8rFSIz55NS_lfsKlviyo&libraries=places" 
-      async 
+    <!-- Google Maps API key is injected at build time from VITE_GOOGLE_MAPS_API_KEY.
+         Restrict the key by HTTP referrer in Google Cloud Console — it is billable. -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places"
+      async
       defer>
     </script>
   </head>
