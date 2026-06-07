@@ -1,8 +1,8 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import { query, withTransaction } from '../config/database';
-import { verifyToken } from './auth';
-import type { AuthenticatedRequest } from './auth';
+import { verifyToken } from '../middleware/auth';
+import type { AuthenticatedRequest } from '../middleware/auth';
 import { errorDetails, BookingConflictError } from '../utils/errors';
 import { validateBody } from '../middleware/validate';
 import { bookingCreateSchema, bookingUpdateSchema } from '../validation/booking.schemas';

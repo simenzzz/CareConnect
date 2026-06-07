@@ -2,7 +2,7 @@ import express from 'express';
 import type { Response } from 'express';
 import { z } from 'zod';
 import { query } from '../config/database';
-import { verifyToken, AuthenticatedRequest } from './auth';
+import { verifyToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateQuery } from '../middleware/validate';
 import { errorDetails } from '../utils/errors';
 

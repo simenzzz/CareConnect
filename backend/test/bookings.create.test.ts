@@ -14,7 +14,7 @@ const fakeEnv = { NODE_ENV: 'test' };
 vi.mock('../src/config/env', () => ({ getEnv: () => fakeEnv, loadEnv: () => fakeEnv }));
 
 // Bypass real Firebase token verification; inject an authenticated customer.
-vi.mock('../src/routes/auth', () => ({
+vi.mock('../src/middleware/auth', () => ({
   verifyToken: (req: any, _res: any, next: any) => {
     req.user = { uid: 'test-uid' };
     next();

@@ -1,6 +1,6 @@
 import express, { Response } from 'express'
 import { query } from '../config/database'
-import { verifyToken, AuthenticatedRequest } from './auth'
+import { verifyToken, AuthenticatedRequest } from '../middleware/auth'
 import { getEnv } from '../config/env'
 import { errorDetails } from '../utils/errors'
 import { validateBody } from '../middleware/validate'
