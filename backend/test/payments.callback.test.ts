@@ -28,6 +28,11 @@ vi.mock('../src/config/firebase', () => ({ verifyIdToken: vi.fn() }));
 const queryMock = vi.fn();
 vi.mock('../src/config/database', () => ({
   query: (...args: unknown[]) => queryMock(...args),
+  // Run the callback against a client whose query() delegates to the same mock,
+  // so the two UPDATEs inside the callback's transaction are still observable.
+  withTransaction: async (
+    fn: (client: { query: (...a: unknown[]) => unknown }) => unknown,
+  ) => fn({ query: (...args: unknown[]) => queryMock(...args) }),
 }));
 
 // Imported after the mocks are registered.
@@ -42,11 +47,17 @@ const makeApp = () => {
   return app;
 };
 
-// Default: the booking exists and has a PENDING payment row to complete.
+// Default: the booking exists and has a PENDING payment row (charged amount 100)
+// to complete.
 const onlyBookingSelect = () =>
   queryMock.mockImplementation((text: string) => {
     if (text.includes('SELECT * FROM bookings')) {
       return Promise.resolve({ rows: [BOOKING], rowCount: 1 });
+    }
+    // The amount actually charged is verified against this immutable row, not the
+    // (mutable) booking price.
+    if (text.includes('SELECT amount FROM payments')) {
+      return Promise.resolve({ rows: [{ amount: '100' }], rowCount: 1 });
     }
     if (text.includes('UPDATE payments')) {
       return Promise.resolve({ rows: [], rowCount: 1 });
@@ -131,6 +142,34 @@ describe('Whish callback cannot be forged (C2)', () => {
     expect(res.status).toBe(409);
     expect(res.body.success).toBe(false);
     expect(bookingWasConfirmed()).toBe(false);
+  });
+
+  it('does NOT report success if confirming the booking fails mid-transaction', async () => {
+    // The payment UPDATE succeeds but the booking UPDATE throws. Because both run
+    // in one transaction, the failure must propagate (500) rather than returning a
+    // success while leaving the booking unconfirmed.
+    queryMock.mockImplementation((text: string) => {
+      if (text.includes('SELECT * FROM bookings')) {
+        return Promise.resolve({ rows: [BOOKING], rowCount: 1 });
+      }
+      if (text.includes('UPDATE payments')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      if (text.includes('UPDATE bookings')) {
+        return Promise.reject(new Error('db write failed'));
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+    global.fetch = vi.fn().mockResolvedValue({
+      json: async () => ({ status: true, data: { collectStatus: 'success', amount: 100 } }),
+    }) as never;
+
+    const res = await request(makeApp()).get(
+      '/api/payments/whish/callback?status=success&externalId=123',
+    );
+
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
   });
 
   it('DOES confirm when Whish verifies success with the correct amount', async () => {

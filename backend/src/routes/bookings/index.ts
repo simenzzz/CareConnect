@@ -6,7 +6,7 @@ import type { AuthenticatedRequest } from '../../middleware/auth';
 import { errorDetails, BookingConflictError } from '../../utils/errors';
 import { validateBody } from '../../middleware/validate';
 import { bookingCreateSchema, bookingUpdateSchema } from '../../validation/booking.schemas';
-import { BOOKING_STATUS, BOOKING_STATUS_UPDATABLE } from '../../constants/bookingStatus';
+import { BOOKING_STATUS, BOOKING_STATUS_UPDATABLE, PAYMENT_STATUS } from '../../constants/bookingStatus';
 import listRouter from './list';
 
 const router = express.Router();
@@ -322,7 +322,31 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
     }
     
     const existingBooking = bookingCheck.rows[0];
-    
+
+    // Lock pricing once a live payment (pending or completed) exists for the
+    // booking, so the stored record can't drift away from the amount actually
+    // charged. The authoritative anti-bypass guard is the callback verifying the
+    // charged amount against the immutable payment row (see payments.ts); this
+    // 403 is the user-facing companion that stops the customer editing price mid-
+    // payment. FAILED/abandoned payments are excluded so a customer can still
+    // renegotiate before retrying.
+    if (
+      user.user_type === 'customer' &&
+      (priceUsd !== undefined || discount !== undefined)
+    ) {
+      const livePayment = await query(
+        `SELECT 1 FROM payments
+         WHERE booking_id = $1 AND payment_status IN ($2, $3)
+         LIMIT 1`,
+        [bookingId, PAYMENT_STATUS.PENDING, PAYMENT_STATUS.COMPLETED]
+      );
+      if (livePayment.rows.length > 0) {
+        return res.status(403).json({
+          error: 'Price cannot be changed after payment has started'
+        });
+      }
+    }
+
     // Build update query dynamically based on provided fields
     const updates: string[] = [];
     const values: any[] = [];
@@ -366,19 +390,18 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
     }
     
     // Update booking if there are changes
+    let updatedBooking = existingBooking;
     if (updates.length > 0) {
       values.push(bookingId);
       const updateQuery = `
-        UPDATE bookings 
+        UPDATE bookings
         SET ${updates.join(', ')}
         WHERE id = $${paramCount}
         RETURNING *
       `;
-      
+
       const updateResult = await query(updateQuery, values);
-      var updatedBooking = updateResult.rows[0];
-    } else {
-      var updatedBooking = existingBooking;
+      updatedBooking = updateResult.rows[0];
     }
     
     // Update children if provided (only customers can do this)

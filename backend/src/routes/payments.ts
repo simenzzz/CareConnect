@@ -1,5 +1,5 @@
 import express, { Response } from 'express'
-import { query } from '../config/database'
+import { query, withTransaction } from '../config/database'
 import { verifyToken, AuthenticatedRequest } from '../middleware/auth'
 import { getEnv } from '../config/env'
 import { errorDetails } from '../utils/errors'
@@ -243,11 +243,22 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
 
     const isPaid = statusData.status && statusData.data?.collectStatus === 'success'
 
-    // Re-verify the charged amount against the server-computed booking amount.
-    // Never trust an amount from the client; if Whish reports an amount, it must match.
-    const expectedAmount = Number(booking.price_usd) * (1 - Number(booking.discount) / 100)
+    // Re-verify the charged amount against the amount snapshotted on the PENDING
+    // payment row at initiate time — NOT against booking.price_usd/discount, which
+    // remain editable after initiate. Verifying against the immutable charged
+    // figure means no later edit to the booking (by either party) can make a
+    // forged/short payment verify, or cause a legitimately-charged payment to be
+    // rejected. Never trust an amount from the client.
+    const pendingPaymentResult = await query(
+      'SELECT amount FROM payments WHERE booking_id = $1 AND payment_status = $2',
+      [bookingId, PAYMENT_STATUS.PENDING]
+    )
+    const expectedAmount = pendingPaymentResult.rows[0]
+      ? Number(pendingPaymentResult.rows[0].amount)
+      : null
     const reportedAmount = statusData.data?.amount
     const amountMismatch =
+      expectedAmount !== null &&
       reportedAmount !== undefined &&
       reportedAmount !== null &&
       Math.abs(Number(reportedAmount) - expectedAmount) > 0.01
@@ -257,21 +268,31 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
       // callback. Completing the payment is the gate: if no PENDING row is updated
       // (never initiated via /whish/initiate, or already processed), we confirm
       // nothing. This makes the callback idempotent and rejects out-of-band ids.
-      const paymentUpdate = await query(
-        `UPDATE payments
-         SET payment_status = $1, updated_at = NOW()
-         WHERE booking_id = $2 AND payment_status = $3`,
-        [PAYMENT_STATUS.COMPLETED, bookingId, PAYMENT_STATUS.PENDING]
-      )
-
-      if (paymentUpdate.rowCount && paymentUpdate.rowCount > 0) {
-        await query(
-          `UPDATE bookings
-           SET status = $1, payment_method = $2, updated_at = NOW()
-           WHERE id = $3 AND status <> $1`,
-          [BOOKING_STATUS.CONFIRMED, 'WISHMONEY', bookingId]
+      // Complete the PENDING payment and confirm the booking atomically: a
+      // confirmed payment must never be left with an unconfirmed booking (or
+      // vice versa) if the second statement fails. The payment UPDATE is the
+      // gate — only when it actually completes a row do we confirm the booking.
+      const completedPaymentCount = await withTransaction(async (client) => {
+        const paymentUpdate = await client.query(
+          `UPDATE payments
+           SET payment_status = $1, updated_at = NOW()
+           WHERE booking_id = $2 AND payment_status = $3`,
+          [PAYMENT_STATUS.COMPLETED, bookingId, PAYMENT_STATUS.PENDING]
         )
 
+        if (paymentUpdate.rowCount && paymentUpdate.rowCount > 0) {
+          await client.query(
+            `UPDATE bookings
+             SET status = $1, payment_method = $2, updated_at = NOW()
+             WHERE id = $3 AND status <> $1`,
+            [BOOKING_STATUS.CONFIRMED, 'WISHMONEY', bookingId]
+          )
+        }
+
+        return paymentUpdate.rowCount ?? 0
+      })
+
+      if (completedPaymentCount > 0) {
         return res.json({
           success: true,
           message: 'Payment confirmed successfully'

@@ -202,6 +202,14 @@ Update an existing booking.
 - `COMPLETED`
 - `CANCELED`
 
+> `CONFIRMED` is **not** a client-settable status — it is written only by the
+> verified Whish payment callback.
+
+**Pricing lock:** once a payment has been initiated for a booking (a `payments`
+row exists), the owning **customer** can no longer change `priceUsd`/`discount`
+(returns `403`). This prevents lowering the agreed amount after the payment
+amount has been computed. Sitters retain price control until payment starts.
+
 **Response:**
 ```json
 {
@@ -224,6 +232,7 @@ Update an existing booking.
 
 **Error Responses:**
 - `400`: Invalid status or booking ID
+- `403`: Price/discount change attempted by the customer after payment started
 - `404`: Booking not found or access denied
 
 **Notes:**
