@@ -21,10 +21,16 @@ for f in migrations/[0-9]*.sql; do psql "$DATABASE_URL" -f "$f"; done
 ## History note
 
 The original schema (`users`, `customers`, `sitters`, `children`, `pets`,
-`user_locations`, `bookings`, junction tables) was created ad-hoc and is **not**
-captured as a `000_init.sql` baseline yet — these files are the known deltas layered
-on top of that live state. Reconstructing a clean baseline from the running schema is
-a tracked follow-up.
+`user_locations`, `bookings`, junction tables, `sitter_skills`) was created ad-hoc.
+`000_init.sql` now captures that pre-001 baseline so a fresh database can be stood up
+by applying `000` → `004` in order. It was **reconstructed from the application's SQL
+statements + the known deltas**, not yet diffed against a live `pg_dump`, so verify it
+against a real `pg_dump --schema-only --no-owner --no-privileges` before relying on it
+in CI/staging and reconcile any differences in types/defaults/FK actions.
+
+The baseline intentionally omits the `payments` table (added by 001) and the
+`type_of_booking`/`pet_id`/`child_id` booking columns (added by 002; the single-id
+columns are dropped again by 003) so the deltas apply on top without conflict.
 
 ## Fixtures are NOT migrations
 
