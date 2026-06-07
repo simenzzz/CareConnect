@@ -1,3 +1,10 @@
+> ✅ **STATUS 2026-06-08:** R1–R6 below are all DONE and committed on `main`
+> (`1b0a302`..`0264681`, not pushed). Backend build clean + 17 tests; frontend
+> build + lint (0 errors) + 46 tests. Only the OPS items (O1–O4) and two manual
+> verifications remain: R1 booking-flow QA with a live Maps key, and diffing the
+> reconstructed `000_init.sql` against a real `pg_dump`. Live status in the
+> `careconnect-security-todos` memory.
+
 # CareConnect Hardening — Remaining Work (session handoff)
 
 > Continues `careconnect-hardening.md`. Steps 1–6 are largely **done and committed**
