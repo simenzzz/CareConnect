@@ -93,6 +93,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
   // Add entity state
   const [showAddForm, setShowAddForm] = useState(false)
   const [isSavingEntity, setIsSavingEntity] = useState(false)
+  // Dynamic child/pet form payload; shape varies by sitterType before submit.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [entityFormData, setEntityFormData] = useState<any>({})
   
   // Add location state
@@ -473,7 +475,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       } else {
         setError(response.error || `Failed to add ${sitterType === 'pet' ? 'pet' : 'child'}`)
       }
-    } catch (err) {
+    } catch {
       setError(`Error adding ${sitterType === 'pet' ? 'pet' : 'child'}`)
     } finally {
       setIsSavingEntity(false)
@@ -608,8 +610,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
         setError(response.error || 'Failed to submit booking. Please try again.')
       }
       
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit booking. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit booking. Please try again.')
       console.error('Booking error:', err)
     } finally {
       setIsSubmitting(false)

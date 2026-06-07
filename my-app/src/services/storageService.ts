@@ -102,7 +102,7 @@ class StorageService {
       try {
         downloadURL = await getDownloadURL(snapshot.ref);
         console.log('✅ Download URL obtained:', downloadURL);
-      } catch (urlError: any) {
+      } catch (urlError) {
         console.error('❌ Failed to get download URL:', urlError);
         // If getting URL fails, construct it manually
         const bucket = storage.app.options.storageBucket;
@@ -116,23 +116,23 @@ class StorageService {
         url: downloadURL
       };
       
-    } catch (error: any) {
+    } catch (error) {
+      const fbError = error as { code?: string; message?: string };
       console.error('❌ Upload failed:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      console.error('Full error:', JSON.stringify(error, null, 2));
-      
+      console.error('Error code:', fbError.code);
+      console.error('Error message:', fbError.message);
+
       // Handle specific Firebase Storage errors
       let errorMessage = 'Failed to upload document. Please try again.';
-      
-      if (error.code === 'storage/unauthorized') {
-        errorMessage = `Upload permission denied. Firebase error: ${error.code}`;
-      } else if (error.code === 'storage/canceled') {
+
+      if (fbError.code === 'storage/unauthorized') {
+        errorMessage = `Upload permission denied. Firebase error: ${fbError.code}`;
+      } else if (fbError.code === 'storage/canceled') {
         errorMessage = 'Upload was canceled.';
-      } else if (error.code === 'storage/unknown') {
+      } else if (fbError.code === 'storage/unknown') {
         errorMessage = 'An unknown error occurred. Please check your internet connection.';
-      } else if (error.message) {
-        errorMessage = `${error.message} (Code: ${error.code || 'unknown'})`;
+      } else if (fbError.message) {
+        errorMessage = `${fbError.message} (Code: ${fbError.code || 'unknown'})`;
       }
       
       return {

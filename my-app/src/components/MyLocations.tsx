@@ -298,8 +298,8 @@ const MyLocations: React.FC = () => {
 
   const handleEditClick = (location: Location) => {
     setEditingId(location.id!);
-    const lat = typeof location.latitude === 'number' ? location.latitude : parseFloat(location.latitude as any);
-    const lng = typeof location.longitude === 'number' ? location.longitude : parseFloat(location.longitude as any);
+    const lat = typeof location.latitude === 'number' ? location.latitude : parseFloat(String(location.latitude));
+    const lng = typeof location.longitude === 'number' ? location.longitude : parseFloat(String(location.longitude));
     
     console.log('Editing location:', location);
     console.log('Parsed coordinates:', lat, lng);
@@ -759,7 +759,7 @@ const MyLocations: React.FC = () => {
                   )}
                   <p style={{ color: '#7f8c8d', fontSize: '0.9rem' }}>
                     <i className="fas fa-map-pin" style={{ marginRight: '8px', width: '20px' }}></i>
-                    {parseFloat(location.latitude as any).toFixed(6)}, {parseFloat(location.longitude as any).toFixed(6)}
+                    {parseFloat(String(location.latitude)).toFixed(6)}, {parseFloat(String(location.longitude)).toFixed(6)}
                   </p>
                 </div>
               </div>
