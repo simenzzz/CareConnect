@@ -4,6 +4,11 @@ import { query } from '../../config/database';
 import { verifyToken } from '../../middleware/auth';
 import type { AuthenticatedRequest } from '../../middleware/auth';
 import { errorDetails } from '../../utils/errors';
+import {
+  getUserByFirebaseUid,
+  getCustomerIdByUserId,
+  getSitterIdByUserId,
+} from '../../repositories/userRepository';
 
 const router = express.Router();
 
@@ -17,30 +22,20 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
     }
     
     // Get user info to determine if customer or sitter
-    const userResult = await query(
-      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
-    
-    if (userResult.rows.length === 0) {
+    const user = await getUserByFirebaseUid(firebaseUid);
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    const user = userResult.rows[0];
     let bookings;
     
     if (user.user_type === 'customer') {
       // Get customer's bookings
-      const customerResult = await query(
-        'SELECT id FROM customers WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (customerResult.rows.length === 0) {
+      const customerId = await getCustomerIdByUserId(user.id);
+
+      if (customerId === null) {
         return res.status(404).json({ error: 'Customer profile not found' });
       }
-      
-      const customerId = customerResult.rows[0].id;
       
       // Get all bookings for this customer with sitter details
       const bookingsResult = await query(
@@ -71,16 +66,11 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
       
     } else if (user.user_type === 'sitter') {
       // Get sitter's bookings
-      const sitterResult = await query(
-        'SELECT id FROM sitters WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (sitterResult.rows.length === 0) {
+      const sitterId = await getSitterIdByUserId(user.id);
+
+      if (sitterId === null) {
         return res.status(404).json({ error: 'Sitter profile not found' });
       }
-      
-      const sitterId = sitterResult.rows[0].id;
       
       // Get all bookings for this sitter with customer details
       const bookingsResult = await query(
@@ -205,29 +195,19 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
     }
     
     // Get user info to determine if customer or sitter
-    const userResult = await query(
-      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
-    
-    if (userResult.rows.length === 0) {
+    const user = await getUserByFirebaseUid(firebaseUid);
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    const user = userResult.rows[0];
     let bookings;
     
     if (user.user_type === 'customer') {
-      const customerResult = await query(
-        'SELECT id FROM customers WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (customerResult.rows.length === 0) {
+      const customerId = await getCustomerIdByUserId(user.id);
+
+      if (customerId === null) {
         return res.status(404).json({ error: 'Customer profile not found' });
       }
-      
-      const customerId = customerResult.rows[0].id;
       
       // Get bookings that have pets
       const bookingsResult = await query(
@@ -263,16 +243,11 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
       bookings = bookingsResult.rows;
       
     } else if (user.user_type === 'sitter') {
-      const sitterResult = await query(
-        'SELECT id FROM sitters WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (sitterResult.rows.length === 0) {
+      const sitterId = await getSitterIdByUserId(user.id);
+
+      if (sitterId === null) {
         return res.status(404).json({ error: 'Sitter profile not found' });
       }
-      
-      const sitterId = sitterResult.rows[0].id;
       
       // Get bookings that have pets
       const bookingsResult = await query(
@@ -392,29 +367,19 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
     }
     
     // Get user info to determine if customer or sitter
-    const userResult = await query(
-      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
-    
-    if (userResult.rows.length === 0) {
+    const user = await getUserByFirebaseUid(firebaseUid);
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    const user = userResult.rows[0];
     let bookings;
     
     if (user.user_type === 'customer') {
-      const customerResult = await query(
-        'SELECT id FROM customers WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (customerResult.rows.length === 0) {
+      const customerId = await getCustomerIdByUserId(user.id);
+
+      if (customerId === null) {
         return res.status(404).json({ error: 'Customer profile not found' });
       }
-      
-      const customerId = customerResult.rows[0].id;
       
       // Get bookings that have children
       const bookingsResult = await query(
@@ -450,16 +415,11 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
       bookings = bookingsResult.rows;
       
     } else if (user.user_type === 'sitter') {
-      const sitterResult = await query(
-        'SELECT id FROM sitters WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (sitterResult.rows.length === 0) {
+      const sitterId = await getSitterIdByUserId(user.id);
+
+      if (sitterId === null) {
         return res.status(404).json({ error: 'Sitter profile not found' });
       }
-      
-      const sitterId = sitterResult.rows[0].id;
       
       // Get bookings that have children
       const bookingsResult = await query(
@@ -583,31 +543,23 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
     }
     
     // Get user info
-    const userResult = await query(
-      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
-    
-    if (userResult.rows.length === 0) {
+    const user = await getUserByFirebaseUid(firebaseUid);
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    const user = userResult.rows[0];
     
     // Get the booking with validation that user is part of this booking
     let bookingQuery;
     let queryParams;
     
     if (user.user_type === 'customer') {
-      const customerResult = await query(
-        'SELECT id FROM customers WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (customerResult.rows.length === 0) {
+      const customerId = await getCustomerIdByUserId(user.id);
+
+      if (customerId === null) {
         return res.status(404).json({ error: 'Customer profile not found' });
       }
-      
+
       bookingQuery = `
         SELECT 
           b.id,
@@ -629,18 +581,15 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
         JOIN sitters s ON b.sitter_id = s.id
         WHERE b.id = $1 AND b.customer_id = $2
       `;
-      queryParams = [bookingId, customerResult.rows[0].id];
+      queryParams = [bookingId, customerId];
       
     } else if (user.user_type === 'sitter') {
-      const sitterResult = await query(
-        'SELECT id FROM sitters WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (sitterResult.rows.length === 0) {
+      const sitterId = await getSitterIdByUserId(user.id);
+
+      if (sitterId === null) {
         return res.status(404).json({ error: 'Sitter profile not found' });
       }
-      
+
       bookingQuery = `
         SELECT 
           b.id,
@@ -662,7 +611,7 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
         JOIN customers c ON b.customer_id = c.id
         WHERE b.id = $1 AND b.sitter_id = $2
       `;
-      queryParams = [bookingId, sitterResult.rows[0].id];
+      queryParams = [bookingId, sitterId];
       
     } else {
       return res.status(400).json({ error: 'Invalid user type' });

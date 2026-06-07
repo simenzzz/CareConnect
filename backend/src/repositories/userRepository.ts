@@ -22,3 +22,8 @@ export const getCustomerIdByUserId = async (userId: number): Promise<number | nu
   const result = await query('SELECT id FROM customers WHERE user_id = $1', [userId]);
   return result.rows[0]?.id ?? null;
 };
+
+export const getSitterIdByUserId = async (userId: number): Promise<number | null> => {
+  const result = await query('SELECT id FROM sitters WHERE user_id = $1', [userId]);
+  return result.rows[0]?.id ?? null;
+};

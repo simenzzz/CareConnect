@@ -7,6 +7,11 @@ import { errorDetails, BookingConflictError } from '../../utils/errors';
 import { validateBody } from '../../middleware/validate';
 import { bookingCreateSchema, bookingUpdateSchema } from '../../validation/booking.schemas';
 import { BOOKING_STATUS, BOOKING_STATUS_UPDATABLE, PAYMENT_STATUS } from '../../constants/bookingStatus';
+import {
+  getUserByFirebaseUid,
+  getCustomerIdByUserId,
+  getSitterIdByUserId,
+} from '../../repositories/userRepository';
 import listRouter from './list';
 
 const router = express.Router();
@@ -63,32 +68,22 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
     }
     
     // Get user info (must be customer)
-    const userResult = await query(
-      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
-    
-    if (userResult.rows.length === 0) {
+    const user = await getUserByFirebaseUid(firebaseUid);
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    const user = userResult.rows[0];
-    
+
     if (user.user_type !== 'customer') {
       return res.status(403).json({ error: 'Only customers can create bookings' });
     }
-    
+
     // Get customer ID
-    const customerResult = await query(
-      'SELECT id FROM customers WHERE user_id = $1',
-      [user.id]
-    );
-    
-    if (customerResult.rows.length === 0) {
+    const customerId = await getCustomerIdByUserId(user.id);
+
+    if (customerId === null) {
       return res.status(404).json({ error: 'Customer profile not found' });
     }
-    
-    const customerId = customerResult.rows[0].id;
     
     // Validate sitter exists and is active
     const sitterResult = await query(
@@ -270,47 +265,36 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
     }
     
     // Get user info
-    const userResult = await query(
-      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
-    
-    if (userResult.rows.length === 0) {
+    const user = await getUserByFirebaseUid(firebaseUid);
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    const user = userResult.rows[0];
-    
+
     // Get booking and verify ownership
     let bookingCheck;
     if (user.user_type === 'customer') {
-      const customerResult = await query(
-        'SELECT id FROM customers WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (customerResult.rows.length === 0) {
+      const customerId = await getCustomerIdByUserId(user.id);
+
+      if (customerId === null) {
         return res.status(404).json({ error: 'Customer profile not found' });
       }
-      
+
       bookingCheck = await query(
         'SELECT * FROM bookings WHERE id = $1 AND customer_id = $2',
-        [bookingId, customerResult.rows[0].id]
+        [bookingId, customerId]
       );
-      
+
     } else if (user.user_type === 'sitter') {
-      const sitterResult = await query(
-        'SELECT id FROM sitters WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (sitterResult.rows.length === 0) {
+      const sitterId = await getSitterIdByUserId(user.id);
+
+      if (sitterId === null) {
         return res.status(404).json({ error: 'Sitter profile not found' });
       }
-      
+
       bookingCheck = await query(
         'SELECT * FROM bookings WHERE id = $1 AND sitter_id = $2',
-        [bookingId, sitterResult.rows[0].id]
+        [bookingId, sitterId]
       );
       
     } else {
@@ -480,47 +464,36 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
     }
     
     // Get user info
-    const userResult = await query(
-      'SELECT id, user_type FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
-    
-    if (userResult.rows.length === 0) {
+    const user = await getUserByFirebaseUid(firebaseUid);
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    const user = userResult.rows[0];
-    
+
     // Verify ownership
     let bookingCheck;
     if (user.user_type === 'customer') {
-      const customerResult = await query(
-        'SELECT id FROM customers WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (customerResult.rows.length === 0) {
+      const customerId = await getCustomerIdByUserId(user.id);
+
+      if (customerId === null) {
         return res.status(404).json({ error: 'Customer profile not found' });
       }
-      
+
       bookingCheck = await query(
         'SELECT * FROM bookings WHERE id = $1 AND customer_id = $2',
-        [bookingId, customerResult.rows[0].id]
+        [bookingId, customerId]
       );
-      
+
     } else if (user.user_type === 'sitter') {
-      const sitterResult = await query(
-        'SELECT id FROM sitters WHERE user_id = $1',
-        [user.id]
-      );
-      
-      if (sitterResult.rows.length === 0) {
+      const sitterId = await getSitterIdByUserId(user.id);
+
+      if (sitterId === null) {
         return res.status(404).json({ error: 'Sitter profile not found' });
       }
-      
+
       bookingCheck = await query(
         'SELECT * FROM bookings WHERE id = $1 AND sitter_id = $2',
-        [bookingId, sitterResult.rows[0].id]
+        [bookingId, sitterId]
       );
       
     } else {
