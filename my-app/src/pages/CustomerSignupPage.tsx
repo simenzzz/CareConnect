@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { logger } from '../utils/logger';
 import { Link, useNavigate } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import { authService } from '../services/authService'
@@ -222,18 +223,18 @@ const CustomerSignupPage: React.FC = () => {
   }
 
   const confirmChild = (childId: string) => {
-    console.log('🔍 confirmChild called with ID:', childId)
+    logger.debug('🔍 confirmChild called with ID:', childId)
     const child = formData.children.find(c => c.id === childId)
     if (!child) {
-      console.log('❌ Child not found with ID:', childId)
+      logger.debug('❌ Child not found with ID:', childId)
       return
     }
     
-    console.log('🔍 Found child:', child)
+    logger.debug('🔍 Found child:', child)
     
     // Validate required fields
     if (!child.name.trim() || !child.age.trim()) {
-      console.log('❌ Validation failed - missing name or age')
+      logger.debug('❌ Validation failed - missing name or age')
       setErrors(prev => ({
         ...prev,
         general: 'Please fill in the child\'s name and age before confirming.'
@@ -241,7 +242,7 @@ const CustomerSignupPage: React.FC = () => {
       return
     }
     
-    console.log('✅ Validation passed, marking child as confirmed')
+    logger.debug('✅ Validation passed, marking child as confirmed')
     
     // Mark child as confirmed
     setFormData(prev => ({
@@ -259,18 +260,18 @@ const CustomerSignupPage: React.FC = () => {
   }
 
   const confirmPet = (petId: string) => {
-    console.log('🔍 confirmPet called with ID:', petId)
+    logger.debug('🔍 confirmPet called with ID:', petId)
     const pet = formData.pets.find(p => p.id === petId)
     if (!pet) {
-      console.log('❌ Pet not found with ID:', petId)
+      logger.debug('❌ Pet not found with ID:', petId)
       return
     }
     
-    console.log('🔍 Found pet:', pet)
+    logger.debug('🔍 Found pet:', pet)
     
     // Validate required fields
     if (!pet.name.trim() || !pet.type.trim()) {
-      console.log('❌ Validation failed - missing name or type')
+      logger.debug('❌ Validation failed - missing name or type')
       setErrors(prev => ({
         ...prev,
         general: 'Please fill in the pet\'s name and type before confirming.'
@@ -278,7 +279,7 @@ const CustomerSignupPage: React.FC = () => {
       return
     }
     
-    console.log('✅ Validation passed, marking pet as confirmed')
+    logger.debug('✅ Validation passed, marking pet as confirmed')
     
     // Mark pet as confirmed
     setFormData(prev => ({
@@ -368,23 +369,23 @@ const CustomerSignupPage: React.FC = () => {
     setIsLoading(true)
     
     try {
-      console.log('🚀 Starting customer signup...')
+      logger.debug('🚀 Starting customer signup...')
       
       // Prepare profile data for API - only include confirmed children and pets
-      console.log('🔍 Before filtering - All children:', formData.children)
-      console.log('🔍 Before filtering - All pets:', formData.pets)
+      logger.debug('🔍 Before filtering - All children:', formData.children)
+      logger.debug('🔍 Before filtering - All pets:', formData.pets)
       
       const confirmedChildren = formData.children.filter(child => {
-        console.log(`🔍 Checking child ${child.name}: isConfirmed = ${child.isConfirmed}`)
+        logger.debug(`🔍 Checking child ${child.name}: isConfirmed = ${child.isConfirmed}`)
         return child.isConfirmed
       })
       const confirmedPets = formData.pets.filter(pet => {
-        console.log(`🔍 Checking pet ${pet.name}: isConfirmed = ${pet.isConfirmed}`)
+        logger.debug(`🔍 Checking pet ${pet.name}: isConfirmed = ${pet.isConfirmed}`)
         return pet.isConfirmed
       })
       
-      console.log('🔍 After filtering - Confirmed children:', confirmedChildren)
-      console.log('🔍 After filtering - Confirmed pets:', confirmedPets)
+      logger.debug('🔍 After filtering - Confirmed children:', confirmedChildren)
+      logger.debug('🔍 After filtering - Confirmed pets:', confirmedPets)
       
       const profileData = {
         fullName: formData.customerName,
@@ -396,9 +397,9 @@ const CustomerSignupPage: React.FC = () => {
         pets: confirmedPets
       }
       
-      console.log('📤 Sending profile data:', JSON.stringify(profileData, null, 2))
-      console.log('👶 Confirmed children count:', confirmedChildren.length)
-      console.log('🐕 Confirmed pets count:', confirmedPets.length)
+      logger.debug('📤 Sending profile data:', JSON.stringify(profileData, null, 2))
+      logger.debug('👶 Confirmed children count:', confirmedChildren.length)
+      logger.debug('🐕 Confirmed pets count:', confirmedPets.length)
       
       // Call our auth service
       const result = await authService.signup({
@@ -410,7 +411,7 @@ const CustomerSignupPage: React.FC = () => {
       
       if (result.success) {
         setSuccessMessage('Customer account created successfully! Redirecting to login...')
-        console.log('✅ Signup successful:', result.data)
+        logger.debug('✅ Signup successful:', result.data)
         // Clear form on success
         setFormData({
           customerName: '',
@@ -435,11 +436,11 @@ const CustomerSignupPage: React.FC = () => {
           ...prev,
           general: result.error || 'Account creation failed'
         }))
-        console.error('❌ Signup failed:', result.error)
+        logger.error('❌ Signup failed:', result.error)
       }
       
     } catch (error) {
-      console.error('Error creating account:', error)
+      logger.error('Error creating account:', error)
       setErrors(prev => ({
         ...prev,
         general: 'Error creating account. Please try again.'

@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from '../../utils/logger';
 import type { Response } from 'express';
 import { query } from '../../config/database';
 import { verifyToken } from '../../middleware/auth';
@@ -176,7 +177,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res: Response): P
     });
     
   } catch (error) {
-    console.error('❌ Error fetching bookings:', error);
+    logger.error('❌ Error fetching bookings:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch bookings',
@@ -348,7 +349,7 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res: Response
     });
     
   } catch (error) {
-    console.error('❌ Error fetching pet bookings:', error);
+    logger.error('❌ Error fetching pet bookings:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch pet bookings',
@@ -519,7 +520,7 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res: Resp
     });
     
   } catch (error) {
-    console.error('❌ Error fetching child bookings:', error);
+    logger.error('❌ Error fetching child bookings:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch child bookings',
@@ -691,7 +692,7 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res: Response)
     });
     
   } catch (error) {
-    console.error('❌ Error fetching booking:', error);
+    logger.error('❌ Error fetching booking:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch booking',

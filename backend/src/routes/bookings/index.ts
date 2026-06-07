@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from '../../utils/logger';
 import type { Response } from 'express';
 import { query, withTransaction } from '../../config/database';
 import { verifyToken } from '../../middleware/auth';
@@ -198,7 +199,7 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
       return booking;
     });
 
-    console.log(`✅ Booking created: ID ${newBooking.id}, Type: ${bookingType}`);
+    logger.info(`✅ Booking created: ID ${newBooking.id}, Type: ${bookingType}`);
     
     return res.status(201).json({
       success: true,
@@ -231,7 +232,7 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
         error: error instanceof BookingConflictError ? error.message : 'Sitter is already booked for an overlapping time slot'
       });
     }
-    console.error('❌ Error creating booking:', error);
+    logger.error('❌ Error creating booking:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to create booking',
@@ -420,7 +421,7 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
       }
     }
     
-    console.log(`✅ Booking updated: ID ${bookingId}`);
+    logger.info(`✅ Booking updated: ID ${bookingId}`);
     
     return res.json({
       success: true,
@@ -440,7 +441,7 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
     });
     
   } catch (error) {
-    console.error('❌ Error updating booking:', error);
+    logger.error('❌ Error updating booking:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to update booking',
@@ -527,7 +528,7 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
     // Delete booking (this will cascade to booking_children and booking_pets)
     await query('DELETE FROM bookings WHERE id = $1', [bookingId]);
     
-    console.log(`✅ Booking deleted: ID ${bookingId}`);
+    logger.info(`✅ Booking deleted: ID ${bookingId}`);
     
     return res.json({
       success: true,
@@ -535,7 +536,7 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
     });
     
   } catch (error) {
-    console.error('❌ Error deleting booking:', error);
+    logger.error('❌ Error deleting booking:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to delete booking',

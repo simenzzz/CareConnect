@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { logger } from '../utils/logger';
 import bookingService from '../services/bookingService'
 import './ManageEntities.css'
 
@@ -68,23 +69,23 @@ const SitterMyBookings: React.FC = () => {
         bookingService.getChildBookings()
       ])
 
-      console.log('Sitter Pet bookings response:', petResponse)
-      console.log('Sitter Child bookings response:', childResponse)
+      logger.debug('Sitter Pet bookings response:', petResponse)
+      logger.debug('Sitter Child bookings response:', childResponse)
 
       if (petResponse.success && petResponse.data) {
         setPetBookings(petResponse.data)
       } else if (petResponse.error) {
-        console.error('Pet bookings error:', petResponse.error)
+        logger.error('Pet bookings error:', petResponse.error)
       }
 
       if (childResponse.success && childResponse.data) {
         setChildBookings(childResponse.data)
       } else if (childResponse.error) {
-        console.error('Child bookings error:', childResponse.error)
+        logger.error('Child bookings error:', childResponse.error)
       }
     } catch (err) {
       setError('Failed to load bookings')
-      console.error('Error loading bookings:', err)
+      logger.error('Error loading bookings:', err)
     } finally {
       setIsLoading(false)
     }

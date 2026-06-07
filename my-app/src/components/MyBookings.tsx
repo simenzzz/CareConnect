@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { logger } from '../utils/logger';
 import { useNavigate } from 'react-router-dom'
 import bookingService from '../services/bookingService'
 import './ManageEntities.css'
@@ -71,17 +72,17 @@ const MyBookings: React.FC = () => {
       ])
 
       if (petResponse.success && petResponse.data) {
-        console.log('Pet bookings response:', petResponse.data)
+        logger.debug('Pet bookings response:', petResponse.data)
         setPetBookings(petResponse.data)
       }
 
       if (childResponse.success && childResponse.data) {
-        console.log('Child bookings response:', childResponse.data)
+        logger.debug('Child bookings response:', childResponse.data)
         setChildBookings(childResponse.data)
       }
     } catch (err) {
       setError('Failed to load bookings')
-      console.error('Error loading bookings:', err)
+      logger.error('Error loading bookings:', err)
     } finally {
       setIsLoading(false)
     }

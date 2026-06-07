@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { logger } from '../utils/logger';
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { auth } from '../config/firebase'
@@ -176,7 +177,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         }
       }
     } catch (err) {
-      console.error('Error loading customer data:', err)
+      logger.error('Error loading customer data:', err)
     } finally {
       setIsLoadingData(false)
     }
@@ -233,11 +234,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   const initializeLocationMap = () => {
     if (!mapRef.current || typeof google === 'undefined' || !google.maps) {
-      console.log('Google Maps not ready')
+      logger.debug('Google Maps not ready')
       return
     }
 
-    console.log('Initializing location map and search...')
+    logger.debug('Initializing location map and search...')
 
     const LEBANON_CENTER = { lat: 33.8547, lng: 35.8623 }
 
@@ -249,7 +250,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           }
-          console.log('Got user location:', userLocation)
+          logger.debug('Got user location:', userLocation)
           setLocationFormData(prev => ({
             ...prev,
             latitude: userLocation.lat,
@@ -258,12 +259,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
           createLocationMap(userLocation)
         },
         (error) => {
-          console.log('Geolocation error:', error)
+          logger.debug('Geolocation error:', error)
           createLocationMap(LEBANON_CENTER)
         }
       )
     } else {
-      console.log('Geolocation not supported')
+      logger.debug('Geolocation not supported')
       createLocationMap(LEBANON_CENTER)
     }
   }
@@ -271,7 +272,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const createLocationMap = (center: { lat: number; lng: number }) => {
     if (!mapRef.current) return
 
-    console.log('Creating map at:', center)
+    logger.debug('Creating map at:', center)
 
     const map = new google.maps.Map(mapRef.current, {
       center: center,
@@ -316,7 +317,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     // Initialize search autocomplete
     if (searchInputRef.current && !autocompleteRef.current) {
-      console.log('Initializing autocomplete on search input')
+      logger.debug('Initializing autocomplete on search input')
       
       const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
         componentRestrictions: { country: 'lb' },
@@ -330,14 +331,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
         const place = autocomplete.getPlace()
 
         if (!place.geometry || !place.geometry.location) {
-          console.log('No geometry found for place')
+          logger.debug('No geometry found for place')
           return
         }
 
         const lat = place.geometry.location.lat()
         const lng = place.geometry.location.lng()
 
-        console.log('Place selected:', place.name, lat, lng)
+        logger.debug('Place selected:', place.name, lat, lng)
 
         marker.setPosition({ lat, lng })
         map.setCenter({ lat, lng })
@@ -591,7 +592,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         )
       }
       
-      console.log('Submitting booking:', bookingData)
+      logger.debug('Submitting booking:', bookingData)
       
       // Call booking API endpoint
       const response = await bookingService.createBooking(bookingData)
@@ -612,7 +613,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit booking. Please try again.')
-      console.error('Booking error:', err)
+      logger.error('Booking error:', err)
     } finally {
       setIsSubmitting(false)
     }

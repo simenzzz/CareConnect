@@ -1,4 +1,5 @@
 import { Pool, PoolClient } from 'pg';
+import { logger } from '../utils/logger';
 import { getEnv } from './env';
 
 let pool: Pool;
@@ -16,9 +17,9 @@ export const connectDatabase = () => {
       ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
     });
 
-    console.log('✅ Database connection pool created');
+    logger.info('✅ Database connection pool created');
   } catch (error) {
-    console.error('❌ Database connection error:', error);
+    logger.error('❌ Database connection error:', error);
     throw error;
   }
 };
@@ -32,7 +33,7 @@ export const query = async (text: string, params?: any[]) => {
     const result = await pool.query(text, params);
     return result;
   } catch (error) {
-    console.error('Database query error:', error);
+    logger.error('Database query error:', error);
     throw error;
   }
 };
@@ -63,7 +64,7 @@ export const withTransaction = async <T>(
     try {
       await client.query('ROLLBACK');
     } catch (rollbackError) {
-      console.error('Transaction rollback failed:', rollbackError);
+      logger.error('Transaction rollback failed:', rollbackError);
     }
     throw error;
   } finally {
@@ -81,6 +82,6 @@ export const getPool = () => {
 export const closeDatabase = async () => {
   if (pool) {
     await pool.end();
-    console.log('✅ Database connection closed');
+    logger.info('✅ Database connection closed');
   }
 };

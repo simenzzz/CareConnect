@@ -1,4 +1,5 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { logger } from '../utils/logger';
 import { storage, auth } from '../config/firebase';
 
 export type DocumentType = 'cv' | 'identity';
@@ -75,12 +76,12 @@ class StorageService {
       
       const storageRef = ref(storage, uploadPath);
       
-      console.log(`📤 Uploading ${type} to Firebase Storage:`, fileName);
-      console.log(`📂 Unique folder name: ${uniqueFolderName}`);
-      console.log(`📂 Full upload path: ${uploadPath}`);
-      console.log(`🪣 Storage bucket:`, storage.app.options.storageBucket);
-      console.log(`📍 Full reference path:`, storageRef.fullPath);
-      console.log(`👤 Current user:`, user ? user.uid : 'Not authenticated (signup)');
+      logger.debug(`📤 Uploading ${type} to Firebase Storage:`, fileName);
+      logger.debug(`📂 Unique folder name: ${uniqueFolderName}`);
+      logger.debug(`📂 Full upload path: ${uploadPath}`);
+      logger.debug(`🪣 Storage bucket:`, storage.app.options.storageBucket);
+      logger.debug(`📍 Full reference path:`, storageRef.fullPath);
+      logger.debug(`👤 Current user:`, user ? user.uid : 'Not authenticated (signup)');
       
       // Upload file
       const snapshot = await uploadBytes(storageRef, file, {
@@ -95,20 +96,20 @@ class StorageService {
         }
       });
       
-      console.log('✅ Upload successful:', snapshot);
+      logger.debug('✅ Upload successful:', snapshot);
       
       // Get download URL - add retry logic in case of timing issues
       let downloadURL;
       try {
         downloadURL = await getDownloadURL(snapshot.ref);
-        console.log('✅ Download URL obtained:', downloadURL);
+        logger.debug('✅ Download URL obtained:', downloadURL);
       } catch (urlError) {
-        console.error('❌ Failed to get download URL:', urlError);
+        logger.error('❌ Failed to get download URL:', urlError);
         // If getting URL fails, construct it manually
         const bucket = storage.app.options.storageBucket;
         const encodedPath = encodeURIComponent(snapshot.ref.fullPath);
         downloadURL = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
-        console.log('🔧 Using constructed URL:', downloadURL);
+        logger.debug('🔧 Using constructed URL:', downloadURL);
       }
       
       return {
@@ -118,9 +119,9 @@ class StorageService {
       
     } catch (error) {
       const fbError = error as { code?: string; message?: string };
-      console.error('❌ Upload failed:', error);
-      console.error('Error code:', fbError.code);
-      console.error('Error message:', fbError.message);
+      logger.error('❌ Upload failed:', error);
+      logger.error('Error code:', fbError.code);
+      logger.error('Error message:', fbError.message);
 
       // Handle specific Firebase Storage errors
       let errorMessage = 'Failed to upload document. Please try again.';

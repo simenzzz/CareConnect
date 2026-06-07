@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from '../../utils/logger';
 import { query } from '../../config/database';
 import { verifyToken, type AuthenticatedRequest } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
@@ -21,7 +22,7 @@ router.get('/pets', verifyToken, async (req: AuthenticatedRequest, res): Promise
 
     return res.json({ success: true, pets: petsResult.rows });
   } catch (error) {
-    console.error('Get pets error:', error);
+    logger.error('Get pets error:', error);
     return res.status(500).json({ error: 'Failed to fetch pets', ...errorDetails(error) });
   }
 });
@@ -53,7 +54,7 @@ router.post('/pets', verifyToken, validateBody(petCreateSchema), async (req: Aut
 
     return res.status(201).json({ success: true, message: 'Pet added successfully', pet: petResult.rows[0] });
   } catch (error) {
-    console.error('Add pet error:', error);
+    logger.error('Add pet error:', error);
     return res.status(500).json({ error: 'Failed to add pet', ...errorDetails(error) });
   }
 });
@@ -93,7 +94,7 @@ router.put('/pets/:id', verifyToken, validateBody(petUpdateSchema), async (req: 
 
     return res.json({ success: true, message: 'Pet updated successfully', pet: updateResult.rows[0] });
   } catch (error) {
-    console.error('Update pet error:', error);
+    logger.error('Update pet error:', error);
     return res.status(500).json({ error: 'Failed to update pet', ...errorDetails(error) });
   }
 });
@@ -120,7 +121,7 @@ router.delete('/pets/:id', verifyToken, async (req: AuthenticatedRequest, res): 
 
     return res.json({ success: true, message: 'Pet deleted successfully' });
   } catch (error) {
-    console.error('Delete pet error:', error);
+    logger.error('Delete pet error:', error);
     return res.status(500).json({ error: 'Failed to delete pet', ...errorDetails(error) });
   }
 });

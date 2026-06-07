@@ -1,6 +1,7 @@
 /// <reference types="@types/google.maps" />
 
 import React, { useState, useEffect, useRef } from 'react';
+import { logger } from '../utils/logger';
 import locationService, { type Location } from '../services/locationService';
 import './ManageEntities.css';
 
@@ -58,13 +59,13 @@ const MyLocations: React.FC = () => {
 
   const initializeMap = () => {
     if (!mapRef.current) {
-      console.log('Map ref not available yet');
+      logger.debug('Map ref not available yet');
       return;
     }
 
     // Check if Google Maps is loaded
     if (typeof google === 'undefined' || !google.maps) {
-      console.warn('Google Maps not loaded. Please add the Google Maps script to your index.html');
+      logger.warn('Google Maps not loaded. Please add the Google Maps script to your index.html');
       setError('Google Maps API not loaded. Please contact support.');
       return;
     }
@@ -76,7 +77,7 @@ const MyLocations: React.FC = () => {
       return;
     }
 
-    console.log('Initializing Google Maps...');
+    logger.debug('Initializing Google Maps...');
 
     // Determine initial center
     let initialCenter = LEBANON_CENTER;
@@ -102,7 +103,7 @@ const MyLocations: React.FC = () => {
             createMap(userLocation);
           },
           (error) => {
-            console.log('Geolocation error:', error);
+            logger.debug('Geolocation error:', error);
             createMap(LEBANON_CENTER);
           }
         );
@@ -301,8 +302,8 @@ const MyLocations: React.FC = () => {
     const lat = typeof location.latitude === 'number' ? location.latitude : parseFloat(String(location.latitude));
     const lng = typeof location.longitude === 'number' ? location.longitude : parseFloat(String(location.longitude));
     
-    console.log('Editing location:', location);
-    console.log('Parsed coordinates:', lat, lng);
+    logger.debug('Editing location:', location);
+    logger.debug('Parsed coordinates:', lat, lng);
     
     setFormData({
       location_name: location.location_name || '',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { logger } from '../utils/logger';
 import { useLocation } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import Footer from '../components/Footer'
@@ -29,7 +30,7 @@ const SittersPage: React.FC = () => {
         if (result.success && result.data) {
           setPetSitters(result.data.petSitters)
           setBabySitters(result.data.babySitters)
-          console.log('✅ Sitters loaded:', {
+          logger.debug('✅ Sitters loaded:', {
             pet: result.data.petSitters.length,
             baby: result.data.babySitters.length
           })
@@ -37,7 +38,7 @@ const SittersPage: React.FC = () => {
           setError(result.error || 'Failed to load sitters')
         }
       } catch (err) {
-        console.error('Error loading sitters:', err)
+        logger.error('Error loading sitters:', err)
         setError('Failed to load sitters')
       } finally {
         setIsLoading(false)

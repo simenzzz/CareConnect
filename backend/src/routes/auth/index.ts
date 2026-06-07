@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from '../../utils/logger';
 import { verifyIdToken } from '../../config/firebase';
 import { query } from '../../config/database';
 import { errorDetails } from '../../utils/errors';
@@ -121,7 +122,7 @@ router.post('/register', validateBody(registerSchema), async (req, res): Promise
                 await query('INSERT INTO sitter_skills (sitter_id, skill_name) VALUES ($1, $2)', [sitterId, skill.trim()]);
               } catch (skillError) {
                 // A single bad skill shouldn't abort registration.
-                console.error('Failed to add skill:', skillError);
+                logger.error('Failed to add skill:', skillError);
               }
             }
           }
@@ -136,7 +137,7 @@ router.post('/register', validateBody(registerSchema), async (req, res): Promise
       throw error;
     }
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error:', error);
     return res.status(500).json({ error: 'Registration failed', ...errorDetails(error) });
   }
 });
@@ -177,7 +178,7 @@ router.post('/login', verifyToken, async (req: AuthenticatedRequest, res): Promi
       profile,
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     return res.status(500).json({ error: 'Login failed', ...errorDetails(error) });
   }
 });
@@ -214,7 +215,7 @@ router.get('/profile', verifyToken, async (req: AuthenticatedRequest, res): Prom
       profile,
     });
   } catch (error) {
-    console.error('Profile fetch error:', error);
+    logger.error('Profile fetch error:', error);
     return res.status(500).json({ error: 'Failed to fetch profile', ...errorDetails(error) });
   }
 });
@@ -265,7 +266,7 @@ router.put('/profile', verifyToken, validateBody(profileUpdateSchema), async (re
 
     return res.json({ message: 'Profile updated successfully' });
   } catch (error) {
-    console.error('Profile update error:', error);
+    logger.error('Profile update error:', error);
     return res.status(500).json({ error: 'Failed to update profile', ...errorDetails(error) });
   }
 });
@@ -297,7 +298,7 @@ router.put('/sitter/documents', verifyToken, async (req: AuthenticatedRequest, r
 
     return res.json({ message: 'Documents updated successfully', cvUrl, identityDocumentUrl });
   } catch (error) {
-    console.error('Update documents error:', error);
+    logger.error('Update documents error:', error);
     return res.status(500).json({ error: 'Failed to update documents', ...errorDetails(error) });
   }
 });

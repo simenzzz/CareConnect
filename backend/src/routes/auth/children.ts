@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from '../../utils/logger';
 import { query } from '../../config/database';
 import { verifyToken, type AuthenticatedRequest } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
@@ -21,7 +22,7 @@ router.get('/children', verifyToken, async (req: AuthenticatedRequest, res): Pro
 
     return res.json({ success: true, children: childrenResult.rows });
   } catch (error) {
-    console.error('Get children error:', error);
+    logger.error('Get children error:', error);
     return res.status(500).json({ error: 'Failed to fetch children', ...errorDetails(error) });
   }
 });
@@ -50,7 +51,7 @@ router.post('/children', verifyToken, validateBody(childCreateSchema), async (re
 
     return res.status(201).json({ success: true, message: 'Child added successfully', child: childResult.rows[0] });
   } catch (error) {
-    console.error('Add child error:', error);
+    logger.error('Add child error:', error);
     return res.status(500).json({ error: 'Failed to add child', ...errorDetails(error) });
   }
 });
@@ -87,7 +88,7 @@ router.put('/children/:id', verifyToken, validateBody(childUpdateSchema), async 
 
     return res.json({ success: true, message: 'Child updated successfully', child: updateResult.rows[0] });
   } catch (error) {
-    console.error('Update child error:', error);
+    logger.error('Update child error:', error);
     return res.status(500).json({ error: 'Failed to update child', ...errorDetails(error) });
   }
 });
@@ -114,7 +115,7 @@ router.delete('/children/:id', verifyToken, async (req: AuthenticatedRequest, re
 
     return res.json({ success: true, message: 'Child deleted successfully' });
   } catch (error) {
-    console.error('Delete child error:', error);
+    logger.error('Delete child error:', error);
     return res.status(500).json({ error: 'Failed to delete child', ...errorDetails(error) });
   }
 });

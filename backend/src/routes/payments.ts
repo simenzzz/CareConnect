@@ -1,4 +1,5 @@
 import express, { Response } from 'express'
+import { logger } from '../utils/logger';
 import { query, withTransaction } from '../config/database'
 import { verifyToken, AuthenticatedRequest } from '../middleware/auth'
 import { getEnv } from '../config/env'
@@ -173,7 +174,7 @@ router.post('/whish/initiate', verifyToken, validateBody(paymentInitiateSchema),
       }
     })
   } catch (error) {
-    console.error('Payment initiation error:', error)
+    logger.error('Payment initiation error:', error)
     return res.status(500).json({
       success: false,
       message: 'Failed to initiate payment',
@@ -187,7 +188,7 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
   try {
     const { status, externalId } = req.query
 
-    console.log('Whish Callback Received:', { status, externalId })
+    logger.info('Whish Callback Received:', { status, externalId })
 
     if (!externalId) {
       return res.status(400).json({
@@ -315,7 +316,7 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
     }
 
     if (amountMismatch) {
-      console.error('Whish payment amount mismatch', {
+      logger.error('Whish payment amount mismatch', {
         bookingId,
         expectedAmount,
         reportedAmount
@@ -335,7 +336,7 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
       message: 'Payment verification failed'
     })
   } catch (error) {
-    console.error('Callback processing error:', error)
+    logger.error('Callback processing error:', error)
     return res.status(500).json({
       success: false,
       message: 'Failed to process payment callback',
@@ -431,7 +432,7 @@ router.get('/:bookingId', verifyToken, async (req: AuthenticatedRequest, res: Re
       payment: paymentResult.rows[0]
     })
   } catch (error) {
-    console.error('Get payment error:', error)
+    logger.error('Get payment error:', error)
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve payment details',

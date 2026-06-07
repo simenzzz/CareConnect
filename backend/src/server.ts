@@ -2,6 +2,7 @@
 // `dotenv.config()` at load time, so `process.env` is populated before any other
 // local module (database, firebase, routes) is required.
 import { loadEnv } from './config/env';
+import { logger } from './utils/logger';
 
 import express from 'express';
 import cors from 'cors';
@@ -23,11 +24,11 @@ const app = express();
 const PORT = env.PORT;
 
 // Initialize Firebase and Database BEFORE importing routes
-console.log('🔧 Initializing Firebase...');
+logger.info('🔧 Initializing Firebase...');
 initializeFirebase();
-console.log('🔧 Initializing Database...');
+logger.info('🔧 Initializing Database...');
 connectDatabase();
-console.log('✅ Firebase and Database initialized');
+logger.info('✅ Firebase and Database initialized');
 
 // Middleware
 app.use(helmet()); // Security headers
@@ -70,7 +71,7 @@ app.use((req, res) => {
 // Error handler — detail is gated through the single errorDetails() helper so the
 // dev/prod boundary lives in exactly one place.
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
+  logger.error('Error:', err);
   res.status(500).json({
     error: 'Internal server error',
     message: 'Something went wrong',
@@ -80,29 +81,29 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`🚀 CareConnect Backend API running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`🚀 CareConnect Backend API running on port ${PORT}`);
+  logger.info(`📊 Health check: http://localhost:${PORT}/health`);
+  logger.info(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
+  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
   // Don't exit the process - keep server running
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+  logger.error('❌ Uncaught Exception:', error);
   // Don't exit the process - keep server running
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received: closing HTTP server');
   server.close(() => {
-    console.log('HTTP server closed');
+    logger.info('HTTP server closed');
   });
 });
 

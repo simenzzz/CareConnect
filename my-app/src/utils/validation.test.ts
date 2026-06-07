@@ -34,19 +34,30 @@ describe('isValidLebanesePhone', () => {
 });
 
 describe('isOver18', () => {
+  // Format using LOCAL calendar components. `toISOString()` would convert to UTC
+  // and, when run near local midnight in a positive-offset timezone, shift the
+  // date back a day — flipping this exact-boundary assertion. isOver18 compares
+  // against the local clock, so the fixture must be built from local parts too.
+  const toLocalYmd = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   it('accepts a clearly adult date', () => {
     expect(isOver18('1990-01-01')).toBe(true);
   });
   it('rejects a clearly underage date', () => {
     const fiveYearsAgo = new Date();
     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-    expect(isOver18(fiveYearsAgo.toISOString().slice(0, 10))).toBe(false);
+    expect(isOver18(toLocalYmd(fiveYearsAgo))).toBe(false);
   });
   it('rejects exactly-not-yet-18 (birthday tomorrow)', () => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 18);
     d.setDate(d.getDate() + 1);
-    expect(isOver18(d.toISOString().slice(0, 10))).toBe(false);
+    expect(isOver18(toLocalYmd(d))).toBe(false);
   });
 });
 

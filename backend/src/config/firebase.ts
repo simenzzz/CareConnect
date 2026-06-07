@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import { logger } from '../utils/logger';
 import { getEnv } from './env';
 
 let firebaseApp: admin.app.App;
@@ -25,13 +26,13 @@ export const initializeFirebase = () => {
         projectId: env.FIREBASE_PROJECT_ID,
       });
       
-      console.log('✅ Firebase Admin initialized successfully');
+      logger.info('✅ Firebase Admin initialized successfully');
     } else {
       firebaseApp = admin.app();
-      console.log('✅ Firebase Admin already initialized');
+      logger.info('✅ Firebase Admin already initialized');
     }
   } catch (error) {
-    console.error('❌ Firebase initialization error:', error);
+    logger.error('❌ Firebase initialization error:', error);
     throw error;
   }
 };
@@ -45,7 +46,7 @@ export const verifyIdToken = async (idToken: string) => {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
-    console.error('Error verifying ID token:', error);
+    logger.error('Error verifying ID token:', error);
     throw new Error('Invalid ID token');
   }
 };

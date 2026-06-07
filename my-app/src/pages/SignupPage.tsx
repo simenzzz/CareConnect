@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { logger } from '../utils/logger';
 import { Link, useNavigate } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import { authService } from '../services/authService'
@@ -219,7 +220,7 @@ const SignupPage: React.FC = () => {
         [name]: ''
       }))
       
-      console.log(`📎 File selected for ${name}:`, file.name)
+      logger.debug(`📎 File selected for ${name}:`, file.name)
     }
   }
 
@@ -290,10 +291,10 @@ const SignupPage: React.FC = () => {
     setIsLoading(true)
     
     try {
-      console.log('🚀 Starting sitter signup...')
+      logger.debug('🚀 Starting sitter signup...')
       
       // Step 1: Create Firebase account first (without documents)
-      console.log('👤 Creating sitter signup...')
+      logger.debug('👤 Creating sitter signup...')
       
       // Convert sitterType array to single character: B (baby), P (pet), T (both)
       let sitterTypeChar = 'T'
@@ -324,7 +325,7 @@ const SignupPage: React.FC = () => {
       })
       
       if (!signupResult.success) {
-        console.error('❌ Account creation failed:', signupResult.error)
+        logger.error('❌ Account creation failed:', signupResult.error)
         setErrors(prev => ({
           ...prev,
           general: signupResult.error || 'Account creation failed. Please try again.'
@@ -333,10 +334,10 @@ const SignupPage: React.FC = () => {
         return
       }
       
-      console.log('✅ Firebase account created successfully')
+      logger.debug('✅ Firebase account created successfully')
       
       // Step 2: Now upload documents to Firebase Storage
-      console.log('📤 Uploading documents...')
+      logger.debug('📤 Uploading documents...')
       let uploadedCvUrl = ''
       let uploadedIdUrl = ''
       
@@ -346,7 +347,7 @@ const SignupPage: React.FC = () => {
         setUploadingCV(false)
         
         if (!cvResult.success) {
-          console.error('❌ CV upload failed:', cvResult.error)
+          logger.error('❌ CV upload failed:', cvResult.error)
           // Account is created but document upload failed - log this
           setErrors(prev => ({
             ...prev,
@@ -356,7 +357,7 @@ const SignupPage: React.FC = () => {
           return
         }
         uploadedCvUrl = cvResult.url || ''
-        console.log('✅ CV uploaded:', uploadedCvUrl)
+        logger.debug('✅ CV uploaded:', uploadedCvUrl)
       }
       
       if (formData.identityDocument) {
@@ -365,7 +366,7 @@ const SignupPage: React.FC = () => {
         setUploadingID(false)
         
         if (!idResult.success) {
-          console.error('❌ Identity document upload failed:', idResult.error)
+          logger.error('❌ Identity document upload failed:', idResult.error)
           // Account is created but document upload failed - log this
           setErrors(prev => ({
             ...prev,
@@ -375,15 +376,15 @@ const SignupPage: React.FC = () => {
           return
         }
         uploadedIdUrl = idResult.url || ''
-        console.log('✅ Identity Document uploaded:', uploadedIdUrl)
+        logger.debug('✅ Identity Document uploaded:', uploadedIdUrl)
       }
       
       // Step 3: Update the user profile with document URLs in the database
-      console.log('📝 Updating database with document URLs...')
+      logger.debug('📝 Updating database with document URLs...')
       const updateResult = await authService.updateSitterDocuments(uploadedCvUrl, uploadedIdUrl)
       
       if (!updateResult.success) {
-        console.error('❌ Failed to update documents in database:', updateResult.error)
+        logger.error('❌ Failed to update documents in database:', updateResult.error)
         setErrors(prev => ({
           ...prev,
           general: 'Account created but failed to save document links. Please contact support.'
@@ -392,12 +393,12 @@ const SignupPage: React.FC = () => {
         return
       }
       
-      console.log('✅ Documents saved to database')
+      logger.debug('✅ Documents saved to database')
       
       const result = signupResult
       
       if (result.success) {
-        console.log('✅ Signup successful:', result.data)
+        logger.debug('✅ Signup successful:', result.data)
         // Redirect to homepage with success message
         navigate('/?signup=success')
       } else {
@@ -406,11 +407,11 @@ const SignupPage: React.FC = () => {
           ...prev,
           general: result.error || 'Account creation failed'
         }))
-        console.error('❌ Signup failed:', result.error)
+        logger.error('❌ Signup failed:', result.error)
       }
       
     } catch (error) {
-      console.error('Error creating account:', error)
+      logger.error('Error creating account:', error)
       setErrors(prev => ({
         ...prev,
         general: 'Error creating account. Please try again.'

@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from '../../utils/logger';
 import { query } from '../../config/database';
 import { verifyToken, type AuthenticatedRequest } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
@@ -21,7 +22,7 @@ router.get('/locations', verifyToken, async (req: AuthenticatedRequest, res): Pr
 
     return res.json({ success: true, locations: locationsResult.rows });
   } catch (error) {
-    console.error('Get locations error:', error);
+    logger.error('Get locations error:', error);
     return res.status(500).json({ error: 'Failed to fetch locations', ...errorDetails(error) });
   }
 });
@@ -59,7 +60,7 @@ router.post('/locations', verifyToken, validateBody(locationCreateSchema), async
 
     return res.status(201).json({ success: true, message: 'Location added successfully', location: locationResult.rows[0] });
   } catch (error) {
-    console.error('Add location error:', error);
+    logger.error('Add location error:', error);
     return res.status(500).json({ error: 'Failed to add location', ...errorDetails(error) });
   }
 });
@@ -98,7 +99,7 @@ router.put('/locations/:id', verifyToken, validateBody(locationUpdateSchema), as
 
     return res.json({ success: true, message: 'Location updated successfully', location: updateResult.rows[0] });
   } catch (error) {
-    console.error('Update location error:', error);
+    logger.error('Update location error:', error);
     return res.status(500).json({ error: 'Failed to update location', ...errorDetails(error) });
   }
 });
@@ -142,7 +143,7 @@ router.delete('/locations/:id', verifyToken, async (req: AuthenticatedRequest, r
 
     return res.json({ success: true, message: 'Location deleted successfully' });
   } catch (error) {
-    console.error('Delete location error:', error);
+    logger.error('Delete location error:', error);
     return res.status(500).json({ error: 'Failed to delete location', ...errorDetails(error) });
   }
 });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { logger } from '../utils/logger';
 import { Link, useNavigate } from 'react-router-dom'
 import { auth } from '../config/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -51,7 +52,7 @@ const PageHeader: React.FC = () => {
       setShowDropdown(false)
       navigate('/')
     } catch (error) {
-      console.error('Sign out failed:', error)
+      logger.error('Sign out failed:', error)
     }
   }
 

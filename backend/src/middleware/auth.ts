@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { logger } from '../utils/logger';
 import { verifyIdToken } from '../config/firebase';
 
 /** Express request augmented with the verified Firebase user. */
@@ -32,7 +33,7 @@ export const verifyToken = async (
     req.user = decodedToken as AuthenticatedRequest['user'];
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
+    logger.error('Token verification error:', error);
     res.status(401).json({ error: 'Invalid token' });
   }
 };

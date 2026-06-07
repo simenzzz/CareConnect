@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from '../utils/logger';
 import type { Response } from 'express';
 import { z } from 'zod';
 import { query } from '../config/database';
@@ -117,7 +118,7 @@ router.get(
         pagination: { limit, offset, count: sittersWithSkills.length },
       });
     } catch (error) {
-      console.error('Error fetching sitters:', error);
+      logger.error('Error fetching sitters:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch sitters',
@@ -167,7 +168,7 @@ router.get(
         pagination: { limit, offset, count: sittersWithSkills.length },
       });
     } catch (error) {
-      console.error('Error searching sitters:', error);
+      logger.error('Error searching sitters:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to search sitters',
