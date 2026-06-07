@@ -14,6 +14,7 @@ const LoginPage: React.FC = () => {
   })
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -74,11 +75,8 @@ const LoginPage: React.FC = () => {
     }
   }
 
-  const togglePassword = (fieldName: string) => {
-    const input = document.getElementById(fieldName) as HTMLInputElement
-    if (input) {
-      input.type = input.type === 'password' ? 'text' : 'password'
-    }
+  const togglePassword = () => {
+    setShowPassword(prev => !prev)
   }
 
   return (
@@ -136,7 +134,7 @@ const LoginPage: React.FC = () => {
                 <label htmlFor="password">Password</label>
                 <div className="password-input">
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     id="password"
                     name="password"
                     value={formData.password}
@@ -147,9 +145,9 @@ const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     className="password-toggle"
-                    onClick={() => togglePassword('password')}
+                    onClick={togglePassword}
                   >
-                    <i className="fas fa-eye"></i>
+                    <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
                   </button>
                 </div>
                 {errors.password && <span className="error-message">{errors.password}</span>}

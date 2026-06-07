@@ -3,6 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import { authService } from '../services/authService'
 import storageService from '../services/storageService'
+import { lebanonAreas } from '../data/lebanon'
+import {
+  isValidEmail,
+  isValidLebanesePhone,
+  isOver18,
+  isValidPassword,
+  getPasswordErrorMessage,
+} from '../utils/validation'
 import './SignupPage.css'
 
 interface FormData {
@@ -55,16 +63,6 @@ const SignupPage: React.FC = () => {
   const [uploadingCV, setUploadingCV] = useState(false)
   const [uploadingID, setUploadingID] = useState(false)
   const [newSkill, setNewSkill] = useState('')
-
-  // Lebanon geography data
-  const lebanonAreas = {
-    'Beirut': ['Hamra', 'Verdun', 'Ashrafieh', 'Gemmayzeh', 'Mar Mikhael', 'Ras Beirut', 'Achrafieh', 'Badaro', 'Sin el Fil', 'Bourj Hammoud'],
-    'Mount Lebanon': ['Jounieh', 'Kaslik', 'Antelias', 'Dbayeh', 'Zalka', 'Baabda', 'Aley', 'Bhamdoun', 'Broummana', 'Metn', 'Hazmieh'],
-    'North Lebanon': ['Tripoli', 'Zgharta', 'Koura', 'Bcharre', 'Batroun', 'Byblos', 'Jbeil', 'Amioun', 'Zgharta', 'Miniyeh'],
-    'South Lebanon': ['Sidon', 'Tyre', 'Nabatieh', 'Marjayoun', 'Hasbaya', 'Jezzine', 'Saida', 'Sour', 'Bint Jbeil', 'Khiam'],
-    'Bekaa': ['Zahle', 'Baalbek', 'Hermel', 'Rashaya', 'West Bekaa', 'Marjayoun', 'Chtaura', 'Anjar', 'Qabb Elias', 'Rayak'],
-    'Nabatieh': ['Nabatieh', 'Marjayoun', 'Hasbaya', 'Bint Jbeil', 'Khiam', 'Tebnine', 'Ain Ebel', 'Deir Mimas', 'Kfar Kila', 'Rmeish']
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -232,58 +230,6 @@ const SignupPage: React.FC = () => {
       
       console.log(`📎 File selected for ${name}:`, file.name)
     }
-  }
-
-  // Validation helper functions
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  const isValidLebanesePhone = (phone: string): boolean => {
-    // Lebanese phone number patterns: +961XXXXXXXXX or 961XXXXXXXXX or 0XXXXXXXXX
-    const phoneRegex = /^(\+961|961|0)?[0-9]{8}$/
-    return phoneRegex.test(phone.replace(/\s/g, ''))
-  }
-
-  const isOver18 = (dateOfBirth: string): boolean => {
-    const today = new Date()
-    const birthDate = new Date(dateOfBirth)
-    const age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      return age - 1 >= 18
-    }
-    return age >= 18
-  }
-
-  const isValidPassword = (password: string): boolean => {
-    // At least 8 characters
-    if (password.length < 8) return false
-    
-    // At least 1 uppercase letter (A-Z)
-    if (!/[A-Z]/.test(password)) return false
-    
-    // At least 1 lowercase letter (a-z)
-    if (!/[a-z]/.test(password)) return false
-    
-    // At least 1 number (0-9)
-    if (!/[0-9]/.test(password)) return false
-    
-    // At least 1 special character (!@#$%^&* etc.)
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return false
-    
-    return true
-  }
-
-  const getPasswordErrorMessage = (password: string): string => {
-    if (password.length < 8) return 'Password must be at least 8 characters long'
-    if (!/[A-Z]/.test(password)) return 'Password must contain at least 1 uppercase letter (A-Z)'
-    if (!/[a-z]/.test(password)) return 'Password must contain at least 1 lowercase letter (a-z)'
-    if (!/[0-9]/.test(password)) return 'Password must contain at least 1 number (0-9)'
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return 'Password must contain at least 1 special character (!@#$%^&* etc.)'
-    return ''
   }
 
   const validateForm = (): boolean => {
