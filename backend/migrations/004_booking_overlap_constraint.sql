@@ -18,6 +18,8 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 -- bookings that touch at an endpoint do NOT conflict — matching the strict
 -- inequalities in the application-level overlap check.
 -- Status spelling 'CANCELED' (single 'L') must match what the API writes.
+-- Canonical source: backend/src/constants/bookingStatus.ts (BOOKING_STATUS.CANCELED).
+-- Raw SQL cannot import TS, so keep this literal in lockstep with that constant.
 ALTER TABLE bookings
   ADD CONSTRAINT bookings_no_overlap
   EXCLUDE USING gist (

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BOOKING_STATUS_UPDATABLE } from '../constants/bookingStatus';
 
 /**
  * Validation for booking write boundaries. Loose objects (see auth.schemas.ts
@@ -60,6 +61,8 @@ export const bookingUpdateSchema = z
     bookingFrom: dateString.optional(),
     bookingTo: dateString.optional(),
     priceUsd: baseBookingFields.priceUsd.optional(),
-    status: z.string().trim().max(50).optional(),
+    // Client-settable booking statuses only — CONFIRMED is excluded (set solely
+    // by the verified Whish payment callback). See constants/bookingStatus.ts.
+    status: z.enum(BOOKING_STATUS_UPDATABLE).optional(),
   })
   .refine(endsAfterStart, dateOrderIssue);

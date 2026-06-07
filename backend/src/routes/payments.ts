@@ -5,6 +5,7 @@ import { getEnv } from '../config/env'
 import { errorDetails } from '../utils/errors'
 import { validateBody } from '../middleware/validate'
 import { paymentInitiateSchema } from '../validation/payment.schemas'
+import { BOOKING_STATUS, PAYMENT_STATUS } from '../constants/bookingStatus'
 
 const router = express.Router()
 
@@ -88,7 +89,7 @@ router.post('/whish/initiate', verifyToken, validateBody(paymentInitiateSchema),
     }
 
     // Verify booking is pending payment
-    if (booking.status !== 'PENDING' && booking.status !== 'CONFIRMED') {
+    if (booking.status !== 'PENDING' && booking.status !== BOOKING_STATUS.CONFIRMED) {
       return res.status(400).json({
         success: false,
         message: `Cannot process payment for booking with status: ${booking.status}`
@@ -102,7 +103,7 @@ router.post('/whish/initiate', verifyToken, validateBody(paymentInitiateSchema),
     // Check if payment already exists
     const existingPayment = await query(
       'SELECT * FROM payments WHERE booking_id = $1 AND payment_status = $2',
-      [bookingId, 'COMPLETED']
+      [bookingId, PAYMENT_STATUS.COMPLETED]
     )
 
     if (existingPayment.rows.length > 0) {
@@ -156,7 +157,7 @@ router.post('/whish/initiate', verifyToken, validateBody(paymentInitiateSchema),
         bookingId,
         finalAmount,
         'WISHMONEY',
-        'PENDING',
+        PAYMENT_STATUS.PENDING,
         `WHISH_${bookingId}_${Date.now()}`
       ]
     )
@@ -260,7 +261,7 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
         `UPDATE payments
          SET payment_status = $1, updated_at = NOW()
          WHERE booking_id = $2 AND payment_status = $3`,
-        ['COMPLETED', bookingId, 'PENDING']
+        [PAYMENT_STATUS.COMPLETED, bookingId, PAYMENT_STATUS.PENDING]
       )
 
       if (paymentUpdate.rowCount && paymentUpdate.rowCount > 0) {
@@ -268,7 +269,7 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
           `UPDATE bookings
            SET status = $1, payment_method = $2, updated_at = NOW()
            WHERE id = $3 AND status <> $1`,
-          ['CONFIRMED', 'WISHMONEY', bookingId]
+          [BOOKING_STATUS.CONFIRMED, 'WISHMONEY', bookingId]
         )
 
         return res.json({
@@ -279,7 +280,7 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
 
       // No PENDING payment to complete: a duplicate callback for an already-confirmed
       // booking is an idempotent success; anything else is rejected (nothing initiated).
-      if (booking.status === 'CONFIRMED') {
+      if (booking.status === BOOKING_STATUS.CONFIRMED) {
         return res.json({
           success: true,
           message: 'Payment already confirmed'
@@ -305,7 +306,7 @@ router.get('/whish/callback', async (req: express.Request, res: Response) => {
       `UPDATE payments
        SET payment_status = $1, updated_at = NOW()
        WHERE booking_id = $2 AND payment_status = $3`,
-      ['FAILED', bookingId, 'PENDING']
+      [PAYMENT_STATUS.FAILED, bookingId, PAYMENT_STATUS.PENDING]
     )
 
     return res.json({

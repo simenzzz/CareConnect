@@ -6,6 +6,7 @@ import type { AuthenticatedRequest } from '../../middleware/auth';
 import { errorDetails, BookingConflictError } from '../../utils/errors';
 import { validateBody } from '../../middleware/validate';
 import { bookingCreateSchema, bookingUpdateSchema } from '../../validation/booking.schemas';
+import { BOOKING_STATUS, BOOKING_STATUS_UPDATABLE } from '../../constants/bookingStatus';
 import listRouter from './list';
 
 const router = express.Router();
@@ -149,7 +150,7 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
       const overlap = await client.query(
         `SELECT id FROM bookings
          WHERE sitter_id = $1
-           AND status <> 'CANCELED'
+           AND status <> '${BOOKING_STATUS.CANCELED}'
            AND booking_from < $3
            AND booking_to > $2
          LIMIT 1`,
@@ -174,7 +175,7 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
           paymentMethod || null,
           priceUsd,
           discount || 0,
-          'UPCOMING',
+          BOOKING_STATUS.UPCOMING,
           bookingType,
           additionalNotes || null
         ]
@@ -353,11 +354,11 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
     }
     
     if (status !== undefined) {
-      // Validate status
-      const validStatuses = ['CANCELED', 'ONGOING', 'COMPLETED', 'UPCOMING'];
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({ 
-          error: 'Invalid status. Must be one of: CANCELED, ONGOING, COMPLETED, UPCOMING' 
+      // Defense-in-depth: the zod schema already constrains `status` to this set
+      // at the boundary (CONFIRMED is excluded — only the payment callback sets it).
+      if (!BOOKING_STATUS_UPDATABLE.includes(status)) {
+        return res.status(400).json({
+          error: `Invalid status. Must be one of: ${BOOKING_STATUS_UPDATABLE.join(', ')}`
         });
       }
       updates.push(`status = $${paramCount++}`);
@@ -510,7 +511,7 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res: Respon
     const booking = bookingCheck.rows[0];
     
     // Check if booking can be deleted (only UPCOMING bookings)
-    if (booking.status !== 'UPCOMING') {
+    if (booking.status !== BOOKING_STATUS.UPCOMING) {
       return res.status(400).json({ 
         error: `Cannot delete booking with status ${booking.status}. Only UPCOMING bookings can be deleted.` 
       });
