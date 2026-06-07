@@ -11,6 +11,8 @@ import {
   isValidPassword,
   getPasswordErrorMessage,
 } from '../utils/validation'
+import SkillsManager from '../components/signup/SkillsManager'
+import DocumentUploadSection from '../components/signup/DocumentUploadSection'
 import './SignupPage.css'
 
 interface FormData {
@@ -62,7 +64,6 @@ const SignupPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [uploadingCV, setUploadingCV] = useState(false)
   const [uploadingID, setUploadingID] = useState(false)
-  const [newSkill, setNewSkill] = useState('')
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -182,19 +183,16 @@ const SignupPage: React.FC = () => {
     setShowConfirmPassword(!showConfirmPassword)
   }
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        skills: [...prev.skills, newSkill.trim()]
-      }))
-      setNewSkill('')
-      // Clear any skill errors
-      setErrors(prev => ({
-        ...prev,
-        skills: ''
-      }))
-    }
+  const handleAddSkill = (skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: [...prev.skills, skill]
+    }))
+    // Clear any skill errors
+    setErrors(prev => ({
+      ...prev,
+      skills: ''
+    }))
   }
 
   const handleRemoveSkill = (skillToRemove: string) => {
@@ -202,13 +200,6 @@ const SignupPage: React.FC = () => {
       ...prev,
       skills: prev.skills.filter(skill => skill !== skillToRemove)
     }))
-  }
-
-  const handleKeyPressSkill = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleAddSkill()
-    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -586,51 +577,12 @@ const SignupPage: React.FC = () => {
                   {errors.sitterType && <span className="error-message">{errors.sitterType}</span>}
                 </div>
 
-                {/* Skills Section */}
-                <div className="form-group">
-                  <label>Skills</label>
-                  <p className="help-text">Add skills that make you a great sitter (e.g., First Aid, CPR, Cooking, etc.)</p>
-                  
-                  <div className="skills-input-container">
-                    <div className="input-group">
-                      <i className="fas fa-star"></i>
-                      <input
-                        type="text"
-                        value={newSkill}
-                        onChange={(e) => setNewSkill(e.target.value)}
-                        onKeyPress={handleKeyPressSkill}
-                        placeholder="Type a skill and press Enter or click +"
-                        maxLength={50}
-                      />
-                      <button 
-                        type="button" 
-                        className="btn-add-skill"
-                        onClick={handleAddSkill}
-                        disabled={!newSkill.trim()}
-                      >
-                        <i className="fas fa-plus"></i>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {formData.skills.length > 0 && (
-                    <div className="skills-list">
-                      {formData.skills.map((skill, index) => (
-                        <div key={index} className="skill-tag">
-                          <span>{skill}</span>
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveSkill(skill)}
-                            className="btn-remove-skill"
-                          >
-                            <i className="fas fa-times"></i>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {errors.skills && <span className="error-message">{errors.skills}</span>}
-                </div>
+                <SkillsManager
+                  skills={formData.skills}
+                  onAdd={handleAddSkill}
+                  onRemove={handleRemoveSkill}
+                  error={errors.skills}
+                />
 
                 {/* Description Section */}
                 <div className="form-group">
@@ -732,73 +684,15 @@ const SignupPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Document Upload */}
-              <div className="form-section">
-                <h3>Required Documents *</h3>
-                
-                <div className="form-group">
-                  <label htmlFor="cv">CV/Resume (PDF) *</label>
-                  <div className="file-upload">
-                    <input
-                      type="file"
-                      id="cv"
-                      name="cv"
-                      accept=".pdf"
-                      onChange={handleFileChange}
-                      className={errors.cv ? 'error' : ''}
-                      disabled={uploadingCV}
-                    />
-                    <label htmlFor="cv" className="file-upload-label">
-                      {formData.cv ? (
-                        <>
-                          <i className="fas fa-check-circle" style={{ color: '#2ecc71' }}></i>
-                          <span className="file-text">File Selected</span>
-                          <span className="file-info">{formData.cv.name}</span>
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-file-pdf"></i>
-                          <span className="file-text">Choose CV file</span>
-                          <span className="file-info">PDF format only (Max 5MB)</span>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                  {errors.cv && <span className="error-message">{errors.cv}</span>}
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="identityDocument">Identity Document *</label>
-                  <div className="file-upload">
-                    <input
-                      type="file"
-                      id="identityDocument"
-                      name="identityDocument"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={handleFileChange}
-                      className={errors.identityDocument ? 'error' : ''}
-                      disabled={uploadingID}
-                    />
-                    <label htmlFor="identityDocument" className="file-upload-label">
-                      {formData.identityDocument ? (
-                        <>
-                          <i className="fas fa-check-circle" style={{ color: '#2ecc71' }}></i>
-                          <span className="file-text">File Selected</span>
-                          <span className="file-info">{formData.identityDocument.name}</span>
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-id-card"></i>
-                          <span className="file-text">Choose Identity Document</span>
-                          <span className="file-info">PDF, JPG, PNG formats accepted (Max 10MB)</span>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                  {errors.identityDocument && <span className="error-message">{errors.identityDocument}</span>}
-                  <p className="help-text">Upload your Lebanese ID card or passport</p>
-                </div>
-              </div>
+              <DocumentUploadSection
+                cv={formData.cv}
+                identityDocument={formData.identityDocument}
+                uploadingCV={uploadingCV}
+                uploadingID={uploadingID}
+                onFileChange={handleFileChange}
+                cvError={errors.cv}
+                idError={errors.identityDocument}
+              />
 
               {/* Terms and Conditions */}
               <div className="form-group">
