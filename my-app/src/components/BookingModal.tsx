@@ -7,6 +7,7 @@ import { authService } from '../services/authService'
 import customerService from '../services/customerService'
 import bookingService from '../services/bookingService'
 import locationService, { type Location } from '../services/locationService'
+import AddLocationForm, { type LocationFormData } from './booking/AddLocationForm'
 import './BookingModal.css'
 
 interface Child {
@@ -97,7 +98,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   // Add location state
   const [showAddLocationForm, setShowAddLocationForm] = useState(false)
   const [isSavingLocation, setIsSavingLocation] = useState(false)
-  const [locationFormData, setLocationFormData] = useState({
+  const [locationFormData, setLocationFormData] = useState<LocationFormData>({
     location_name: '',
     address_name: '',
     street_name: '',
@@ -480,6 +481,61 @@ const BookingModal: React.FC<BookingModalProps> = ({
   }
 
   // Submit booking
+  const handleSaveLocation = async () => {
+    if (!locationFormData.location_name || !locationFormData.area || !locationFormData.city) {
+      setError('Location name, area, and city are required')
+      return
+    }
+
+    setIsSavingLocation(true)
+    setError(null)
+
+    // Auto-generate address_line
+    const addressParts = [
+      locationFormData.street_name,
+      locationFormData.building_name,
+      locationFormData.floor ? `Floor ${locationFormData.floor}` : '',
+      locationFormData.area,
+      locationFormData.city
+    ].filter(part => part && part.trim()).join(', ')
+
+    const dataToSave = {
+      ...locationFormData,
+      address_line: addressParts || `${locationFormData.area}, ${locationFormData.city}`
+    }
+
+    const response = await locationService.addLocation(dataToSave)
+
+    if (response.success && response.data && response.data.location) {
+      // Reload locations
+      const locationsResponse = await locationService.getLocations()
+      if (locationsResponse.success && locationsResponse.data) {
+        setLocations(locationsResponse.data)
+        setSelectedLocationId(String(response.data.location.id))
+      }
+
+      // Reset form and close
+      setLocationFormData({
+        location_name: '',
+        address_name: '',
+        street_name: '',
+        building_name: '',
+        floor: '',
+        area: '',
+        city: '',
+        postal_code: '',
+        latitude: 33.8547,
+        longitude: 35.8623,
+        is_default: false
+      })
+      setShowAddLocationForm(false)
+    } else {
+      setError(response.error || 'Failed to add location')
+    }
+
+    setIsSavingLocation(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -963,258 +1019,15 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
               {/* Add Location Form */}
               {showAddLocationForm && (
-                <div className="add-entity-form">
-                  <div className="add-entity-header">
-                    <h3>Add Location</h3>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowAddLocationForm(false)}
-                      className="btn-close-add"
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </div>
-
-                {/* Search Location */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3e50' }}>
-                    <i className="fas fa-search" style={{ marginRight: '8px', color: '#667eea' }}></i>
-                    Search Location
-                  </label>
-                  <div className="input-group">
-                    <i className="fas fa-search"></i>
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      placeholder="Search for a location in Lebanon..."
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Google Map */}
-                <div className="form-group">
-                  <label>
-                    <i className="fas fa-map"></i>
-                    Select on Map
-                  </label>
-                  <div 
-                    ref={mapRef} 
-                    style={{ 
-                      width: '100%', 
-                      height: '250px', 
-                      borderRadius: '8px',
-                      border: '2px solid #ecf0f1',
-                      marginBottom: '10px',
-                      backgroundColor: '#f5f5f5'
-                    }}
-                  />
-                  <p style={{ fontSize: '0.85rem', color: '#7f8c8d', marginTop: '5px' }}>
-                    <i className="fas fa-info-circle" style={{ marginRight: '5px' }}></i>
-                    Click on the map or drag the marker
-                  </p>
-                </div>
-
-                {/* Location Name */}
-                <div className="form-group">
-                  <label>
-                    <i className="fas fa-tag"></i>
-                    Location Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={locationFormData.location_name}
-                    onChange={(e) => setLocationFormData({...locationFormData, location_name: e.target.value})}
-                    placeholder="e.g., Home, Work, Office"
-                    required
-                  />
-                </div>
-
-                {/* Address Name and Street Name */}
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>
-                      <i className="fas fa-map-signs"></i>
-                      Address Name
-                    </label>
-                    <input
-                      type="text"
-                      value={locationFormData.address_name}
-                      onChange={(e) => setLocationFormData({...locationFormData, address_name: e.target.value})}
-                      placeholder="Address Name (Optional)"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      <i className="fas fa-road"></i>
-                      Street Name
-                    </label>
-                    <input
-                      type="text"
-                      value={locationFormData.street_name}
-                      onChange={(e) => setLocationFormData({...locationFormData, street_name: e.target.value})}
-                      placeholder="Street name"
-                    />
-                  </div>
-                </div>
-
-                {/* Building Name and Floor */}
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>
-                      <i className="fas fa-building"></i>
-                      Building
-                    </label>
-                    <input
-                      type="text"
-                      value={locationFormData.building_name}
-                      onChange={(e) => setLocationFormData({...locationFormData, building_name: e.target.value})}
-                      placeholder="Building name (Optional)"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      <i className="fas fa-layer-group"></i>
-                      Floor
-                    </label>
-                    <input
-                      type="text"
-                      value={locationFormData.floor}
-                      onChange={(e) => setLocationFormData({...locationFormData, floor: e.target.value})}
-                      placeholder="Floor (Optional)"
-                    />
-                  </div>
-                </div>
-
-                {/* Area and City */}
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>
-                      <i className="fas fa-map"></i>
-                      Area *
-                    </label>
-                    <input
-                      type="text"
-                      value={locationFormData.area}
-                      onChange={(e) => setLocationFormData({...locationFormData, area: e.target.value})}
-                      placeholder="e.g., Mount Lebanon"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      <i className="fas fa-city"></i>
-                      City *
-                    </label>
-                    <input
-                      type="text"
-                      value={locationFormData.city}
-                      onChange={(e) => setLocationFormData({...locationFormData, city: e.target.value})}
-                      placeholder="e.g., Beirut"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Postal Code */}
-                <div className="form-group">
-                  <label>
-                    <i className="fas fa-mail-bulk"></i>
-                    Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    value={locationFormData.postal_code}
-                    onChange={(e) => setLocationFormData({...locationFormData, postal_code: e.target.value})}
-                    placeholder="Postal Code (Optional)"
-                  />
-                </div>
-
-                  {/* Save Button - Centered and Green */}
-                  <div className="form-actions" style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                    <button 
-                      type="button" 
-                      onClick={async () => {
-                        if (!locationFormData.location_name || !locationFormData.area || !locationFormData.city) {
-                          setError('Location name, area, and city are required')
-                          return
-                        }
-                        
-                        setIsSavingLocation(true)
-                        setError(null)
-                        
-                        // Auto-generate address_line
-                        const addressParts = [
-                          locationFormData.street_name,
-                          locationFormData.building_name,
-                          locationFormData.floor ? `Floor ${locationFormData.floor}` : '',
-                          locationFormData.area,
-                          locationFormData.city
-                        ].filter(part => part && part.trim()).join(', ')
-
-                        const dataToSave = {
-                          ...locationFormData,
-                          address_line: addressParts || `${locationFormData.area}, ${locationFormData.city}`
-                        }
-                        
-                        const response = await locationService.addLocation(dataToSave)
-                        
-                        if (response.success && response.data && response.data.location) {
-                          // Reload locations
-                          const locationsResponse = await locationService.getLocations()
-                          if (locationsResponse.success && locationsResponse.data) {
-                            setLocations(locationsResponse.data)
-                            setSelectedLocationId(String(response.data.location.id))
-                          }
-                          
-                          // Reset form and close
-                          setLocationFormData({
-                            location_name: '',
-                            address_name: '',
-                            street_name: '',
-                            building_name: '',
-                            floor: '',
-                            area: '',
-                            city: '',
-                            postal_code: '',
-                            latitude: 33.8547,
-                            longitude: 35.8623,
-                            is_default: false
-                          })
-                          setShowAddLocationForm(false)
-                        } else {
-                          setError(response.error || 'Failed to add location')
-                        }
-                        
-                        setIsSavingLocation(false)
-                      }}
-                      className="btn-save-entity"
-                      style={{ 
-                        backgroundColor: '#27ae60',
-                        borderColor: '#27ae60',
-                        padding: '12px 40px',
-                        fontSize: '1rem',
-                        fontWeight: 600
-                      }}
-                      disabled={isSavingLocation}
-                    >
-                      {isSavingLocation ? (
-                        <>
-                          <i className="fas fa-spinner fa-spin"></i>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-check"></i>
-                          Add Location
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                <AddLocationForm
+                  locationFormData={locationFormData}
+                  setLocationFormData={setLocationFormData}
+                  mapRef={mapRef}
+                  searchInputRef={searchInputRef}
+                  isSavingLocation={isSavingLocation}
+                  onClose={() => setShowAddLocationForm(false)}
+                  onSave={handleSaveLocation}
+                />
               )}
 
               {!showAddForm && !showAddLocationForm && (
