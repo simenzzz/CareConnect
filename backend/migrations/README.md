@@ -1,38 +1,27 @@
-# Database migrations
+# Database schema
 
-Ordered, append-only SQL migrations for the CareConnect PostgreSQL schema.
+`init.sql` is the single authoritative CareConnect PostgreSQL schema while the
+product is pre-launch.
 
 ## Convention
 
-- One file per change, named `NNN_short_description.sql` (zero-padded, monotonic).
-- Apply in ascending numeric order. Never edit a migration that has already been
-  applied to an environment — add a new one instead.
-- Prefer idempotent / guarded statements (`IF NOT EXISTS`, `IF EXISTS`) where practical.
+- Edit `init.sql` directly when the desired schema changes.
+- Do not add numbered migration files during development.
+- Re-apply the init script to a fresh disposable database after schema changes.
+- Revisit append-only migrations once there is production data to preserve.
 
 ## Applying
 
-There is no migration runner wired up yet. Until one is added (e.g. `node-pg-migrate`),
-apply manually in order against the target database, for example:
-
 ```bash
-for f in migrations/[0-9]*.sql; do psql "$DATABASE_URL" -f "$f"; done
+psql "$DATABASE_URL" -f migrations/init.sql
 ```
 
-## History note
+The script is fresh-database-first. It uses `CREATE TABLE IF NOT EXISTS`, so a
+second run should not error, but it will not alter an existing table to add new
+columns or constraints. For development, recreate the database and apply
+`init.sql` instead of maintaining live-table `ALTER` steps.
 
-The original schema (`users`, `customers`, `sitters`, `children`, `pets`,
-`user_locations`, `bookings`, junction tables, `sitter_skills`) was created ad-hoc.
-`000_init.sql` now captures that pre-001 baseline so a fresh database can be stood up
-by applying `000` → `004` in order. It was **reconstructed from the application's SQL
-statements + the known deltas**, not yet diffed against a live `pg_dump`, so verify it
-against a real `pg_dump --schema-only --no-owner --no-privileges` before relying on it
-in CI/staging and reconcile any differences in types/defaults/FK actions.
+## Fixtures are NOT schema
 
-The baseline intentionally omits the `payments` table (added by 001) and the
-`type_of_booking`/`pet_id`/`child_id` booking columns (added by 002; the single-id
-columns are dropped again by 003) so the deltas apply on top without conflict.
-
-## Fixtures are NOT migrations
-
-Test/sample data lives in `../fixtures/` (e.g. `sample_bookings.sql`) and must never
-be applied to production. Keep it out of any automated migration/deploy path.
+Test/sample data belongs in `../fixtures/` and must never be part of the schema
+or any deploy path.

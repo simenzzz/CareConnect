@@ -6,9 +6,9 @@
  * where cancelled slots never freed up. Every status literal in the backend
  * should reference these constants rather than re-typing the string.
  *
- * NOTE: `migrations/004_booking_overlap_constraint.sql` hardcodes
- * `status <> 'CANCELED'` in raw SQL (it cannot import TypeScript). Keep that
- * spelling in lockstep with `BOOKING_STATUS.CANCELED` below.
+ * NOTE: `migrations/init.sql` hardcodes `status <> 'CANCELED'` in the raw SQL
+ * overlap constraint (it cannot import TypeScript). Keep that spelling in
+ * lockstep with `BOOKING_STATUS.CANCELED` below.
  */
 
 export const BOOKING_STATUS = {

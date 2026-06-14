@@ -1,21 +1,16 @@
--- 000: Baseline schema (pre-001).
+-- CareConnect authoritative schema (pre-launch).
 --
--- ⚠️ RECONSTRUCTED, NOT YET pg_dump-VERIFIED.
--- The original schema was created ad-hoc against a live database; this baseline
--- was reconstructed from the application's INSERT/UPDATE/SELECT statements and the
--- known deltas (001–004). It captures the schema AS IT EXISTED BEFORE 001, so the
--- existing migrations apply cleanly on top:
---   * the `payments` table is intentionally absent (added by 001);
---   * `bookings` intentionally has NO `type_of_booking`/`pet_id`/`child_id`
---     (added by 002; the single-id columns are then dropped by 003).
--- Before trusting this in CI/staging, diff it against a real
--- `pg_dump --schema-only --no-owner --no-privileges` of the production DB and
--- reconcile exact types, NOT NULL/DEFAULT, and FK on-delete actions.
+-- This is the single init script for the desired end-state schema. While the
+-- product is still in development, edit this file directly and re-apply it to a
+-- fresh database. Do not add numbered migration files until there is production
+-- data to preserve.
 --
--- Idempotent (`IF NOT EXISTS`) so it is a safe no-op against an environment that
--- already has the live schema.
+-- Fresh-DB first: CREATE TABLE IF NOT EXISTS makes a re-run safe, but it will not
+-- alter existing live tables. Recreate disposable dev databases before applying.
 
--- ── Identity ────────────────────────────────────────────────────────────────
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+-- Identity
 CREATE TABLE IF NOT EXISTS users (
   id           SERIAL PRIMARY KEY,
   firebase_uid VARCHAR(128) NOT NULL UNIQUE,
@@ -45,9 +40,10 @@ CREATE TABLE IF NOT EXISTS sitters (
   date_of_birth                 DATE         NOT NULL,
   area                          VARCHAR(120) NOT NULL,
   city                          VARCHAR(120) NOT NULL,
+  latitude                      DECIMAL(10, 7),
+  longitude                     DECIMAL(10, 7),
   phone                         VARCHAR(30)  NOT NULL,
   hours_per_week                INTEGER      NOT NULL,
-  -- 'B' baby-sitter, 'P' pet-sitter, 'T' both.
   sitter_type                   VARCHAR(1)   NOT NULL CHECK (sitter_type IN ('B', 'P', 'T')),
   experience                    TEXT,
   description                   TEXT,
@@ -55,15 +51,15 @@ CREATE TABLE IF NOT EXISTS sitters (
   identity_document_url         TEXT,
   cv_uploaded_at                TIMESTAMP,
   identity_document_uploaded_at TIMESTAMP,
-  -- Bookable only when is_active = TRUE AND is_verified = TRUE.
   is_active                     BOOLEAN      NOT NULL DEFAULT TRUE,
   is_verified                   BOOLEAN      NOT NULL DEFAULT FALSE,
   rating                        DECIMAL(3, 2) NOT NULL DEFAULT 0,
+  review_count                  INTEGER      NOT NULL DEFAULT 0,
   created_at                    TIMESTAMP    NOT NULL DEFAULT NOW(),
   updated_at                    TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
--- ── Care recipients (soft-deleted via is_active) ────────────────────────────
+-- Care recipients
 CREATE TABLE IF NOT EXISTS children (
   id            SERIAL PRIMARY KEY,
   customer_id   INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -93,7 +89,7 @@ CREATE TABLE IF NOT EXISTS pets (
   updated_at        TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- ── Locations (soft-deleted via is_active) ──────────────────────────────────
+-- Locations
 CREATE TABLE IF NOT EXISTS user_locations (
   id            SERIAL PRIMARY KEY,
   customer_id   INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -114,10 +110,7 @@ CREATE TABLE IF NOT EXISTS user_locations (
   updated_at    TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- ── Bookings (pre-002: no type_of_booking/pet_id/child_id) ───────────────────
--- booking_from/booking_to are timestamptz so migration 004's tstzrange overlap
--- constraint applies without modification. If a real pg_dump shows these as
--- `timestamp without time zone`, change these to TIMESTAMP and 004 to tsrange.
+-- Bookings
 CREATE TABLE IF NOT EXISTS bookings (
   id               SERIAL PRIMARY KEY,
   sitter_id        INTEGER NOT NULL REFERENCES sitters(id),
@@ -129,12 +122,16 @@ CREATE TABLE IF NOT EXISTS bookings (
   price_usd        DECIMAL(10, 2) NOT NULL,
   discount         DECIMAL(5, 2)  NOT NULL DEFAULT 0,
   status           VARCHAR(20)  NOT NULL DEFAULT 'UPCOMING',
+  type_of_booking  VARCHAR(10)  CHECK (type_of_booking IN ('PET', 'CHILD')),
   additional_notes TEXT,
   created_at       TIMESTAMP    NOT NULL DEFAULT NOW(),
-  updated_at       TIMESTAMP    NOT NULL DEFAULT NOW()
+  updated_at       TIMESTAMP    NOT NULL DEFAULT NOW(),
+  CONSTRAINT bookings_no_overlap EXCLUDE USING gist (
+    sitter_id WITH =,
+    tstzrange(booking_from, booking_to, '[)') WITH &&
+  ) WHERE (status <> 'CANCELED')
 );
 
--- ── Junction tables (a booking links many children and/or pets) ──────────────
 CREATE TABLE IF NOT EXISTS booking_children (
   id         SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
@@ -149,7 +146,6 @@ CREATE TABLE IF NOT EXISTS booking_pets (
   CONSTRAINT booking_pets_unique UNIQUE (booking_id, pet_id)
 );
 
--- ── Sitter skills ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS sitter_skills (
   id         SERIAL PRIMARY KEY,
   sitter_id  INTEGER NOT NULL REFERENCES sitters(id) ON DELETE CASCADE,
@@ -157,7 +153,70 @@ CREATE TABLE IF NOT EXISTS sitter_skills (
   created_at TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
--- ── Indexes for common lookups ───────────────────────────────────────────────
+-- Payments
+CREATE TABLE IF NOT EXISTS payments (
+  id SERIAL PRIMARY KEY,
+  booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+  amount DECIMAL(10, 2) NOT NULL,
+  payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('CARD', 'WISHMONEY', 'CASH')),
+  payment_status VARCHAR(50) NOT NULL DEFAULT 'PENDING' CHECK (payment_status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED')),
+  transaction_id VARCHAR(255) UNIQUE,
+  card_last_four VARCHAR(4),
+  cardholder_name VARCHAR(255),
+  phone_number VARCHAR(20),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT payments_booking_id_key UNIQUE (booking_id)
+);
+
+COMMENT ON TABLE payments IS 'Stores payment information for bookings';
+COMMENT ON COLUMN payments.payment_method IS 'CARD (credit/debit), WISHMONEY, or CASH';
+COMMENT ON COLUMN payments.payment_status IS 'PENDING, PROCESSING, COMPLETED, FAILED, or REFUNDED';
+COMMENT ON COLUMN payments.transaction_id IS 'Unique transaction ID from payment gateway';
+COMMENT ON COLUMN payments.card_last_four IS 'Last 4 digits of card number (for display only)';
+COMMENT ON COLUMN payments.phone_number IS 'Phone number used for Whish Money or mobile payments';
+COMMENT ON COLUMN bookings.type_of_booking IS 'Type of booking: PET or CHILD';
+
+-- Reviews and matching signals
+CREATE TABLE IF NOT EXISTS reviews (
+  id          SERIAL PRIMARY KEY,
+  booking_id  INTEGER  NOT NULL REFERENCES bookings(id)  ON DELETE CASCADE,
+  sitter_id   INTEGER  NOT NULL REFERENCES sitters(id)   ON DELETE CASCADE,
+  customer_id INTEGER  NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  rating      SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment     TEXT,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT reviews_booking_unique UNIQUE (booking_id)
+);
+
+CREATE TABLE IF NOT EXISTS sitter_availability (
+  id          SERIAL PRIMARY KEY,
+  sitter_id   INTEGER  NOT NULL REFERENCES sitters(id) ON DELETE CASCADE,
+  day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+  start_time  TIME     NOT NULL,
+  end_time    TIME     NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT sitter_availability_window CHECK (end_time > start_time)
+);
+
+CREATE TABLE IF NOT EXISTS match_events (
+  id              SERIAL PRIMARY KEY,
+  request_group   UUID     NOT NULL,
+  customer_id     INTEGER  NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  sitter_id       INTEGER  NOT NULL REFERENCES sitters(id)   ON DELETE CASCADE,
+  location_id      INTEGER  NOT NULL REFERENCES user_locations(id) ON DELETE CASCADE,
+  type_of_booking VARCHAR(10) NOT NULL CHECK (type_of_booking IN ('PET', 'CHILD')),
+  booking_from     TIMESTAMPTZ NOT NULL,
+  booking_to       TIMESTAMPTZ NOT NULL,
+  rank            INTEGER  NOT NULL,
+  score           DECIMAL(6, 4) NOT NULL,
+  was_selected    BOOLEAN  NOT NULL DEFAULT FALSE,
+  booking_id      INTEGER  REFERENCES bookings(id) ON DELETE SET NULL,
+  created_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_customers_user_id      ON customers(user_id);
 CREATE INDEX IF NOT EXISTS idx_sitters_user_id        ON sitters(user_id);
 CREATE INDEX IF NOT EXISTS idx_children_customer_id   ON children(customer_id);
@@ -168,3 +227,12 @@ CREATE INDEX IF NOT EXISTS idx_bookings_customer_id   ON bookings(customer_id);
 CREATE INDEX IF NOT EXISTS idx_booking_children_bid   ON booking_children(booking_id);
 CREATE INDEX IF NOT EXISTS idx_booking_pets_bid       ON booking_pets(booking_id);
 CREATE INDEX IF NOT EXISTS idx_sitter_skills_sitter   ON sitter_skills(sitter_id);
+CREATE INDEX IF NOT EXISTS idx_payments_booking_id    ON payments(booking_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status        ON payments(payment_status);
+CREATE INDEX IF NOT EXISTS idx_payments_method        ON payments(payment_method);
+CREATE INDEX IF NOT EXISTS idx_payments_transaction_id ON payments(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_sitter_id      ON reviews(sitter_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_customer_id    ON reviews(customer_id);
+CREATE INDEX IF NOT EXISTS idx_sitter_availability_sitter ON sitter_availability(sitter_id);
+CREATE INDEX IF NOT EXISTS idx_match_events_request_group ON match_events(request_group);
+CREATE INDEX IF NOT EXISTS idx_match_events_customer_id   ON match_events(customer_id);
