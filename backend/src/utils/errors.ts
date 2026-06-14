@@ -12,6 +12,13 @@ export class BookingConflictError extends Error {
   }
 }
 
+export class BadRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BadRequestError';
+  }
+}
+
 /**
  * Returns extra error detail ONLY in non-production environments. In production
  * this is an empty object, so `error.message`/stack detail never reaches clients.

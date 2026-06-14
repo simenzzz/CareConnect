@@ -26,3 +26,32 @@ export const strictLimiter = rateLimit({
     message: 'Too many attempts, please wait a few minutes and try again.',
   },
 });
+
+/**
+ * Limiter for the per-booking suggestions endpoint. It is read-only but markedly
+ * more expensive than other GETs (full candidate scan + overlap subquery + three
+ * fan-out lookups + a match_events write per call), and it is an enumeration
+ * surface over the verified-sitter pool — so it gets its own tighter budget,
+ * looser than auth/payments but well below the general 300.
+ */
+export const suggestionsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many suggestion requests, please slow down.',
+  },
+});
+
+export const reviewsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many review requests, please slow down.',
+  },
+});

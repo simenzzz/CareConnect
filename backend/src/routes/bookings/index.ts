@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { query, withTransaction } from '../../config/database';
 import { verifyToken } from '../../middleware/auth';
 import type { AuthenticatedRequest } from '../../middleware/auth';
-import { errorDetails, BookingConflictError } from '../../utils/errors';
+import { errorDetails, BookingConflictError, BadRequestError } from '../../utils/errors';
 import { validateBody } from '../../middleware/validate';
 import { bookingCreateSchema, bookingUpdateSchema } from '../../validation/booking.schemas';
 import { BOOKING_STATUS, BOOKING_STATUS_UPDATABLE, PAYMENT_STATUS } from '../../constants/bookingStatus';
@@ -14,8 +14,13 @@ import {
   getSitterIdByUserId,
 } from '../../repositories/userRepository';
 import listRouter from './list';
+import suggestionsRouter from './suggestions';
 
 const router = express.Router();
+
+// Read-only matching suggestions (GET /api/bookings/suggestions). Mounted first so
+// its literal path is resolved before any future parameterized routes.
+router.use(suggestionsRouter);
 
 // POST /api/bookings - Create a new booking (customers only)
 router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
@@ -33,6 +38,7 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
       petId,
       childId,
       additionalNotes,
+      matchEventId,
       childrenIds,
       petIds
     } = req.body;
@@ -88,7 +94,7 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
     
     // Validate sitter exists and is active
     const sitterResult = await query(
-      'SELECT id FROM sitters WHERE id = $1 AND is_active = true AND is_verified = true',
+      'SELECT id, sitter_type FROM sitters WHERE id = $1 AND is_active = true AND is_verified = true',
       [sitterId]
     );
     
@@ -132,6 +138,13 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
     
     // Determine type of booking if not provided
     const bookingType = typeOfBooking || (petIdsArray.length > 0 ? 'PET' : 'CHILD');
+    const sitterType = sitterResult.rows[0].sitter_type as 'B' | 'P' | 'T';
+    const serviceMatches =
+      (bookingType === 'CHILD' && (sitterType === 'B' || sitterType === 'T')) ||
+      (bookingType === 'PET' && (sitterType === 'P' || sitterType === 'T'));
+    if (!serviceMatches) {
+      return res.status(400).json({ error: 'Sitter does not support this booking type' });
+    }
 
     // Create the booking + junction rows atomically. The whole unit runs in one
     // transaction so a failure mid-way can never leave an orphaned booking, and the
@@ -155,6 +168,25 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
 
       if (overlap.rows.length > 0) {
         throw new BookingConflictError();
+      }
+
+      if (matchEventId) {
+        const matchEvent = await client.query(
+          `SELECT id FROM match_events
+           WHERE id = $1
+             AND customer_id = $2
+             AND sitter_id = $3
+             AND location_id = $4
+             AND type_of_booking = $5
+             AND booking_from = $6
+             AND booking_to = $7
+             AND was_selected = FALSE
+           FOR UPDATE`,
+          [matchEventId, customerId, sitterId, locationId, bookingType, bookingFrom, bookingTo],
+        );
+        if (matchEvent.rows.length === 0) {
+          throw new BadRequestError('Invalid match event for this booking');
+        }
       }
 
       const bookingResult = await client.query(
@@ -196,6 +228,15 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
         );
       }
 
+      if (matchEventId) {
+        await client.query(
+          `UPDATE match_events
+           SET was_selected = TRUE, booking_id = $1
+           WHERE id = $2 AND customer_id = $3 AND sitter_id = $4`,
+          [booking.id, matchEventId, customerId, sitterId],
+        );
+      }
+
       return booking;
     });
 
@@ -224,8 +265,11 @@ router.post('/', verifyToken, validateBody(bookingCreateSchema), async (req: Aut
     });
     
   } catch (error) {
-    // 23P01 = exclusion_violation: the DB-level overlap constraint (migration 004)
+    // 23P01 = exclusion_violation: the DB-level overlap constraint (migrations/init.sql)
     // caught a double-booking that slipped past the app check under concurrency.
+    if (error instanceof BadRequestError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     if (error instanceof BookingConflictError || (error as { code?: string })?.code === '23P01') {
       return res.status(409).json({
         success: false,
@@ -274,8 +318,9 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
 
     // Get booking and verify ownership
     let bookingCheck;
+    let customerId: number | null = null;
     if (user.user_type === 'customer') {
-      const customerId = await getCustomerIdByUserId(user.id);
+      customerId = await getCustomerIdByUserId(user.id);
 
       if (customerId === null) {
         return res.status(404).json({ error: 'Customer profile not found' });
@@ -374,53 +419,68 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
       values.push(status);
     }
     
-    // Update booking if there are changes
+    // Apply the booking update and any child/pet association changes atomically, so
+    // a mid-way failure can never leave a booking with its old row updated but its
+    // junction rows half-rewritten (or wiped). Junction changes also re-verify
+    // ownership here — the same customer_id-scoped check the create path enforces —
+    // so a customer can't attach another customer's child/pet to their booking.
     let updatedBooking = existingBooking;
-    if (updates.length > 0) {
-      values.push(bookingId);
-      const updateQuery = `
-        UPDATE bookings
-        SET ${updates.join(', ')}
-        WHERE id = $${paramCount}
-        RETURNING *
-      `;
+    await withTransaction(async (client) => {
+      if (updates.length > 0) {
+        values.push(bookingId);
+        const updateQuery = `
+          UPDATE bookings
+          SET ${updates.join(', ')}
+          WHERE id = $${paramCount}
+          RETURNING *
+        `;
 
-      const updateResult = await query(updateQuery, values);
-      updatedBooking = updateResult.rows[0];
-    }
-    
-    // Update children if provided (only customers can do this)
-    if (childrenIds !== undefined && user.user_type === 'customer') {
-      // Remove existing children associations
-      await query('DELETE FROM booking_children WHERE booking_id = $1', [bookingId]);
-      
-      // Add new children associations
-      if (childrenIds.length > 0) {
-        for (const childId of childrenIds) {
-          await query(
-            'INSERT INTO booking_children (booking_id, child_id) VALUES ($1, $2)',
-            [bookingId, childId]
+        const updateResult = await client.query(updateQuery, values);
+        updatedBooking = updateResult.rows[0];
+      }
+
+      // Only customers can change child/pet associations.
+      if (childrenIds !== undefined && user.user_type === 'customer') {
+        if (childrenIds.length > 0) {
+          const ownership = await client.query(
+            'SELECT COUNT(*)::int AS count FROM children WHERE id = ANY($1) AND customer_id = $2 AND is_active = TRUE',
+            [childrenIds, customerId]
+          );
+          if (ownership.rows[0].count !== childrenIds.length) {
+            throw new BadRequestError('Some children do not belong to this customer or are inactive');
+          }
+        }
+        await client.query('DELETE FROM booking_children WHERE booking_id = $1', [bookingId]);
+        if (childrenIds.length > 0) {
+          const placeholders = childrenIds.map((_: number, i: number) => `($1, $${i + 2})`).join(', ');
+          await client.query(
+            `INSERT INTO booking_children (booking_id, child_id) VALUES ${placeholders}`,
+            [bookingId, ...childrenIds]
           );
         }
       }
-    }
-    
-    // Update pets if provided (only customers can do this)
-    if (petIds !== undefined && user.user_type === 'customer') {
-      // Remove existing pets associations
-      await query('DELETE FROM booking_pets WHERE booking_id = $1', [bookingId]);
-      
-      // Add new pets associations
-      if (petIds.length > 0) {
-        for (const petId of petIds) {
-          await query(
-            'INSERT INTO booking_pets (booking_id, pet_id) VALUES ($1, $2)',
-            [bookingId, petId]
+
+      if (petIds !== undefined && user.user_type === 'customer') {
+        if (petIds.length > 0) {
+          const ownership = await client.query(
+            'SELECT COUNT(*)::int AS count FROM pets WHERE id = ANY($1) AND customer_id = $2 AND is_active = TRUE',
+            [petIds, customerId]
+          );
+          if (ownership.rows[0].count !== petIds.length) {
+            throw new BadRequestError('Some pets do not belong to this customer or are inactive');
+          }
+        }
+        await client.query('DELETE FROM booking_pets WHERE booking_id = $1', [bookingId]);
+        if (petIds.length > 0) {
+          const placeholders = petIds.map((_: number, i: number) => `($1, $${i + 2})`).join(', ');
+          await client.query(
+            `INSERT INTO booking_pets (booking_id, pet_id) VALUES ${placeholders}`,
+            [bookingId, ...petIds]
           );
         }
       }
-    }
-    
+    });
+
     logger.info(`✅ Booking updated: ID ${bookingId}`);
     
     return res.json({
@@ -441,6 +501,17 @@ router.put('/:id', verifyToken, validateBody(bookingUpdateSchema), async (req: A
     });
     
   } catch (error) {
+    if (error instanceof BadRequestError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+    // 23P01 = exclusion_violation: moving the time window collided with the
+    // DB-level overlap constraint (a concurrent double-booking for this sitter).
+    if ((error as { code?: string })?.code === '23P01') {
+      return res.status(409).json({
+        success: false,
+        error: 'Sitter is already booked for an overlapping time slot'
+      });
+    }
     logger.error('❌ Error updating booking:', error);
     return res.status(500).json({
       success: false,

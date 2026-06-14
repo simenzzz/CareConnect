@@ -38,7 +38,7 @@ const makeApp = () => {
 };
 
 // Make every pre-insert ownership/existence check pass for a CHILD booking.
-const passAllPreChecks = () =>
+const passAllPreChecks = (sitterType: 'B' | 'P' | 'T' = 'B') =>
   queryMock.mockImplementation((text: string) => {
     if (text.includes('FROM users WHERE firebase_uid')) {
       return Promise.resolve({ rows: [{ id: 10, user_type: 'customer' }] });
@@ -47,7 +47,7 @@ const passAllPreChecks = () =>
       return Promise.resolve({ rows: [{ id: 20 }] });
     }
     if (text.includes('FROM sitters WHERE id = $1 AND is_active')) {
-      return Promise.resolve({ rows: [{ id: 3 }] });
+      return Promise.resolve({ rows: [{ id: 3, sitter_type: sitterType }] });
     }
     if (text.includes('FROM children WHERE id = ANY')) {
       return Promise.resolve({ rows: [{ count: '1' }] });
@@ -82,6 +82,12 @@ const transactionWithOverlap = (overlapRows: unknown[]) =>
         }
         if (text.includes('booking_from < $3')) {
           return Promise.resolve({ rows: overlapRows });
+        }
+        if (text.includes('FROM match_events')) {
+          return Promise.resolve({ rows: [{ id: 77 }] });
+        }
+        if (text.includes('UPDATE match_events')) {
+          return Promise.resolve({ rows: [] });
         }
         if (text.includes('INSERT INTO bookings')) {
           return Promise.resolve({
@@ -141,6 +147,17 @@ describe('Booking creation integrity (H4/H5)', () => {
     expect(withTransactionMock).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects a sitter whose service type does not match the booking type', async () => {
+    passAllPreChecks('P');
+    transactionWithOverlap([]);
+
+    const res = await request(makeApp()).post('/api/bookings').send(validBody);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/booking type/i);
+    expect(withTransactionMock).not.toHaveBeenCalled();
+  });
+
   it('excludes CANCELED bookings from the overlap check using the canonical spelling', async () => {
     // Guards against status-spelling drift: the overlap query must use the same
     // 'CANCELED' (single L) the update handler writes, or cancelled slots never free up.
@@ -153,5 +170,21 @@ describe('Booking creation integrity (H4/H5)', () => {
     expect(overlapSql).toBeDefined();
     expect(overlapSql).toContain("status <> 'CANCELED'");
     expect(overlapSql).not.toContain("'CANCELLED'");
+  });
+
+  it('marks a selected match event when a suggested sitter is booked', async () => {
+    passAllPreChecks();
+    transactionWithOverlap([]);
+
+    const res = await request(makeApp()).post('/api/bookings').send({ ...validBody, matchEventId: 77 });
+
+    expect(res.status).toBe(201);
+    const matchUpdate = capturedSql.find((sql) => sql.includes('UPDATE match_events'));
+    expect(matchUpdate).toContain('was_selected = TRUE');
+    expect(matchUpdate).toContain('booking_id = $1');
+    const matchSelect = capturedSql.find((sql) => sql.includes('FROM match_events'));
+    expect(matchSelect).toContain('location_id = $4');
+    expect(matchSelect).toContain('booking_from = $6');
+    expect(matchSelect).toContain('booking_to = $7');
   });
 });

@@ -24,7 +24,10 @@ vi.mock('../src/middleware/auth', () => ({
 const queryMock = vi.fn();
 vi.mock('../src/config/database', () => ({
   query: (...args: unknown[]) => queryMock(...args),
-  withTransaction: (...args: unknown[]) => Promise.resolve(),
+  // Run the callback against a client whose query() delegates to the same mock,
+  // so statements issued inside the transaction are observable/controllable.
+  withTransaction: (fn: (client: { query: (...a: unknown[]) => unknown }) => unknown) =>
+    Promise.resolve(fn({ query: (...args: unknown[]) => queryMock(...args) })),
 }));
 
 import bookingsRouter from '../src/routes/bookings';
@@ -99,5 +102,50 @@ describe('Booking price lock (R4)', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.booking.priceUsd).toBe(40);
+  });
+});
+
+describe('Booking association ownership on update', () => {
+  beforeEach(() => {
+    queryMock.mockReset();
+  });
+
+  // Resolve an authenticated customer owning booking 1234, where the child
+  // ownership COUNT comes back short (the requested child is not theirs).
+  const setupForeignChild = () =>
+    queryMock.mockImplementation((text: string) => {
+      if (text.includes('FROM users WHERE firebase_uid')) {
+        return Promise.resolve({ rows: [{ id: 10, user_type: 'customer' }] });
+      }
+      if (text.includes('FROM customers WHERE user_id')) {
+        return Promise.resolve({ rows: [{ id: 20 }] });
+      }
+      if (text.includes('SELECT * FROM bookings WHERE id')) {
+        return Promise.resolve({ rows: [BOOKING_ROW], rowCount: 1 });
+      }
+      if (text.includes('FROM payments')) {
+        return Promise.resolve({ rows: [] });
+      }
+      // Ownership probe: 0 of the requested children belong to this customer.
+      if (text.includes('FROM children') && text.includes('COUNT(*)')) {
+        return Promise.resolve({ rows: [{ count: 0 }] });
+      }
+      return Promise.resolve({ rows: [] });
+    });
+
+  it("rejects attaching a child that isn't the customer's (400) and writes nothing", async () => {
+    setupForeignChild();
+
+    const res = await request(makeApp()).put('/api/bookings/1234').send({ childrenIds: [999] });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/do not belong/i);
+    // The junction must NOT be rewritten when ownership fails.
+    const touchedJunction = queryMock.mock.calls.some(
+      ([text]) =>
+        typeof text === 'string' &&
+        (text.includes('DELETE FROM booking_children') || text.includes('INSERT INTO booking_children')),
+    );
+    expect(touchedJunction).toBe(false);
   });
 });

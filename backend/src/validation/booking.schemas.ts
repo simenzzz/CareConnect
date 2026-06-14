@@ -34,6 +34,7 @@ const baseBookingFields = {
   childId: id.optional(),
   childrenIds: idArray,
   petIds: idArray,
+  matchEventId: id.optional(),
   additionalNotes: z.string().trim().max(2000).optional(),
 };
 

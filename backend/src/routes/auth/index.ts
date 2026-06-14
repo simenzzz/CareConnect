@@ -2,15 +2,27 @@ import express from 'express';
 import { logger } from '../../utils/logger';
 import { verifyIdToken } from '../../config/firebase';
 import { query } from '../../config/database';
-import { errorDetails } from '../../utils/errors';
+import { errorDetails, BadRequestError } from '../../utils/errors';
 import { validateBody } from '../../middleware/validate';
 import { registerSchema, profileUpdateSchema } from '../../validation/auth.schemas';
 import { verifyToken, type AuthenticatedRequest } from '../../middleware/auth';
 import childrenRouter from './children';
 import petsRouter from './pets';
 import locationsRouter from './locations';
+import sitterAvailabilityRouter from './sitterAvailability';
 
 const router = express.Router();
+
+const optionalCoordinate = (value: unknown, min: number, max: number, field: string): number | null => {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < min || n > max) {
+    throw new BadRequestError(`${field} out of range`);
+  }
+  return n;
+};
 
 // Register new user
 router.post('/register', validateBody(registerSchema), async (req, res): Promise<express.Response> => {
@@ -95,20 +107,22 @@ router.post('/register', validateBody(registerSchema), async (req, res): Promise
           }
         }
       } else if (userType === 'sitter') {
-        const { fullName, dateOfBirth, area, city, phone, hoursPerWeek, sitterType, experience, description, skills, cvUrl, identityDocumentUrl } = profileData;
+        const { fullName, dateOfBirth, area, city, latitude, longitude, phone, hoursPerWeek, sitterType, experience, description, skills, cvUrl, identityDocumentUrl } = profileData;
 
         if (!fullName || !dateOfBirth || !area || !city || !phone || !hoursPerWeek || !sitterType) {
           throw new Error('Missing required sitter fields');
         }
 
         // sitterType should be 'B' (baby-sitter), 'P' (pet-sitter), or 'T' (both)
+        const sitterLatitude = optionalCoordinate(latitude, -90, 90, 'latitude');
+        const sitterLongitude = optionalCoordinate(longitude, -180, 180, 'longitude');
         const sitterResult = await query(
           `INSERT INTO sitters
-          (user_id, full_name, date_of_birth, area, city, phone, hours_per_week, sitter_type, experience, description, cv_url, identity_document_url, cv_uploaded_at, identity_document_uploaded_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          (user_id, full_name, date_of_birth, area, city, latitude, longitude, phone, hours_per_week, sitter_type, experience, description, cv_url, identity_document_url, cv_uploaded_at, identity_document_uploaded_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
           RETURNING id`,
           [
-            userId, fullName, dateOfBirth, area, city, phone, hoursPerWeek, sitterType, experience,
+            userId, fullName, dateOfBirth, area, city, sitterLatitude, sitterLongitude, phone, hoursPerWeek, sitterType, experience,
             description || null, cvUrl || null, identityDocumentUrl || null,
             cvUrl ? new Date() : null, identityDocumentUrl ? new Date() : null,
           ],
@@ -137,6 +151,9 @@ router.post('/register', validateBody(registerSchema), async (req, res): Promise
       throw error;
     }
   } catch (error) {
+    if (error instanceof BadRequestError) {
+      return res.status(400).json({ error: error.message });
+    }
     logger.error('Registration error:', error);
     return res.status(500).json({ error: 'Registration failed', ...errorDetails(error) });
   }
@@ -251,21 +268,26 @@ router.put('/profile', verifyToken, validateBody(profileUpdateSchema), async (re
         [fullName, phone, dateOfBirth, area, city, user.id],
       );
     } else if (user.user_type === 'sitter') {
-      const { full_name, fullName, age, date_of_birth, dateOfBirth, area, city, phone, hours_per_week, hoursPerWeek, sitter_type, sitterType, experience, description } = profileData;
+      const { full_name, fullName, age, date_of_birth, dateOfBirth, area, city, latitude, longitude, phone, hours_per_week, hoursPerWeek, sitter_type, sitterType, experience, description } = profileData;
 
       const finalFullName = full_name || fullName;
       const finalDateOfBirth = date_of_birth || dateOfBirth;
       const finalHoursPerWeek = hours_per_week || hoursPerWeek;
       const finalSitterType = sitter_type || sitterType;
+      const sitterLatitude = optionalCoordinate(latitude, -90, 90, 'latitude');
+      const sitterLongitude = optionalCoordinate(longitude, -180, 180, 'longitude');
 
       await query(
-        'UPDATE sitters SET full_name = $1, age = $2, date_of_birth = $3, area = $4, city = $5, phone = $6, hours_per_week = $7, sitter_type = $8, experience = $9, description = $10, updated_at = CURRENT_TIMESTAMP WHERE user_id = $11',
-        [finalFullName, age, finalDateOfBirth, area, city, phone, finalHoursPerWeek, finalSitterType, experience, description, user.id],
+        'UPDATE sitters SET full_name = $1, age = $2, date_of_birth = $3, area = $4, city = $5, latitude = COALESCE($6, latitude), longitude = COALESCE($7, longitude), phone = $8, hours_per_week = $9, sitter_type = $10, experience = $11, description = $12, updated_at = CURRENT_TIMESTAMP WHERE user_id = $13',
+        [finalFullName, age, finalDateOfBirth, area, city, sitterLatitude, sitterLongitude, phone, finalHoursPerWeek, finalSitterType, experience, description, user.id],
       );
     }
 
     return res.json({ message: 'Profile updated successfully' });
   } catch (error) {
+    if (error instanceof BadRequestError) {
+      return res.status(400).json({ error: error.message });
+    }
     logger.error('Profile update error:', error);
     return res.status(500).json({ error: 'Failed to update profile', ...errorDetails(error) });
   }
@@ -307,5 +329,6 @@ router.put('/sitter/documents', verifyToken, async (req: AuthenticatedRequest, r
 router.use(childrenRouter);
 router.use(petsRouter);
 router.use(locationsRouter);
+router.use(sitterAvailabilityRouter);
 
 export default router;

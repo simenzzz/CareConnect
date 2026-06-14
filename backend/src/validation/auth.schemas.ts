@@ -104,3 +104,24 @@ export const locationUpdateSchema = z.looseObject({
   postalCode: z.string().trim().max(20).optional(),
   isDefault: boolish,
 });
+
+const timeString = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'time must use HH:MM 24-hour format');
+
+export const sitterAvailabilitySchema = z.looseObject({
+  slots: z
+    .array(
+      z
+        .looseObject({
+          dayOfWeek: z.coerce.number().int().min(0).max(6),
+          startTime: timeString,
+          endTime: timeString,
+        })
+        .refine((slot) => slot.startTime < slot.endTime, {
+          message: 'endTime must be after startTime',
+          path: ['endTime'],
+        }),
+    )
+    .max(56, 'too many availability slots'),
+});

@@ -10,12 +10,13 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { initializeFirebase } from './config/firebase';
 import { connectDatabase } from './config/database';
-import { generalLimiter, strictLimiter } from './middleware/rateLimit';
+import { generalLimiter, strictLimiter, reviewsLimiter } from './middleware/rateLimit';
 import { errorDetails } from './utils/errors';
 import authRoutes from './routes/auth';
 import sittersRoutes from './routes/sitters';
 import bookingsRoutes from './routes/bookings';
 import paymentsRoutes from './routes/payments';
+import reviewsRoutes from './routes/reviews';
 
 // Validate configuration and fail fast before binding the server.
 const env = loadEnv();
@@ -44,6 +45,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', generalLimiter);
 app.use('/api/auth', strictLimiter);
 app.use('/api/payments', strictLimiter);
+app.use('/api/reviews', reviewsLimiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -59,6 +61,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sitters', sittersRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 // 404 handler
 app.use((req, res) => {

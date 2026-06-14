@@ -123,6 +123,7 @@ Create a new booking (customers only).
   "paymentMethod": "Credit Card",
   "priceUsd": 150.00,
   "discount": 0.10,
+  "matchEventId": 321,
   "childrenIds": [1, 2],
   "petIds": [3]
 }
@@ -138,6 +139,8 @@ Create a new booking (customers only).
 **Optional Fields:**
 - `paymentMethod`: Payment method (default: null)
 - `discount`: Discount ratio from 0 to 1 (default: 0)
+- `matchEventId`: suggestion impression id returned by `/api/bookings/suggestions`;
+  when valid, it is marked selected and linked to the created booking
 
 **Response:**
 ```json
@@ -268,6 +271,108 @@ Delete/cancel a booking (UPCOMING bookings only).
 
 ---
 
+### 6. GET `/api/bookings/suggestions`
+
+Return a **ranked shortlist of sitters** matched to a specific booking request. The
+ranking is deterministic (no ML): a weighted, explainable score combining proximity,
+rating, experience, needs-fit, and availability. See
+`src/services/matching/` for the engine and `weights.ts` for the tunable weights.
+
+**Authentication:** Required (customers only)
+
+**Query parameters:**
+- `typeOfBooking` (required): `PET` or `CHILD`
+- `locationId` (required): a location belonging to the authenticated customer
+- `bookingFrom`, `bookingTo` (required): ISO datetimes; `bookingTo` must be after `bookingFrom`
+- `limit` (optional): 1–50, default 10
+
+The customer (and the location/care-needs referenced) is resolved from the verified
+token — `locationId` is validated against the caller's own locations and never trusted
+for authorization.
+
+**Hard filters (a sitter must pass all to be a candidate):**
+- `is_active = true AND is_verified = true`
+- `sitter_type` matches the booking type (`CHILD` → `B`/`T`, `PET` → `P`/`T`)
+- not already booked for any time overlapping `[bookingFrom, bookingTo)`
+- within the configured max radius of the location (only when both have coordinates)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "fullName": "Nearby Proven",
+      "area": "Beirut",
+      "city": "Hamra",
+      "hoursPerWeek": 30,
+      "sitterType": "B",
+      "description": null,
+      "rating": 4.8,
+      "experience": null,
+      "skills": ["First Aid"],
+      "createdAt": "2026-01-01T00:00:00Z",
+      "matchScore": 0.83,
+      "matchReasons": ["About 0.0 km away", "Rated 4.8★ across 30 reviews"],
+      "matchEventId": 321
+    }
+  ],
+  "meta": { "typeOfBooking": "CHILD", "count": 1 }
+}
+```
+
+Contact PII (phone) is never included. `matchScore` is in `[0,1]`; `matchReasons` are the
+top contributing factors for the "why this match" explanation. `matchEventId` is
+best-effort and may be absent if impression logging fails; pass it to booking creation
+when present.
+
+**Error Responses:**
+- `400`: invalid query, or location does not belong to the customer
+- `403`: caller is not a customer
+- `404`: user or customer profile not found
+
+---
+
+### 7. Review write API
+
+Base path: `/api/reviews`
+
+Customers can review only their own `COMPLETED` bookings. The backend resolves the
+customer from the Firebase token and recomputes the sitter's `rating` and
+`review_count` in the same transaction.
+
+**Create:**
+```http
+POST /api/reviews
+```
+
+```json
+{
+  "bookingId": 123,
+  "rating": 5,
+  "comment": "Great care and communication."
+}
+```
+
+**Update:**
+```http
+PUT /api/reviews/123
+```
+
+```json
+{
+  "rating": 4,
+  "comment": "Updated note."
+}
+```
+
+Errors: `400` for non-completed bookings or validation, `403` for non-customers,
+`404` when the booking/review is not token-scoped to the customer, and `409` when
+creating a duplicate review for the same booking.
+
+---
+
 ## Database Schema
 
 ### bookings table
@@ -337,4 +442,3 @@ curl -X GET http://localhost:5000/api/bookings \
 curl -X DELETE http://localhost:5000/api/bookings/1 \
   -H "Authorization: Bearer <firebase-token>"
 ```
-
