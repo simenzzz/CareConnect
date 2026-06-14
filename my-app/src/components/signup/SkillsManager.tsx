@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type React from 'react'
+import { Star, Plus, X } from 'lucide-react'
 
 interface SkillsManagerProps {
   skills: string[]
@@ -34,7 +35,7 @@ function SkillsManager({ skills, onAdd, onRemove, error }: SkillsManagerProps) {
 
       <div className="skills-input-container">
         <div className="input-group">
-          <i className="fas fa-star"></i>
+          <Star size={18} />
           <input
             type="text"
             value={newSkill}
@@ -43,8 +44,8 @@ function SkillsManager({ skills, onAdd, onRemove, error }: SkillsManagerProps) {
             placeholder="Type a skill and press Enter or click +"
             maxLength={50}
           />
-          <button type="button" className="btn-add-skill" onClick={addSkill} disabled={!newSkill.trim()}>
-            <i className="fas fa-plus"></i>
+          <button type="button" className="btn-add-skill" onClick={addSkill} disabled={!newSkill.trim()} aria-label="Add skill">
+            <Plus size={20} />
           </button>
         </div>
       </div>
@@ -54,8 +55,8 @@ function SkillsManager({ skills, onAdd, onRemove, error }: SkillsManagerProps) {
           {skills.map((skill, index) => (
             <div key={index} className="skill-tag">
               <span>{skill}</span>
-              <button type="button" onClick={() => onRemove(skill)} className="btn-remove-skill">
-                <i className="fas fa-times"></i>
+              <button type="button" onClick={() => onRemove(skill)} className="btn-remove-skill" aria-label={`Remove ${skill}`}>
+                <X size={14} />
               </button>
             </div>
           ))}

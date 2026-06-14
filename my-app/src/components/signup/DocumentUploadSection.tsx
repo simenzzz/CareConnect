@@ -1,4 +1,5 @@
 import type React from 'react'
+import { CircleCheck, FileText, IdCard } from 'lucide-react'
 
 interface DocumentUploadSectionProps {
   cv: File | null
@@ -39,13 +40,13 @@ function DocumentUploadSection({
           <label htmlFor="cv" className="file-upload-label">
             {cv ? (
               <>
-                <i className="fas fa-check-circle" style={{ color: '#2ecc71' }}></i>
-                <span className="file-text">File Selected</span>
+                <CircleCheck size={28} />
+                <span className="file-text">File selected</span>
                 <span className="file-info">{cv.name}</span>
               </>
             ) : (
               <>
-                <i className="fas fa-file-pdf"></i>
+                <FileText size={28} />
                 <span className="file-text">Choose CV file</span>
                 <span className="file-info">PDF format only (Max 5MB)</span>
               </>
@@ -70,14 +71,14 @@ function DocumentUploadSection({
           <label htmlFor="identityDocument" className="file-upload-label">
             {identityDocument ? (
               <>
-                <i className="fas fa-check-circle" style={{ color: '#2ecc71' }}></i>
-                <span className="file-text">File Selected</span>
+                <CircleCheck size={28} />
+                <span className="file-text">File selected</span>
                 <span className="file-info">{identityDocument.name}</span>
               </>
             ) : (
               <>
-                <i className="fas fa-id-card"></i>
-                <span className="file-text">Choose Identity Document</span>
+                <IdCard size={28} />
+                <span className="file-text">Choose identity document</span>
                 <span className="file-info">PDF, JPG, PNG formats accepted (Max 10MB)</span>
               </>
             )}

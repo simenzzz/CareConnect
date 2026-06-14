@@ -14,6 +14,12 @@ export interface Sitter {
   createdAt: string;
 }
 
+export interface SitterSuggestion extends Sitter {
+  matchScore: number;
+  matchReasons: string[];
+  matchEventId?: number;
+}
+
 interface SittersData {
   petSitters: Sitter[];
   babySitters: Sitter[];
@@ -54,6 +60,32 @@ class SittersService {
       return { success: true, data: result.data, message: result.message };
     } catch (error) {
       return toError(error, 'Failed to search sitters');
+    }
+  }
+
+  async fetchSuggestions(params: {
+    typeOfBooking: 'PET' | 'CHILD';
+    locationId: number;
+    bookingFrom: string;
+    bookingTo: string;
+    childrenIds?: number[];
+    petIds?: number[];
+    limit?: number;
+  }): Promise<{ success: boolean; data?: SitterSuggestion[]; error?: string }> {
+    try {
+      const search = new URLSearchParams({
+        typeOfBooking: params.typeOfBooking,
+        locationId: String(params.locationId),
+        bookingFrom: params.bookingFrom,
+        bookingTo: params.bookingTo,
+        limit: String(params.limit ?? 10),
+      });
+      if (params.childrenIds?.length) search.set('childrenIds', params.childrenIds.join(','));
+      if (params.petIds?.length) search.set('petIds', params.petIds.join(','));
+      const result = await apiRequest<{ data: SitterSuggestion[] }>(`/bookings/suggestions?${search.toString()}`);
+      return { success: true, data: result.data };
+    } catch (error) {
+      return toError(error, 'Failed to fetch suggestions');
     }
   }
 }

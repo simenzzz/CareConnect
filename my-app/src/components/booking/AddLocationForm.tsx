@@ -1,4 +1,19 @@
 import type React from 'react'
+import {
+  X,
+  Search,
+  Map,
+  Info,
+  Tag,
+  Signpost,
+  Route,
+  Building2,
+  Layers,
+  Building,
+  Mails,
+  Check,
+  LoaderCircle,
+} from 'lucide-react'
 
 export interface LocationFormData {
   location_name: string
@@ -38,42 +53,32 @@ function AddLocationForm({
     <div className="add-entity-form">
       <div className="add-entity-header">
         <h3>Add Location</h3>
-        <button type="button" onClick={onClose} className="btn-close-add">
-          <i className="fas fa-times"></i>
+        <button type="button" onClick={onClose} className="btn-close-add" aria-label="Close">
+          <X size={18} />
         </button>
       </div>
 
       {/* Search Location */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3e50' }}>
-          <i className="fas fa-search" style={{ marginRight: '8px', color: '#667eea' }}></i>
+      <div className="form-group">
+        <label>
+          <Search size={16} />
           Search Location
         </label>
         <div className="input-group">
-          <i className="fas fa-search"></i>
-          <input ref={searchInputRef} type="text" placeholder="Search for a location in Lebanon..." style={{ width: '100%' }} />
+          <Search size={18} />
+          <input ref={searchInputRef} type="text" placeholder="Search for a location in Lebanon..." />
         </div>
       </div>
 
       {/* Google Map */}
       <div className="form-group">
         <label>
-          <i className="fas fa-map"></i>
+          <Map size={16} />
           Select on Map
         </label>
-        <div
-          ref={mapRef}
-          style={{
-            width: '100%',
-            height: '250px',
-            borderRadius: '8px',
-            border: '2px solid #ecf0f1',
-            marginBottom: '10px',
-            backgroundColor: '#f5f5f5',
-          }}
-        />
-        <p style={{ fontSize: '0.85rem', color: '#7f8c8d', marginTop: '5px' }}>
-          <i className="fas fa-info-circle" style={{ marginRight: '5px' }}></i>
+        <div ref={mapRef} className="location-map" />
+        <p className="location-map__hint">
+          <Info size={14} />
           Click on the map or drag the marker
         </p>
       </div>
@@ -81,7 +86,7 @@ function AddLocationForm({
       {/* Location Name */}
       <div className="form-group">
         <label>
-          <i className="fas fa-tag"></i>
+          <Tag size={16} />
           Location Name *
         </label>
         <input
@@ -97,7 +102,7 @@ function AddLocationForm({
       <div className="form-row">
         <div className="form-group">
           <label>
-            <i className="fas fa-map-signs"></i>
+            <Signpost size={16} />
             Address Name
           </label>
           <input
@@ -110,7 +115,7 @@ function AddLocationForm({
 
         <div className="form-group">
           <label>
-            <i className="fas fa-road"></i>
+            <Route size={16} />
             Street Name
           </label>
           <input
@@ -126,7 +131,7 @@ function AddLocationForm({
       <div className="form-row">
         <div className="form-group">
           <label>
-            <i className="fas fa-building"></i>
+            <Building2 size={16} />
             Building
           </label>
           <input
@@ -139,7 +144,7 @@ function AddLocationForm({
 
         <div className="form-group">
           <label>
-            <i className="fas fa-layer-group"></i>
+            <Layers size={16} />
             Floor
           </label>
           <input
@@ -155,7 +160,7 @@ function AddLocationForm({
       <div className="form-row">
         <div className="form-group">
           <label>
-            <i className="fas fa-map"></i>
+            <Map size={16} />
             Area *
           </label>
           <input
@@ -169,7 +174,7 @@ function AddLocationForm({
 
         <div className="form-group">
           <label>
-            <i className="fas fa-city"></i>
+            <Building size={16} />
             City *
           </label>
           <input
@@ -185,7 +190,7 @@ function AddLocationForm({
       {/* Postal Code */}
       <div className="form-group">
         <label>
-          <i className="fas fa-mail-bulk"></i>
+          <Mails size={16} />
           Postal Code
         </label>
         <input
@@ -197,22 +202,21 @@ function AddLocationForm({
       </div>
 
       {/* Save Button */}
-      <div className="form-actions" style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+      <div className="add-entity-actions add-entity-actions--center">
         <button
           type="button"
           onClick={onSave}
-          className="btn-save-entity"
-          style={{ backgroundColor: '#27ae60', borderColor: '#27ae60', padding: '12px 40px', fontSize: '1rem', fontWeight: 600 }}
+          className="btn-save-add"
           disabled={isSavingLocation}
         >
           {isSavingLocation ? (
             <>
-              <i className="fas fa-spinner fa-spin"></i>
+              <LoaderCircle size={18} className="spin" />
               Saving...
             </>
           ) : (
             <>
-              <i className="fas fa-check"></i>
+              <Check size={18} />
               Add Location
             </>
           )}

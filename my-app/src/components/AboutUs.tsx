@@ -1,42 +1,44 @@
 import React from 'react'
+import { Users } from 'lucide-react'
+import SectionLabel from './ui/SectionLabel'
 import './AboutUs.css'
 
 const AboutUs: React.FC = () => {
   return (
-    <section id="about" className="about-us">
+    <section className="about-us">
       <div className="container">
         <div className="about-content">
           <div className="about-text">
-            <h2>About CareConnect</h2>
+            <SectionLabel>Our story</SectionLabel>
+            <h2>Care, the way it should feel</h2>
             <p>
-              CareConnect is a trusted platform that connects families with experienced, 
-              verified caregivers for their children and pets. We understand that finding 
-              the right care for your loved ones is one of the most important decisions 
-              you'll make.
+              CareConnect connects Lebanese families with experienced, verified
+              caregivers for their children and pets. Finding the right care is one of
+              the most important decisions you make — we treat it that way.
             </p>
             <p>
-              Our mission is to provide a safe, reliable, and convenient way for families 
-              to find qualified sitters while giving caregivers the opportunity to build 
-              meaningful relationships with the families they serve.
+              Our mission is a safe, reliable and convenient way for families to find
+              qualified sitters, while giving caregivers the chance to build meaningful
+              relationships with the families they serve.
             </p>
             <div className="about-stats">
               <div className="stat">
                 <h3>500+</h3>
-                <p>Verified Sitters</p>
+                <p>Verified sitters</p>
               </div>
               <div className="stat">
                 <h3>1,000+</h3>
-                <p>Happy Families</p>
+                <p>Happy families</p>
               </div>
               <div className="stat">
                 <h3>5,000+</h3>
-                <p>Successful Bookings</p>
+                <p>Bookings made</p>
               </div>
             </div>
           </div>
           <div className="about-image">
             <div className="about-placeholder">
-              <i className="fas fa-users"></i>
+              <Users size={72} strokeWidth={1.25} />
             </div>
           </div>
         </div>

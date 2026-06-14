@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { logger } from '../utils/logger';
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { PawPrint, Baby, Search, Map, MapPin, X, LoaderCircle, CircleAlert, WandSparkles } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import Footer from '../components/Footer'
 import PetSitterCard from '../components/PetSitterCard'
@@ -84,7 +85,7 @@ const SittersPage: React.FC = () => {
       <main className="sitters-main">
         <div className="sitters-hero">
           <div className="container">
-            <h1>Find Your Perfect Sitter</h1>
+            <h1>Find your perfect sitter</h1>
             <p>Browse our verified sitters and find the perfect match for your family</p>
           </div>
         </div>
@@ -92,18 +93,18 @@ const SittersPage: React.FC = () => {
         <div className="sitters-tabs">
           <div className="container">
             <div className="tabs-container">
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'pet' ? 'active' : ''}`}
                 onClick={() => setActiveTab('pet')}
               >
-                <i className="fas fa-paw"></i>
+                <PawPrint size={18} />
                 Pet Sitters
               </button>
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'baby' ? 'active' : ''}`}
                 onClick={() => setActiveTab('baby')}
               >
-                <i className="fas fa-baby"></i>
+                <Baby size={18} />
                 Baby Sitters
               </button>
             </div>
@@ -115,7 +116,7 @@ const SittersPage: React.FC = () => {
             <div className="filters-container">
               <div className="filter-group">
                 <label htmlFor="search-name">
-                  <i className="fas fa-search"></i>
+                  <Search size={16} />
                   Search by Name
                 </label>
                 <input
@@ -129,7 +130,7 @@ const SittersPage: React.FC = () => {
 
               <div className="filter-group">
                 <label htmlFor="search-area">
-                  <i className="fas fa-map"></i>
+                  <Map size={16} />
                   Area
                 </label>
                 <input
@@ -143,7 +144,7 @@ const SittersPage: React.FC = () => {
 
               <div className="filter-group">
                 <label htmlFor="search-city">
-                  <i className="fas fa-map-marker-alt"></i>
+                  <MapPin size={16} />
                   Location
                 </label>
                 <input
@@ -156,7 +157,7 @@ const SittersPage: React.FC = () => {
               </div>
 
               {(searchName || searchArea || searchCity) && (
-                <button 
+                <button
                   className="clear-filters-btn"
                   onClick={() => {
                     setSearchName('')
@@ -164,7 +165,7 @@ const SittersPage: React.FC = () => {
                     setSearchCity('')
                   }}
                 >
-                  <i className="fas fa-times"></i>
+                  <X size={16} />
                   Clear Filters
                 </button>
               )}
@@ -177,7 +178,7 @@ const SittersPage: React.FC = () => {
             {/* Loading State */}
             {isLoading && (
               <div className="loading-state">
-                <i className="fas fa-spinner fa-spin"></i>
+                <LoaderCircle size={32} className="spin" />
                 <p>Loading sitters...</p>
               </div>
             )}
@@ -185,7 +186,7 @@ const SittersPage: React.FC = () => {
             {/* Error State */}
             {error && !isLoading && (
               <div className="error-state">
-                <i className="fas fa-exclamation-circle"></i>
+                <CircleAlert size={32} />
                 <p>{error}</p>
               </div>
             )}
@@ -204,6 +205,10 @@ const SittersPage: React.FC = () => {
                       : 'Experienced childcare providers ready to care for your little ones'
                     }
                   </p>
+                  <Link to="/smart-match" className="smart-match-link">
+                    <WandSparkles size={18} />
+                    Find a sitter for a booking
+                  </Link>
                 </div>
                 
                 <div className="sitters-grid">

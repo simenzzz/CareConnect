@@ -1,4 +1,22 @@
 import React from 'react'
+import {
+  Baby,
+  PawPrint,
+  Check,
+  CirclePlus,
+  X,
+  Tag,
+  Dog,
+  Calendar,
+  Smile,
+  ClipboardList,
+  BriefcaseMedical,
+  User,
+  Cake,
+  Heart,
+  School,
+  LoaderCircle,
+} from 'lucide-react'
 
 export interface Child {
   id: number
@@ -93,85 +111,38 @@ const EntitySection: React.FC<EntitySectionProps> = ({
     return (
       <div className="form-group">
         <label>
-          <i className={`fas fa-${sitterType === 'baby' ? 'baby' : 'paw'}`}></i>
+          {sitterType === 'baby' ? <Baby size={16} /> : <PawPrint size={16} />}
           Select Your {entityLabel}(s) *
         </label>
-        <div style={{
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          padding: '10px',
-          maxHeight: '200px',
-          overflowY: 'auto',
-          backgroundColor: '#f9f9f9'
-        }}>
+        <div className="entity-list">
           {availableItems.length > 0 ? (
             availableItems.map((item) => (
               <label
                 key={item.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '8px',
-                  cursor: 'pointer',
-                  borderRadius: '4px',
-                  transition: 'background 0.2s',
-                  backgroundColor: selectedEntityIds.includes(item.id) ? '#e8f4f8' : 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  if (!selectedEntityIds.includes(item.id)) {
-                    e.currentTarget.style.backgroundColor = '#f0f0f0'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!selectedEntityIds.includes(item.id)) {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                  }
-                }}
+                className={`entity-option ${selectedEntityIds.includes(item.id) ? 'selected' : ''}`}
               >
                 <input
                   type="checkbox"
                   checked={selectedEntityIds.includes(item.id)}
                   onChange={() => onToggleSelect(item.id)}
-                  style={{ marginRight: '10px', cursor: 'pointer', width: '18px', height: '18px' }}
                   disabled={isLoadingData}
                 />
-                <span style={{ flex: 1 }}>
+                <span className="entity-option__text">
                   {getEntityDisplayText(item)}
                 </span>
                 {selectedEntityIds.includes(item.id) && (
-                  <i className="fas fa-check" style={{ color: '#667eea', marginLeft: '8px' }}></i>
+                  <Check size={16} className="entity-option__check" />
                 )}
               </label>
             ))
           ) : (
-            <p style={{ textAlign: 'center', color: '#999', padding: '10px' }}>
+            <p className="entity-empty">
               No {entityLabel.toLowerCase()}s available
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onAddClick}
-          style={{
-            marginTop: '10px',
-            padding: '8px 16px',
-            border: '2px dashed #667eea',
-            background: 'white',
-            color: '#667eea',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            width: '100%',
-            fontWeight: 600,
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f0f0ff'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'white'
-          }}
-        >
-          <i className="fas fa-plus-circle"></i> Add a {entityLabel}
+        <button type="button" onClick={onAddClick} className="btn-add-entity">
+          <CirclePlus size={18} /> Add a {entityLabel}
         </button>
       </div>
     )
@@ -185,8 +156,9 @@ const EntitySection: React.FC<EntitySectionProps> = ({
           type="button"
           onClick={onCancelAdd}
           className="btn-close-add"
+          aria-label="Close"
         >
-          <i className="fas fa-times"></i>
+          <X size={18} />
         </button>
       </div>
 
@@ -195,7 +167,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
         <>
           <div className="form-group">
             <label>
-              <i className="fas fa-tag"></i>
+              <Tag size={16} />
               Pet Name *
             </label>
             <input
@@ -210,7 +182,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
           <div className="form-row">
             <div className="form-group">
               <label>
-                <i className="fas fa-paw"></i>
+                <PawPrint size={16} />
                 Pet Type *
               </label>
               <div className="pet-type-grid">
@@ -231,7 +203,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
           <div className="form-row">
             <div className="form-group">
               <label>
-                <i className="fas fa-dog"></i>
+                <Dog size={16} />
                 Breed
               </label>
               <input
@@ -244,7 +216,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
             <div className="form-group">
               <label>
-                <i className="fas fa-calendar"></i>
+                <Calendar size={16} />
                 Age
               </label>
               <input
@@ -259,7 +231,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
           <div className="form-group">
             <label>
-              <i className="fas fa-smile"></i>
+              <Smile size={16} />
               Personality
             </label>
             <textarea
@@ -272,7 +244,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
           <div className="form-group">
             <label>
-              <i className="fas fa-clipboard-list"></i>
+              <ClipboardList size={16} />
               Care Instructions
             </label>
             <textarea
@@ -285,7 +257,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
           <div className="form-group">
             <label>
-              <i className="fas fa-medkit"></i>
+              <BriefcaseMedical size={16} />
               Special Needs / Medical Conditions
             </label>
             <textarea
@@ -301,7 +273,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
         <>
           <div className="form-group">
             <label>
-              <i className="fas fa-user"></i>
+              <User size={16} />
               Child's Name *
             </label>
             <input
@@ -315,7 +287,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
           <div className="form-group">
             <label>
-              <i className="fas fa-birthday-cake"></i>
+              <Cake size={16} />
               Age *
             </label>
             <input
@@ -331,7 +303,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
           <div className="form-group">
             <label>
-              <i className="fas fa-heart"></i>
+              <Heart size={16} />
               Hobbies & Interests
             </label>
             <textarea
@@ -344,7 +316,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
           <div className="form-group">
             <label>
-              <i className="fas fa-school"></i>
+              <School size={16} />
               School Schedule *
             </label>
             <div className="checkbox-group">
@@ -356,7 +328,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
                 >
                   <div className="checkbox-content">
                     <div className="checkmark">
-                      {entityFormData.schoolType === schedule && <i className="fas fa-check"></i>}
+                      {entityFormData.schoolType === schedule && <Check size={14} />}
                     </div>
                     <span>{schedule}</span>
                   </div>
@@ -367,7 +339,7 @@ const EntitySection: React.FC<EntitySectionProps> = ({
 
           <div className="form-group">
             <label>
-              <i className="fas fa-medkit"></i>
+              <BriefcaseMedical size={16} />
               Special Needs / Medical Conditions
             </label>
             <textarea
@@ -397,12 +369,12 @@ const EntitySection: React.FC<EntitySectionProps> = ({
         >
           {isSavingEntity ? (
             <>
-              <i className="fas fa-spinner fa-spin"></i>
+              <LoaderCircle size={18} className="spin" />
               Saving...
             </>
           ) : (
             <>
-              <i className="fas fa-check"></i>
+              <Check size={18} />
               Save {entityLabel}
             </>
           )}

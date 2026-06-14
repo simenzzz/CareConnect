@@ -1,0 +1,93 @@
+.hearth-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.hearth-field__label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hearth-field__req {
+  color: var(--terracotta);
+}
+
+.hearth-field__hint {
+  font-size: var(--fs-xs);
+  color: var(--ink-faint);
+}
+
+.hearth-field__error {
+  font-size: var(--fs-xs);
+  color: var(--error);
+  font-weight: 500;
+}
+
+/* ---- Controls ---- */
+.hearth-input {
+  width: 100%;
+  padding: 13px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast),
+    background var(--t-fast);
+  font-family: var(--font-body);
+}
+
+.hearth-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.hearth-input:focus {
+  outline: none;
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px var(--terracotta-tint);
+  background: var(--surface-2);
+}
+
+.hearth-field--error .hearth-input {
+  border-color: var(--error);
+}
+
+.hearth-input--select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%234a4239' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 5 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 42px;
+  cursor: pointer;
+}
+
+.hearth-input--area {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* ---- Leading icon adornment ---- */
+.hearth-affix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.hearth-affix__icon {
+  position: absolute;
+  left: 15px;
+  display: inline-flex;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.hearth-affix .hearth-input {
+  padding-left: 44px;
+}

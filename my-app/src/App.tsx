@@ -8,6 +8,7 @@ import CustomerLoginPage from './pages/CustomerLoginPage'
 import SignupPage from './pages/SignupPage'
 import CustomerSignupPage from './pages/CustomerSignupPage'
 import SittersPage from './pages/SittersPage'
+import SmartMatchPage from './pages/SmartMatchPage'
 import PortalPage from './pages/PortalPage'
 import UserPortalPage from './pages/UserPortalPage'
 import SitterPortalPage from './pages/SitterPortalPage'
@@ -26,6 +27,14 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/customer-signup" element={<CustomerSignupPage />} />
             <Route path="/sitters" element={<SittersPage />} />
+            <Route
+              path="/smart-match"
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <SmartMatchPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/portal" element={<PortalPage />} />
             <Route
               path="/user-portal"

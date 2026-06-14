@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Home, UserRound, Eye, EyeOff, CircleAlert, Check } from 'lucide-react'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
+import Button from '../components/ui/Button'
+import { GoogleIcon, FacebookIcon } from '../components/ui/icons'
 import { authService } from '../services/authService'
 import './AuthPage.css'
 
@@ -88,36 +91,28 @@ const CustomerLoginPage: React.FC = () => {
           <div className="auth-form-container">
             <div className="login-type-tabs">
               <Link to="/customer-login" className="tab-link active">
-                <i className="fas fa-home"></i>
+                <Home size={16} />
                 Customer
               </Link>
               <Link to="/login" className="tab-link">
-                <i className="fas fa-user-tie"></i>
+                <UserRound size={16} />
                 Sitter
               </Link>
             </div>
 
             <div className="auth-header">
-              <h1>Welcome Back</h1>
+              <h1>Welcome back</h1>
               <p>Sign in to your customer account</p>
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
               {errors.general && (
-                <div className="error-message" style={{ 
-                  display: 'block', 
-                  marginBottom: '20px', 
-                  padding: '12px', 
-                  background: '#fee', 
-                  border: '1px solid #fcc', 
-                  borderRadius: '8px',
-                  color: '#c33'
-                }}>
-                  <i className="fas fa-exclamation-circle" style={{ marginRight: '8px' }}></i>
-                  {errors.general}
+                <div className="general-error">
+                  <CircleAlert size={18} />
+                  <span>{errors.general}</span>
                 </div>
               )}
-              
+
               <div className="form-group">
                 <label htmlFor="customerEmail">Email Address</label>
                 <input
@@ -148,8 +143,9 @@ const CustomerLoginPage: React.FC = () => {
                     type="button"
                     className="password-toggle"
                     onClick={togglePassword}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {errors.customerPassword && <span className="error-message">{errors.customerPassword}</span>}
@@ -157,25 +153,21 @@ const CustomerLoginPage: React.FC = () => {
 
               <div className="form-options">
                 <label className="checkbox-container">
-                  <input 
-                    type="checkbox" 
-                    id="rememberMe" 
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
                     name="rememberMe"
                     checked={formData.rememberMe}
                     onChange={handleInputChange}
                   />
-                  <span className="checkmark"></span>
                   Remember me
                 </label>
-                <a href="#" className="forgot-password">Forgot Password?</a>
+                <a href="#" className="forgot-password">Forgot password?</a>
               </div>
 
-              <button type="submit" className="btn-auth" disabled={isLoading}>
-                <span className="btn-text">Sign In</span>
-                <div className="btn-loader" style={{ display: isLoading ? 'block' : 'none' }}>
-                  <i className="fas fa-spinner fa-spin"></i>
-                </div>
-              </button>
+              <Button type="submit" loading={isLoading} fullWidth>
+                Sign in
+              </Button>
             </form>
 
             <div className="auth-divider">
@@ -183,12 +175,12 @@ const CustomerLoginPage: React.FC = () => {
             </div>
 
             <div className="social-login">
-              <button className="social-btn google-btn">
-                <i className="fab fa-google"></i>
+              <button type="button" className="social-btn google-btn">
+                <GoogleIcon size={18} />
                 Continue with Google
               </button>
-              <button className="social-btn facebook-btn">
-                <i className="fab fa-facebook-f"></i>
+              <button type="button" className="social-btn facebook-btn">
+                <FacebookIcon size={18} />
                 Continue with Facebook
               </button>
             </div>
@@ -201,13 +193,13 @@ const CustomerLoginPage: React.FC = () => {
 
           <div className="auth-side">
             <div className="auth-side-content">
-              <h2>Find Trusted Care</h2>
-              <p>Connect with experienced sitters for your family's needs</p>
+              <h2>Find trusted care</h2>
+              <p>Connect with experienced, vetted sitters for your family's needs.</p>
               <ul>
-                <li>✓ Verified sitters</li>
-                <li>✓ Flexible scheduling</li>
-                <li>✓ Safe & secure</li>
-                <li>✓ 24/7 support</li>
+                <li><Check size={18} /> Verified sitters</li>
+                <li><Check size={18} /> Flexible scheduling</li>
+                <li><Check size={18} /> Safe &amp; secure</li>
+                <li><Check size={18} /> 24/7 support</li>
               </ul>
             </div>
           </div>

@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import {
+  Heart,
+  User,
+  Baby,
+  PawPrint,
+  MapPin,
+  CalendarCheck,
+  CreditCard,
+  Wallet,
+  LogOut,
+} from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import './Header.css'
 
@@ -39,13 +50,13 @@ const Header: React.FC = () => {
           <Link to="/">
             <div className="logo-container">
               <div className="logo-icon">
-                <i className="fas fa-heart"></i>
+                <Heart size={18} fill="currentColor" strokeWidth={0} />
               </div>
               <h1>CareConnect</h1>
             </div>
           </Link>
         </div>
-        
+
         <nav className="nav">
           <ul className="nav-list">
             <li><Link to="/">Home</Link></li>
@@ -54,111 +65,114 @@ const Header: React.FC = () => {
             <li><a href="#faq">FAQ</a></li>
             {isLoggedIn ? (
               <li className="user-menu" ref={dropdownRef}>
-                <div 
-                  className="user-icon-link" 
+                <button
+                  type="button"
+                  className="user-icon-link"
                   onClick={() => setShowDropdown(!showDropdown)}
+                  aria-label="Account menu"
+                  aria-expanded={showDropdown}
                 >
                   <div className="user-icon">
-                    <i className="fas fa-user-circle"></i>
+                    <User size={20} />
                   </div>
-                </div>
-                
+                </button>
+
                 {showDropdown && (
                   <div className="user-dropdown">
                     {userType === 'customer' ? (
                       <>
-                        <Link 
-                          to="/user-portal?section=profile" 
+                        <Link
+                          to="/user-portal?section=profile"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-user"></i>
+                          <User size={17} />
                           <span>Profile</span>
                         </Link>
-                        
-                        <Link 
-                          to="/user-portal?section=manage-children" 
+
+                        <Link
+                          to="/user-portal?section=manage-children"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-baby"></i>
+                          <Baby size={17} />
                           <span>Manage Children</span>
                         </Link>
-                        
-                        <Link 
-                          to="/user-portal?section=manage-pets" 
+
+                        <Link
+                          to="/user-portal?section=manage-pets"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-paw"></i>
+                          <PawPrint size={17} />
                           <span>Manage Pets</span>
                         </Link>
-                        
-                        <Link 
-                          to="/user-portal?section=my-locations" 
+
+                        <Link
+                          to="/user-portal?section=my-locations"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-map-marker-alt"></i>
+                          <MapPin size={17} />
                           <span>My Locations</span>
                         </Link>
-                        
-                        <Link 
-                          to="/user-portal?section=my-bookings" 
+
+                        <Link
+                          to="/user-portal?section=my-bookings"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-calendar-check"></i>
+                          <CalendarCheck size={17} />
                           <span>My Bookings</span>
                         </Link>
-                        
-                        <Link 
-                          to="/user-portal?section=payment-methods" 
+
+                        <Link
+                          to="/user-portal?section=payment-methods"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-credit-card"></i>
+                          <CreditCard size={17} />
                           <span>Payment Methods</span>
                         </Link>
                       </>
                     ) : userType === 'sitter' ? (
                       <>
-                        <Link 
-                          to="/sitter-portal?section=profile" 
+                        <Link
+                          to="/sitter-portal?section=profile"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-user"></i>
+                          <User size={17} />
                           <span>Profile</span>
                         </Link>
-                        
-                        <Link 
-                          to="/sitter-portal?section=bookings" 
+
+                        <Link
+                          to="/sitter-portal?section=bookings"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-calendar-check"></i>
+                          <CalendarCheck size={17} />
                           <span>Bookings</span>
                         </Link>
-                        
-                        <Link 
-                          to="/sitter-portal?section=balance" 
+
+                        <Link
+                          to="/sitter-portal?section=balance"
                           className="dropdown-item"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <i className="fas fa-wallet"></i>
+                          <Wallet size={17} />
                           <span>My Balance</span>
                         </Link>
                       </>
                     ) : null}
-                    
+
                     <div className="dropdown-divider"></div>
-                    
-                    <button 
+
+                    <button
                       className="dropdown-item sign-out-btn"
                       onClick={handleSignOut}
                     >
-                      <i className="fas fa-sign-out-alt"></i>
+                      <LogOut size={17} />
                       <span>Sign Out</span>
                     </button>
                   </div>

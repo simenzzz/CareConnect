@@ -1,3 +1,4 @@
+import { Plus, Baby, X, User, Calendar, Heart, School, Home, Info, CircleCheck, Check } from 'lucide-react'
 import type { Child } from './types'
 
 interface ChildrenSectionProps {
@@ -16,7 +17,7 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
       <p className="section-description">Add information about your children who need care</p>
 
       <div className="add-section-btn" onClick={onAdd}>
-        <i className="fas fa-plus"></i>
+        <Plus size={18} />
         <span>Add Child</span>
       </div>
 
@@ -25,18 +26,18 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
           <div key={child.id} className="child-item">
             <div className="item-header">
               <div className="section-card-title">
-                <i className="fas fa-child"></i>
+                <Baby size={18} />
                 <span>Child {children.indexOf(child) + 1}</span>
               </div>
-              <button type="button" onClick={() => onRemove(child.id)} className="remove-btn">
-                <i className="fas fa-times"></i>
+              <button type="button" onClick={() => onRemove(child.id)} className="remove-btn" aria-label="Remove child">
+                <X size={16} />
               </button>
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label>Child's Name *</label>
                 <div className="input-group">
-                  <i className="fas fa-user"></i>
+                  <User size={18} />
                   <input
                     type="text"
                     value={child.name}
@@ -48,7 +49,7 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
               <div className="form-group">
                 <label>Age *</label>
                 <div className="input-group">
-                  <i className="fas fa-calendar-alt"></i>
+                  <Calendar size={18} />
                   <input
                     type="number"
                     value={child.age}
@@ -63,7 +64,7 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
             <div className="form-group">
               <label>Hobbies & Interests</label>
               <div className="input-group">
-                <i className="fas fa-heart"></i>
+                <Heart size={18} />
                 <textarea
                   value={child.hobbies}
                   onChange={(e) => onUpdate(child.id, 'hobbies', e.target.value)}
@@ -85,7 +86,7 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
                   />
                   <span className="checkmark"></span>
                   <div className="checkbox-content">
-                    <i className="fas fa-school"></i>
+                    <School size={18} />
                     <span>Regular School</span>
                   </div>
                 </label>
@@ -99,7 +100,7 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
                   />
                   <span className="checkmark"></span>
                   <div className="checkbox-content">
-                    <i className="fas fa-home"></i>
+                    <Home size={18} />
                     <span>Homeschooled</span>
                   </div>
                 </label>
@@ -108,7 +109,7 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
             <div className="form-group">
               <label>Special Needs or Requirements</label>
               <div className="input-group">
-                <i className="fas fa-info-circle"></i>
+                <Info size={18} />
                 <textarea
                   value={child.specialNeeds}
                   onChange={(e) => onUpdate(child.id, 'specialNeeds', e.target.value)}
@@ -122,12 +123,12 @@ function ChildrenSection({ children, onAdd, onRemove, onUpdate, onConfirm }: Chi
             <div className="card-confirm-section">
               {child.isConfirmed ? (
                 <div className="confirmed-status">
-                  <i className="fas fa-check-circle"></i>
+                  <CircleCheck size={18} />
                   <span>Confirmed</span>
                 </div>
               ) : (
                 <button type="button" className="confirm-card-btn" onClick={() => onConfirm(child.id)}>
-                  <i className="fas fa-check"></i>
+                  <Check size={18} />
                   <span>Confirm Child</span>
                 </button>
               )}

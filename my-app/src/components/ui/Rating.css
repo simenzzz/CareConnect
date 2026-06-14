@@ -1,0 +1,27 @@
+.hearth-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hearth-rating__stars {
+  display: inline-flex;
+  gap: 1px;
+  color: var(--brass);
+}
+
+.hearth-rating__stars .is-off {
+  color: var(--line-strong);
+}
+
+.hearth-rating__value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variation-settings: var(--opsz-text);
+  color: var(--ink);
+}
+
+.hearth-rating__count {
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+}

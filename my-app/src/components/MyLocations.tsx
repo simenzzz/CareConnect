@@ -1,6 +1,7 @@
 /// <reference types="@types/google.maps" />
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Building2, Check, CircleAlert, CircleCheck, CirclePlus, Home, Info, Layers, LoaderCircle, Mails, Map, MapPin, MapPinned, Pen, Route, Search, Signpost, Tag, Trash2, X } from 'lucide-react'
 import { logger } from '../utils/logger';
 import locationService, { type Location } from '../services/locationService';
 import './ManageEntities.css';
@@ -55,6 +56,9 @@ const MyLocations: React.FC = () => {
         initializeMap();
       }, 100);
     }
+    // Google Maps instances are intentionally managed through refs; re-running
+    // this effect for every form/map helper identity change would reinitialize the map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdding, editingId]);
 
   const initializeMap = () => {
@@ -449,14 +453,14 @@ const MyLocations: React.FC = () => {
 
       {error && (
         <div className="general-error">
-          <i className="fas fa-exclamation-circle"></i>
+          <CircleAlert size={16} />
           {error}
         </div>
       )}
 
       {successMessage && (
         <div className="success-message">
-          <i className="fas fa-check-circle"></i>
+          <CircleCheck size={16} />
           {successMessage}
         </div>
       )}
@@ -464,7 +468,7 @@ const MyLocations: React.FC = () => {
       <div className="content-card">
         {!isAdding && !editingId && (
           <button className="add-section-btn" onClick={handleAddClick}>
-            <i className="fas fa-plus-circle"></i>
+            <CirclePlus size={16} />
             Add New Location
           </button>
         )}
@@ -474,19 +478,19 @@ const MyLocations: React.FC = () => {
           <div className="child-item">
             <div className="item-header">
               <h3 className="section-card-title">
-                <i className="fas fa-map-marker-alt"></i>
+                <MapPin size={16} />
                 {isAdding ? 'Add New Location' : 'Edit Location'}
               </h3>
             </div>
 
             {/* Search Location */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3e50' }}>
-                <i className="fas fa-search" style={{ marginRight: '8px', color: '#667eea' }}></i>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: 'var(--ink)' }}>
+                <Search size={16} />
                 Search Location
               </label>
               <div className="input-group">
-                <i className="fas fa-search"></i>
+                <Search size={16} />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -498,8 +502,8 @@ const MyLocations: React.FC = () => {
 
             {/* Google Map */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3e50' }}>
-                <i className="fas fa-map" style={{ marginRight: '8px', color: '#e74c3c' }}></i>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: 'var(--ink)' }}>
+                <Map size={16} />
                 Select Location on Map
               </label>
               <div 
@@ -508,22 +512,22 @@ const MyLocations: React.FC = () => {
                   width: '100%', 
                   height: '350px', 
                   borderRadius: '10px',
-                  border: '2px solid #ecf0f1',
+                  border: '2px solid var(--line)',
                   marginBottom: '10px',
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: 'var(--paper-deep)',
                   position: 'relative',
                   overflow: 'hidden'
                 }}
               />
-              <p style={{ fontSize: '0.9rem', color: '#7f8c8d', marginTop: '8px' }}>
-                <i className="fas fa-info-circle" style={{ marginRight: '5px' }}></i>
+              <p style={{ fontSize: '0.9rem', color: 'var(--ink-faint)', marginTop: '8px' }}>
+                <Info size={16} />
                 Click on the map or drag the marker to select your location
               </p>
             </div>
 
             {/* Location Name */}
             <div className="input-group" style={{ marginBottom: '15px' }}>
-              <i className="fas fa-tag"></i>
+              <Tag size={16} />
               <input
                 type="text"
                 value={formData.location_name}
@@ -536,7 +540,7 @@ const MyLocations: React.FC = () => {
             {/* Address Name and Street Name */}
             <div className="form-row" style={{ marginBottom: '15px' }}>
               <div className="input-group">
-                <i className="fas fa-map-signs"></i>
+                <Signpost size={16} />
                 <input
                   type="text"
                   value={formData.address_name}
@@ -546,7 +550,7 @@ const MyLocations: React.FC = () => {
               </div>
 
               <div className="input-group">
-                <i className="fas fa-road"></i>
+                <Route size={16} />
                 <input
                   type="text"
                   value={formData.street_name}
@@ -559,7 +563,7 @@ const MyLocations: React.FC = () => {
             {/* Building Name and Floor */}
             <div className="form-row" style={{ marginBottom: '15px' }}>
               <div className="input-group">
-                <i className="fas fa-building"></i>
+                <Building2 size={16} />
                 <input
                   type="text"
                   value={formData.building_name}
@@ -569,7 +573,7 @@ const MyLocations: React.FC = () => {
               </div>
 
               <div className="input-group">
-                <i className="fas fa-layer-group"></i>
+                <Layers size={16} />
                 <input
                   type="text"
                   value={formData.floor}
@@ -582,7 +586,7 @@ const MyLocations: React.FC = () => {
             {/* Area and City */}
             <div className="form-row" style={{ marginBottom: '15px' }}>
               <div className="input-group">
-                <i className="fas fa-map"></i>
+                <Map size={16} />
                 <input
                   type="text"
                   value={formData.area}
@@ -593,7 +597,7 @@ const MyLocations: React.FC = () => {
               </div>
 
               <div className="input-group">
-                <i className="fas fa-city"></i>
+                <Building2 size={16} />
                 <input
                   type="text"
                   value={formData.city}
@@ -606,7 +610,7 @@ const MyLocations: React.FC = () => {
 
             {/* Postal Code */}
             <div className="input-group" style={{ marginBottom: '15px' }}>
-              <i className="fas fa-mail-bulk"></i>
+              <Mails size={16} />
               <input
                 type="text"
                 value={formData.postal_code}
@@ -626,14 +630,14 @@ const MyLocations: React.FC = () => {
                   width: '16px', 
                   height: '16px', 
                   cursor: 'pointer',
-                  accentColor: '#667eea'
+                  accentColor: 'var(--terracotta)'
                 }}
               />
               <label 
                 htmlFor="default-location" 
                 style={{ 
                   fontSize: '0.9rem', 
-                  color: '#2c3e50',
+                  color: 'var(--ink)',
                   cursor: 'pointer',
                   userSelect: 'none',
                   margin: 0
@@ -659,7 +663,7 @@ const MyLocations: React.FC = () => {
                   padding: '12px 24px',
                   borderRadius: '8px',
                   border: 'none',
-                  background: '#e74c3c',
+                  background: 'var(--error)',
                   color: 'white',
                   fontSize: '15px',
                   fontWeight: 600,
@@ -671,10 +675,10 @@ const MyLocations: React.FC = () => {
                   gap: '8px',
                   opacity: isSaving ? 0.6 : 1
                 }}
-                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.background = '#c0392b')}
-                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.background = '#e74c3c')}
+                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.background = 'var(--terracotta-d)')}
+                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.background = 'var(--error)')}
               >
-                <i className="fas fa-times"></i>
+                <X size={16} />
                 Cancel
               </button>
               <button 
@@ -685,12 +689,12 @@ const MyLocations: React.FC = () => {
               >
                 {isSaving ? (
                   <>
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <LoaderCircle size={16} className="spin" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-check"></i>
+                    <Check size={16} />
                     {isAdding ? 'Add Location' : 'Save Changes'}
                   </>
                 )}
@@ -706,16 +710,19 @@ const MyLocations: React.FC = () => {
               <div key={location.id} className="child-item">
                 <div className="item-header">
                   <h3 className="section-card-title">
-                    <i className="fas fa-map-marker-alt" style={{ color: location.is_default ? '#27ae60' : '#e74c3c' }}></i>
+                    <MapPin
+                      size={16}
+                      style={{ color: location.is_default ? 'var(--olive)' : 'var(--terracotta)' }}
+                    />
                     {location.location_name}
                     {location.is_default && (
-                      <span style={{ 
-                        marginLeft: '10px', 
-                        fontSize: '0.8rem', 
-                        background: '#27ae60', 
-                        color: 'white', 
-                        padding: '2px 8px', 
-                        borderRadius: '10px' 
+                      <span style={{
+                        marginLeft: '10px',
+                        fontSize: '0.8rem',
+                        background: 'var(--olive)',
+                        color: 'white',
+                        padding: '2px 8px',
+                        borderRadius: '10px'
                       }}>
                         Default
                       </span>
@@ -727,39 +734,39 @@ const MyLocations: React.FC = () => {
                       onClick={() => handleEditClick(location)}
                       title="Edit"
                     >
-                      <i className="fas fa-pen"></i>
+                      <Pen size={16} />
                     </button>
                     <button 
                       className="remove-btn"
                       onClick={() => handleDelete(location.id!)}
                       title="Delete"
                     >
-                      <i className="fas fa-trash"></i>
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
 
                 <div style={{ marginTop: '15px' }}>
-                  <p style={{ color: '#2c3e50', marginBottom: '8px' }}>
-                    <i className="fas fa-home" style={{ marginRight: '8px', color: '#7f8c8d', width: '20px' }}></i>
+                  <p style={{ color: 'var(--ink)', marginBottom: '8px' }}>
+                    <Home size={16} />
                     {location.address_line}
                   </p>
-                  <p style={{ color: '#2c3e50', marginBottom: '8px' }}>
-                    <i className="fas fa-map" style={{ marginRight: '8px', color: '#7f8c8d', width: '20px' }}></i>
+                  <p style={{ color: 'var(--ink)', marginBottom: '8px' }}>
+                    <Map size={16} />
                     {location.area}
                   </p>
-                  <p style={{ color: '#2c3e50', marginBottom: '8px' }}>
-                    <i className="fas fa-city" style={{ marginRight: '8px', color: '#7f8c8d', width: '20px' }}></i>
+                  <p style={{ color: 'var(--ink)', marginBottom: '8px' }}>
+                    <Building2 size={16} />
                     {location.city}
                   </p>
                   {location.postal_code && (
-                    <p style={{ color: '#2c3e50', marginBottom: '8px' }}>
-                      <i className="fas fa-mail-bulk" style={{ marginRight: '8px', color: '#7f8c8d', width: '20px' }}></i>
+                    <p style={{ color: 'var(--ink)', marginBottom: '8px' }}>
+                      <Mails size={16} />
                       {location.postal_code}
                     </p>
                   )}
-                  <p style={{ color: '#7f8c8d', fontSize: '0.9rem' }}>
-                    <i className="fas fa-map-pin" style={{ marginRight: '8px', width: '20px' }}></i>
+                  <p style={{ color: 'var(--ink-faint)', fontSize: '0.9rem' }}>
+                    <MapPin size={16} />
                     {parseFloat(String(location.latitude)).toFixed(6)}, {parseFloat(String(location.longitude)).toFixed(6)}
                   </p>
                 </div>
@@ -769,8 +776,8 @@ const MyLocations: React.FC = () => {
         )}
 
         {!isAdding && !editingId && locations.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
-            <i className="fas fa-map-marked-alt" style={{ fontSize: '3rem', marginBottom: '15px', opacity: 0.5 }}></i>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--ink-faint)' }}>
+            <MapPinned size={16} />
             <p>No locations saved yet</p>
             <p style={{ fontSize: '0.9rem' }}>Click "Add New Location" to get started</p>
           </div>
@@ -781,4 +788,3 @@ const MyLocations: React.FC = () => {
 };
 
 export default MyLocations;
-

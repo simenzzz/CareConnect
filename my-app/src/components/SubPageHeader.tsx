@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { Heart } from 'lucide-react'
 import ScrollLink from './ScrollLink'
 import './Header.css'
 
@@ -11,7 +12,7 @@ const SubPageHeader: React.FC = () => {
           <Link to="/">
             <div className="logo-container">
               <div className="logo-icon">
-                <i className="fas fa-heart"></i>
+                <Heart size={18} fill="currentColor" strokeWidth={0} />
               </div>
               <h1>CareConnect</h1>
             </div>

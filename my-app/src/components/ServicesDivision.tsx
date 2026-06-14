@@ -1,63 +1,93 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { PawPrint, Baby, Check } from 'lucide-react'
+import { buttonClasses } from './ui/buttonClasses'
+import SectionLabel from './ui/SectionLabel'
 import './ServicesDivision.css'
+
+const PET_FEATURES = [
+  'In-home pet sitting',
+  'Dog walking services',
+  'Feeding & medication',
+  'Playtime & exercise',
+  'Overnight care',
+  'Emergency vet visits',
+]
+
+const BABY_FEATURES = [
+  'Certified childcare providers',
+  'Age-appropriate activities',
+  'Meal preparation & feeding',
+  'Bedtime routines',
+  'Educational playtime',
+  'First-aid certified',
+]
 
 const ServicesDivision: React.FC = () => {
   return (
     <section id="services" className="services-division">
       <div className="container">
         <div className="section-header">
-          <h2>Our Services</h2>
-          <p>Choose the perfect care solution for your needs</p>
+          <SectionLabel center>What we offer</SectionLabel>
+          <h2>Two kinds of care, one standard</h2>
+          <p>Choose the support your household needs — or both.</p>
         </div>
         <div className="services-grid">
-          {/* Pet Sitting Services */}
-          <div className="service-card pet-service">
+          <article className="service-card pet-service">
             <div className="service-header">
               <div className="service-icon">
-                <i className="fas fa-paw"></i>
+                <PawPrint size={30} />
               </div>
-              <h3>Pet Sitting Services</h3>
+              <h3>Pet sitting</h3>
             </div>
             <div className="service-content">
               <ul className="service-features">
-                <li><i className="fas fa-check"></i> In-home pet sitting</li>
-                <li><i className="fas fa-check"></i> Dog walking services</li>
-                <li><i className="fas fa-check"></i> Feeding & medication</li>
-                <li><i className="fas fa-check"></i> Playtime & exercise</li>
-                <li><i className="fas fa-check"></i> Overnight care</li>
-                <li><i className="fas fa-check"></i> Emergency vet visits</li>
+                {PET_FEATURES.map((f) => (
+                  <li key={f}>
+                    <Check size={18} /> {f}
+                  </li>
+                ))}
               </ul>
               <div className="service-pricing">
-                <span className="price">Starting at $25/hour</span>
+                <span className="price">from $25</span>
+                <span className="price-unit">/ hour</span>
               </div>
-              <Link to="/sitters#pet-sitters" className="btn-service">Book Pet Care</Link>
+              <Link
+                to="/sitters#pet-sitters"
+                className={buttonClasses('primary', 'md', 'hearth-btn--block')}
+              >
+                Book pet care
+              </Link>
             </div>
-          </div>
+          </article>
 
-          {/* Baby Sitting Services */}
-          <div className="service-card baby-service">
+          <article className="service-card baby-service">
             <div className="service-header">
               <div className="service-icon">
-                <i className="fas fa-baby"></i>
+                <Baby size={30} />
               </div>
-              <h3>Baby Sitting Services</h3>
+              <h3>Baby sitting</h3>
             </div>
             <div className="service-content">
               <ul className="service-features">
-                <li><i className="fas fa-check"></i> Certified childcare providers</li>
-                <li><i className="fas fa-check"></i> Age-appropriate activities</li>
-                <li><i className="fas fa-check"></i> Meal preparation & feeding</li>
-                <li><i className="fas fa-check"></i> Bedtime routines</li>
-                <li><i className="fas fa-check"></i> Educational playtime</li>
-                <li><i className="fas fa-check"></i> First aid certified</li>
+                {BABY_FEATURES.map((f) => (
+                  <li key={f}>
+                    <Check size={18} /> {f}
+                  </li>
+                ))}
               </ul>
               <div className="service-pricing">
-                <span className="price">Starting at $20/hour</span>
+                <span className="price">from $20</span>
+                <span className="price-unit">/ hour</span>
               </div>
-              <Link to="/sitters#baby-sitters" className="btn-service">Book Childcare</Link>
+              <Link
+                to="/sitters#baby-sitters"
+                className={buttonClasses('primary', 'md', 'hearth-btn--block')}
+              >
+                Book childcare
+              </Link>
             </div>
-          </div>
+          </article>
         </div>
       </div>
     </section>

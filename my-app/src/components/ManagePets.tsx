@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Bird, Calendar, CalendarPlus, Cat, Check, CircleCheck, ClipboardList, ClipboardPlus, Dna, Dog, Fish, Heart, LoaderCircle, PawPrint, Pen, Plus, Tag, Trash2, TriangleAlert, X } from 'lucide-react'
 import customerService from '../services/customerService';
 import './ManageEntities.css';
 
@@ -145,7 +146,7 @@ const ManagePets: React.FC = () => {
   if (isLoading) {
     return (
       <div className="manage-loading">
-        <i className="fas fa-spinner fa-spin"></i>
+        <LoaderCircle size={16} className="spin" />
         <p>Loading pets...</p>
       </div>
     );
@@ -160,14 +161,14 @@ const ManagePets: React.FC = () => {
 
       {error && (
         <div className="general-error">
-          <i className="fas fa-exclamation-triangle"></i>
+          <TriangleAlert size={16} />
           {error}
         </div>
       )}
 
       {successMessage && (
         <div className="success-message">
-          <i className="fas fa-check-circle"></i>
+          <CircleCheck size={16} />
           {successMessage}
         </div>
       )}
@@ -176,7 +177,7 @@ const ManagePets: React.FC = () => {
         {/* Add Button */}
         {!isAdding && (
           <div className="add-section-btn" onClick={handleAddClick}>
-            <i className="fas fa-plus"></i>
+            <Plus size={16} />
             <span>Add Pet</span>
           </div>
         )}
@@ -186,11 +187,11 @@ const ManagePets: React.FC = () => {
           <div className="pet-item">
             <div className="item-header">
               <div className="section-card-title">
-                <i className="fas fa-paw"></i>
+                <PawPrint size={16} />
                 <span>Add New Pet</span>
               </div>
               <button type="button" onClick={handleCancel} className="remove-btn">
-                <i className="fas fa-times"></i>
+                <X size={16} />
               </button>
             </div>
 
@@ -198,7 +199,7 @@ const ManagePets: React.FC = () => {
               <div className="form-group">
                 <label>Pet's Name *</label>
                 <div className="input-group">
-                  <i className="fas fa-tag"></i>
+                  <Tag size={16} />
                   <input
                     type="text"
                     value={formData.name}
@@ -212,7 +213,7 @@ const ManagePets: React.FC = () => {
               <div className="form-group">
                 <label>Age</label>
                 <div className="input-group">
-                  <i className="fas fa-calendar-alt"></i>
+                  <Calendar size={16} />
                   <input
                     type="number"
                     value={formData.age}
@@ -236,7 +237,7 @@ const ManagePets: React.FC = () => {
                     checked={formData.type === 'dog'}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   />
-                  <i className="fas fa-dog"></i>
+                  <Dog size={16} />
                   <span>Dog</span>
                 </label>
                 <label className={`pet-type-option ${formData.type === 'cat' ? 'selected' : ''}`}>
@@ -247,7 +248,7 @@ const ManagePets: React.FC = () => {
                     checked={formData.type === 'cat'}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   />
-                  <i className="fas fa-cat"></i>
+                  <Cat size={16} />
                   <span>Cat</span>
                 </label>
                 <label className={`pet-type-option ${formData.type === 'bird' ? 'selected' : ''}`}>
@@ -258,7 +259,7 @@ const ManagePets: React.FC = () => {
                     checked={formData.type === 'bird'}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   />
-                  <i className="fas fa-dove"></i>
+                  <Bird size={16} />
                   <span>Bird</span>
                 </label>
                 <label className={`pet-type-option ${formData.type === 'fish' ? 'selected' : ''}`}>
@@ -269,7 +270,7 @@ const ManagePets: React.FC = () => {
                     checked={formData.type === 'fish'}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   />
-                  <i className="fas fa-fish"></i>
+                  <Fish size={16} />
                   <span>Fish</span>
                 </label>
                 <label className={`pet-type-option ${formData.type === 'rabbit' ? 'selected' : ''}`}>
@@ -280,7 +281,7 @@ const ManagePets: React.FC = () => {
                     checked={formData.type === 'rabbit'}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   />
-                  <i className="fas fa-paw"></i>
+                  <PawPrint size={16} />
                   <span>Rabbit</span>
                 </label>
                 <label className={`pet-type-option ${formData.type === 'other' ? 'selected' : ''}`}>
@@ -291,7 +292,7 @@ const ManagePets: React.FC = () => {
                     checked={formData.type === 'other'}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   />
-                  <i className="fas fa-paw"></i>
+                  <PawPrint size={16} />
                   <span>Other</span>
                 </label>
               </div>
@@ -301,7 +302,7 @@ const ManagePets: React.FC = () => {
               <div className="form-group">
                 <label>Breed</label>
                 <div className="input-group">
-                  <i className="fas fa-dna"></i>
+                  <Dna size={16} />
                   <input
                     type="text"
                     value={formData.breed}
@@ -315,7 +316,7 @@ const ManagePets: React.FC = () => {
             <div className="form-group">
               <label>Personality & Behavior</label>
               <div className="input-group">
-                <i className="fas fa-heart"></i>
+                <Heart size={16} />
                 <textarea
                   value={formData.personality}
                   onChange={(e) => setFormData({ ...formData, personality: e.target.value })}
@@ -328,7 +329,7 @@ const ManagePets: React.FC = () => {
             <div className="form-group">
               <label>Care Instructions</label>
               <div className="input-group">
-                <i className="fas fa-clipboard-list"></i>
+                <ClipboardList size={16} />
                 <textarea
                   value={formData.careInstructions}
                   onChange={(e) => setFormData({ ...formData, careInstructions: e.target.value })}
@@ -341,7 +342,7 @@ const ManagePets: React.FC = () => {
             <div className="form-group">
               <label>Medical Conditions, Allergies, or Special Needs</label>
               <div className="input-group">
-                <i className="fas fa-notes-medical"></i>
+                <ClipboardPlus size={16} />
                 <textarea
                   value={formData.specialNeeds}
                   onChange={(e) => setFormData({ ...formData, specialNeeds: e.target.value })}
@@ -360,12 +361,12 @@ const ManagePets: React.FC = () => {
               >
                 {isSaving ? (
                   <>
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <LoaderCircle size={16} className="spin" />
                     <span>Saving...</span>
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-check"></i>
+                    <Check size={16} />
                     <span>Save Pet</span>
                   </>
                 )}
@@ -378,7 +379,7 @@ const ManagePets: React.FC = () => {
         <div className="pets-container">
           {pets.length === 0 && !isAdding ? (
             <div className="empty-state-text">
-              <i className="fas fa-paw"></i>
+              <PawPrint size={16} />
               <p>No pets added yet. Click "Add Pet" above to get started.</p>
             </div>
           ) : (
@@ -388,11 +389,11 @@ const ManagePets: React.FC = () => {
                   <>
                     <div className="item-header">
                       <div className="section-card-title">
-                        <i className="fas fa-paw"></i>
+                        <PawPrint size={16} />
                         <span>Edit Pet {index + 1}</span>
                       </div>
                       <button type="button" onClick={handleCancel} className="remove-btn">
-                        <i className="fas fa-times"></i>
+                        <X size={16} />
                       </button>
                     </div>
 
@@ -400,7 +401,7 @@ const ManagePets: React.FC = () => {
                       <div className="form-group">
                         <label>Pet's Name *</label>
                         <div className="input-group">
-                          <i className="fas fa-tag"></i>
+                          <Tag size={16} />
                           <input
                             type="text"
                             value={formData.name}
@@ -413,7 +414,7 @@ const ManagePets: React.FC = () => {
                       <div className="form-group">
                         <label>Age</label>
                         <div className="input-group">
-                          <i className="fas fa-calendar-alt"></i>
+                          <Calendar size={16} />
                           <input
                             type="number"
                             value={formData.age}
@@ -437,7 +438,7 @@ const ManagePets: React.FC = () => {
                             checked={formData.type === 'dog'}
                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                           />
-                          <i className="fas fa-dog"></i>
+                          <Dog size={16} />
                           <span>Dog</span>
                         </label>
                         <label className={`pet-type-option ${formData.type === 'cat' ? 'selected' : ''}`}>
@@ -448,7 +449,7 @@ const ManagePets: React.FC = () => {
                             checked={formData.type === 'cat'}
                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                           />
-                          <i className="fas fa-cat"></i>
+                          <Cat size={16} />
                           <span>Cat</span>
                         </label>
                         <label className={`pet-type-option ${formData.type === 'bird' ? 'selected' : ''}`}>
@@ -459,7 +460,7 @@ const ManagePets: React.FC = () => {
                             checked={formData.type === 'bird'}
                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                           />
-                          <i className="fas fa-dove"></i>
+                          <Bird size={16} />
                           <span>Bird</span>
                         </label>
                         <label className={`pet-type-option ${formData.type === 'fish' ? 'selected' : ''}`}>
@@ -470,7 +471,7 @@ const ManagePets: React.FC = () => {
                             checked={formData.type === 'fish'}
                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                           />
-                          <i className="fas fa-fish"></i>
+                          <Fish size={16} />
                           <span>Fish</span>
                         </label>
                         <label className={`pet-type-option ${formData.type === 'rabbit' ? 'selected' : ''}`}>
@@ -481,7 +482,7 @@ const ManagePets: React.FC = () => {
                             checked={formData.type === 'rabbit'}
                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                           />
-                          <i className="fas fa-paw"></i>
+                          <PawPrint size={16} />
                           <span>Rabbit</span>
                         </label>
                         <label className={`pet-type-option ${formData.type === 'other' ? 'selected' : ''}`}>
@@ -492,7 +493,7 @@ const ManagePets: React.FC = () => {
                             checked={formData.type === 'other'}
                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                           />
-                          <i className="fas fa-paw"></i>
+                          <PawPrint size={16} />
                           <span>Other</span>
                         </label>
                       </div>
@@ -502,7 +503,7 @@ const ManagePets: React.FC = () => {
                       <div className="form-group">
                         <label>Breed</label>
                         <div className="input-group">
-                          <i className="fas fa-dna"></i>
+                          <Dna size={16} />
                           <input
                             type="text"
                             value={formData.breed}
@@ -516,7 +517,7 @@ const ManagePets: React.FC = () => {
                     <div className="form-group">
                       <label>Personality & Behavior</label>
                       <div className="input-group">
-                        <i className="fas fa-heart"></i>
+                        <Heart size={16} />
                         <textarea
                           value={formData.personality}
                           onChange={(e) => setFormData({ ...formData, personality: e.target.value })}
@@ -529,7 +530,7 @@ const ManagePets: React.FC = () => {
                     <div className="form-group">
                       <label>Care Instructions</label>
                       <div className="input-group">
-                        <i className="fas fa-clipboard-list"></i>
+                        <ClipboardList size={16} />
                         <textarea
                           value={formData.careInstructions}
                           onChange={(e) => setFormData({ ...formData, careInstructions: e.target.value })}
@@ -542,7 +543,7 @@ const ManagePets: React.FC = () => {
                     <div className="form-group">
                       <label>Medical Conditions, Allergies, or Special Needs</label>
                       <div className="input-group">
-                        <i className="fas fa-notes-medical"></i>
+                        <ClipboardPlus size={16} />
                         <textarea
                           value={formData.specialNeeds}
                           onChange={(e) => setFormData({ ...formData, specialNeeds: e.target.value })}
@@ -561,12 +562,12 @@ const ManagePets: React.FC = () => {
                       >
                         {isSaving ? (
                           <>
-                            <i className="fas fa-spinner fa-spin"></i>
+                            <LoaderCircle size={16} className="spin" />
                             <span>Saving...</span>
                           </>
                         ) : (
                           <>
-                            <i className="fas fa-check"></i>
+                            <Check size={16} />
                             <span>Save Changes</span>
                           </>
                         )}
@@ -577,7 +578,7 @@ const ManagePets: React.FC = () => {
                   <>
                     <div className="item-header">
                       <div className="section-card-title">
-                        <i className="fas fa-paw"></i>
+                        <PawPrint size={16} />
                         <span>Pet {index + 1}</span>
                       </div>
                       <div className="item-actions">
@@ -587,7 +588,7 @@ const ManagePets: React.FC = () => {
                           className="edit-btn"
                           title="Edit"
                         >
-                          <i className="fas fa-pen"></i>
+                          <Pen size={16} />
                         </button>
                         <button 
                           type="button" 
@@ -595,7 +596,7 @@ const ManagePets: React.FC = () => {
                           className="remove-btn"
                           title="Delete"
                         >
-                          <i className="fas fa-trash"></i>
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
@@ -603,7 +604,7 @@ const ManagePets: React.FC = () => {
                     <div className="pet-details">
                       <div className="detail-item">
                         <span className="detail-label">
-                          <i className="fas fa-tag"></i>
+                          <Tag size={16} />
                           Name
                         </span>
                         <span className="detail-value">{pet.name}</span>
@@ -612,7 +613,7 @@ const ManagePets: React.FC = () => {
                       {pet.age && (
                         <div className="detail-item">
                           <span className="detail-label">
-                            <i className="fas fa-calendar-alt"></i>
+                            <Calendar size={16} />
                             Age
                           </span>
                           <span className="detail-value">{pet.age} years old</span>
@@ -621,7 +622,7 @@ const ManagePets: React.FC = () => {
 
                       <div className="detail-item">
                         <span className="detail-label">
-                          <i className="fas fa-dog"></i>
+                          <Dog size={16} />
                           Type
                         </span>
                         <span className="detail-value">{pet.type}</span>
@@ -630,7 +631,7 @@ const ManagePets: React.FC = () => {
                       {pet.breed && (
                         <div className="detail-item">
                           <span className="detail-label">
-                            <i className="fas fa-dna"></i>
+                            <Dna size={16} />
                             Breed
                           </span>
                           <span className="detail-value">{pet.breed}</span>
@@ -640,7 +641,7 @@ const ManagePets: React.FC = () => {
                       {pet.personality && (
                         <div className="detail-item">
                           <span className="detail-label">
-                            <i className="fas fa-heart"></i>
+                            <Heart size={16} />
                             Personality
                           </span>
                           <span className="detail-value">{pet.personality}</span>
@@ -650,7 +651,7 @@ const ManagePets: React.FC = () => {
                       {pet.care_instructions && (
                         <div className="detail-item">
                           <span className="detail-label">
-                            <i className="fas fa-clipboard-list"></i>
+                            <ClipboardList size={16} />
                             Care Instructions
                           </span>
                           <span className="detail-value">{pet.care_instructions}</span>
@@ -660,7 +661,7 @@ const ManagePets: React.FC = () => {
                       {pet.special_needs && (
                         <div className="detail-item">
                           <span className="detail-label">
-                            <i className="fas fa-notes-medical"></i>
+                            <ClipboardPlus size={16} />
                             Special Needs
                           </span>
                           <span className="detail-value">{pet.special_needs}</span>
@@ -669,7 +670,7 @@ const ManagePets: React.FC = () => {
 
                       <div className="detail-item">
                         <span className="detail-label">
-                          <i className="fas fa-calendar-plus"></i>
+                          <CalendarPlus size={16} />
                           Added On
                         </span>
                         <span className="detail-value">{formatDate(pet.created_at)}</span>

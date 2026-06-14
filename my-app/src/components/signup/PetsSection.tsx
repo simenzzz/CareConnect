@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react'
+import { Plus, PawPrint, X, Tag, Calendar, Dna, Heart, ClipboardList, ClipboardPlus, CircleCheck, Check, Dog, Cat, Bird, Fish } from 'lucide-react'
 import type { Pet } from './types'
 
 interface PetsSectionProps {
@@ -8,13 +10,13 @@ interface PetsSectionProps {
   onConfirm: (id: string) => void
 }
 
-const PET_TYPES: { value: string; icon: string; label: string }[] = [
-  { value: 'dog', icon: 'fa-dog', label: 'Dog' },
-  { value: 'cat', icon: 'fa-cat', label: 'Cat' },
-  { value: 'bird', icon: 'fa-dove', label: 'Bird' },
-  { value: 'fish', icon: 'fa-fish', label: 'Fish' },
-  { value: 'rabbit', icon: 'fa-paw', label: 'Rabbit' },
-  { value: 'other', icon: 'fa-paw', label: 'Other' },
+const PET_TYPES: { value: string; Icon: LucideIcon; label: string }[] = [
+  { value: 'dog', Icon: Dog, label: 'Dog' },
+  { value: 'cat', Icon: Cat, label: 'Cat' },
+  { value: 'bird', Icon: Bird, label: 'Bird' },
+  { value: 'fish', Icon: Fish, label: 'Fish' },
+  { value: 'rabbit', Icon: PawPrint, label: 'Rabbit' },
+  { value: 'other', Icon: PawPrint, label: 'Other' },
 ]
 
 /** "Pets Information" block of the customer signup form. */
@@ -25,7 +27,7 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
       <p className="section-description">Add information about your pets who need care</p>
 
       <div className="add-section-btn" onClick={onAdd}>
-        <i className="fas fa-plus"></i>
+        <Plus size={18} />
         <span>Add Pet</span>
       </div>
 
@@ -34,18 +36,18 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
           <div key={pet.id} className="pet-item">
             <div className="item-header">
               <div className="section-card-title">
-                <i className="fas fa-paw"></i>
+                <PawPrint size={18} />
                 <span>Pet {pets.indexOf(pet) + 1}</span>
               </div>
-              <button type="button" onClick={() => onRemove(pet.id)} className="remove-btn">
-                <i className="fas fa-times"></i>
+              <button type="button" onClick={() => onRemove(pet.id)} className="remove-btn" aria-label="Remove pet">
+                <X size={16} />
               </button>
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label>Pet's Name *</label>
                 <div className="input-group">
-                  <i className="fas fa-tag"></i>
+                  <Tag size={18} />
                   <input
                     type="text"
                     value={pet.name}
@@ -57,7 +59,7 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
               <div className="form-group">
                 <label>Age</label>
                 <div className="input-group">
-                  <i className="fas fa-calendar-alt"></i>
+                  <Calendar size={18} />
                   <input
                     type="number"
                     value={pet.age || ''}
@@ -72,17 +74,17 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
             <div className="form-group">
               <label>Pet Type *</label>
               <div className="pet-type-grid">
-                {PET_TYPES.map((option) => (
-                  <label key={option.value} className={`pet-type-option ${pet.type === option.value ? 'selected' : ''}`}>
+                {PET_TYPES.map(({ value, Icon, label }) => (
+                  <label key={value} className={`pet-type-option ${pet.type === value ? 'selected' : ''}`}>
                     <input
                       type="radio"
                       name={`petType_${pet.id}`}
-                      value={option.value}
-                      checked={pet.type === option.value}
+                      value={value}
+                      checked={pet.type === value}
                       onChange={(e) => onUpdate(pet.id, 'type', e.target.value)}
                     />
-                    <i className={`fas ${option.icon}`}></i>
-                    <span>{option.label}</span>
+                    <Icon size={22} />
+                    <span>{label}</span>
                   </label>
                 ))}
               </div>
@@ -91,7 +93,7 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
               <div className="form-group">
                 <label>Breed</label>
                 <div className="input-group">
-                  <i className="fas fa-dna"></i>
+                  <Dna size={18} />
                   <input
                     type="text"
                     value={pet.breed}
@@ -104,7 +106,7 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
             <div className="form-group">
               <label>Personality & Behavior</label>
               <div className="input-group">
-                <i className="fas fa-heart"></i>
+                <Heart size={18} />
                 <textarea
                   value={pet.personality || ''}
                   onChange={(e) => onUpdate(pet.id, 'personality', e.target.value)}
@@ -116,7 +118,7 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
             <div className="form-group">
               <label>Care Instructions</label>
               <div className="input-group">
-                <i className="fas fa-clipboard-list"></i>
+                <ClipboardList size={18} />
                 <textarea
                   value={pet.careInstructions || ''}
                   onChange={(e) => onUpdate(pet.id, 'careInstructions', e.target.value)}
@@ -128,7 +130,7 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
             <div className="form-group">
               <label>Medical Conditions, Allergies, or Special Needs</label>
               <div className="input-group">
-                <i className="fas fa-notes-medical"></i>
+                <ClipboardPlus size={18} />
                 <textarea
                   value={pet.specialNeeds}
                   onChange={(e) => onUpdate(pet.id, 'specialNeeds', e.target.value)}
@@ -142,12 +144,12 @@ function PetsSection({ pets, onAdd, onRemove, onUpdate, onConfirm }: PetsSection
             <div className="card-confirm-section">
               {pet.isConfirmed ? (
                 <div className="confirmed-status">
-                  <i className="fas fa-check-circle"></i>
+                  <CircleCheck size={18} />
                   <span>Confirmed</span>
                 </div>
               ) : (
                 <button type="button" className="confirm-card-btn" onClick={() => onConfirm(pet.id)}>
-                  <i className="fas fa-check"></i>
+                  <Check size={18} />
                   <span>Confirm Pet</span>
                 </button>
               )}

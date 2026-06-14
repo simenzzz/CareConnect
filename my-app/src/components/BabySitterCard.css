@@ -1,10 +1,10 @@
 .baby-sitter-card {
-  background: white;
-  border-radius: 15px;
-  padding: 25px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border-left: 4px solid #e74c3c;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--terracotta);
+  border-radius: var(--r-lg);
+  padding: var(--space-5);
+  transition: transform var(--t-med), box-shadow var(--t-med);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -12,161 +12,161 @@
 
 .baby-sitter-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
-/* Disable hover effects when modal is open */
+/* Disable hover effects when a modal is open */
 body.modal-open .baby-sitter-card:hover {
   transform: none;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 body.modal-open .book-session-btn:hover {
   transform: none;
 }
 
+/* Shared sitter-card internals (also used by PetSitterCard) */
 .sitter-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
 .sitter-avatar {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #e74c3c, #c0392b);
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-pill);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 15px;
   flex-shrink: 0;
+  color: var(--paper);
 }
 
-.sitter-avatar i {
-  font-size: 1.5rem;
-  color: white;
+.baby-sitter-card .sitter-avatar {
+  background: var(--terracotta);
 }
 
 .sitter-info {
   flex: 1;
+  min-width: 0;
 }
 
 .sitter-info h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0 0 5px 0;
+  font-size: 1.25rem;
+  margin: 0 0 2px 0;
 }
 
 .sitter-location {
-  color: #7f8c8d;
-  font-size: 0.9rem;
+  color: var(--ink-faint);
+  font-size: var(--fs-sm);
   margin: 0;
   display: flex;
   align-items: center;
+  gap: var(--space-1);
 }
 
-.sitter-location i {
-  margin-right: 5px;
-  color: #e74c3c;
+.sitter-location svg {
+  color: var(--terracotta);
+  flex-shrink: 0;
 }
 
 .sitter-rating {
   display: flex;
   align-items: center;
-  background: #f8f9fa;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
+  gap: var(--space-1);
+  background: var(--paper-deep);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-variation-settings: var(--opsz-text);
 }
 
-.sitter-rating i {
-  color: #f39c12;
-  margin-right: 5px;
+.sitter-rating svg {
+  color: var(--brass);
 }
 
 .sitter-details {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   flex: 1;
 }
 
 .sitter-experience {
-  color: #7f8c8d;
+  color: var(--ink-soft);
   line-height: 1.6;
-  margin-bottom: 15px;
-  font-size: 0.95rem;
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-sm);
+}
+
+.match-reasons {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--olive-d);
+  background: var(--success-tint);
+  border: 1px solid var(--olive);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  margin: 0 0 var(--space-4);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.match-reasons svg {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .sitter-specialties {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .specialty-tag {
-  background: #fdf2f2;
-  color: #c0392b;
+  background: var(--terracotta-tint);
+  color: var(--terracotta-d);
   padding: 4px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
 }
 
 .sitter-contact {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 15px;
-  border-top: 1px solid #ecf0f1;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 
 .book-session-btn {
-  background: #27ae60;
-  color: white;
+  background: var(--olive);
+  color: var(--paper);
   border: none;
   padding: 12px 25px;
-  border-radius: 25px;
-  font-size: 1rem;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--t-fast);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   justify-content: center;
 }
 
 .book-session-btn:hover {
-  background: #229954;
+  background: var(--olive-d);
   transform: translateY(-2px);
-}
-
-.book-session-btn i {
-  font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {
   .sitter-header {
     flex-direction: column;
     text-align: center;
-  }
-  
-  .sitter-avatar {
-    margin-right: 0;
-    margin-bottom: 15px;
-  }
-  
-  .sitter-contact {
-    flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
-  }
-  
-  .whatsapp-btn {
-    justify-content: center;
   }
 }

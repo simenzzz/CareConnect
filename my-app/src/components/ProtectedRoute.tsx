@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { LoaderCircle } from 'lucide-react'
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { UserType } from '../context/AuthContext';
@@ -26,7 +27,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   if (isLoading) {
     return (
       <div className="loading-screen">
-        <i className="fas fa-spinner fa-spin"></i>
+        <LoaderCircle size={16} className="spin" />
         <p>Loading...</p>
       </div>
     );

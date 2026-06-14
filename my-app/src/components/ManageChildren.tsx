@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Baby, Calendar, CalendarPlus, Check, CircleCheck, Heart, Home, Info, LoaderCircle, Pen, Plus, School, Trash2, TriangleAlert, User, X } from 'lucide-react'
 import customerService from '../services/customerService';
 import './ManageEntities.css';
 
@@ -139,7 +140,7 @@ const ManageChildren: React.FC = () => {
   if (isLoading) {
     return (
       <div className="manage-loading">
-        <i className="fas fa-spinner fa-spin"></i>
+        <LoaderCircle size={16} className="spin" />
         <p>Loading children...</p>
       </div>
     );
@@ -154,14 +155,14 @@ const ManageChildren: React.FC = () => {
 
       {error && (
         <div className="general-error">
-          <i className="fas fa-exclamation-triangle"></i>
+          <TriangleAlert size={16} />
           {error}
         </div>
       )}
 
       {successMessage && (
         <div className="success-message">
-          <i className="fas fa-check-circle"></i>
+          <CircleCheck size={16} />
           {successMessage}
         </div>
       )}
@@ -170,7 +171,7 @@ const ManageChildren: React.FC = () => {
         {/* Add Button */}
         {!isAdding && (
           <div className="add-section-btn" onClick={handleAddClick}>
-            <i className="fas fa-plus"></i>
+            <Plus size={16} />
             <span>Add Child</span>
           </div>
         )}
@@ -180,11 +181,11 @@ const ManageChildren: React.FC = () => {
           <div className="child-item">
             <div className="item-header">
               <div className="section-card-title">
-                <i className="fas fa-child"></i>
+                <Baby size={16} />
                 <span>Add New Child</span>
               </div>
               <button type="button" onClick={handleCancel} className="remove-btn">
-                <i className="fas fa-times"></i>
+                <X size={16} />
               </button>
             </div>
 
@@ -192,7 +193,7 @@ const ManageChildren: React.FC = () => {
               <div className="form-group">
                 <label>Child's Name *</label>
                 <div className="input-group">
-                  <i className="fas fa-user"></i>
+                  <User size={16} />
                   <input
                     type="text"
                     value={formData.name}
@@ -206,7 +207,7 @@ const ManageChildren: React.FC = () => {
               <div className="form-group">
                 <label>Age *</label>
                 <div className="input-group">
-                  <i className="fas fa-calendar-alt"></i>
+                  <Calendar size={16} />
                   <input
                     type="number"
                     value={formData.age}
@@ -222,7 +223,7 @@ const ManageChildren: React.FC = () => {
             <div className="form-group">
               <label>Hobbies & Interests</label>
               <div className="input-group">
-                <i className="fas fa-heart"></i>
+                <Heart size={16} />
                 <textarea
                   value={formData.hobbies}
                   onChange={(e) => setFormData({ ...formData, hobbies: e.target.value })}
@@ -245,7 +246,7 @@ const ManageChildren: React.FC = () => {
                   />
                   <span className="checkmark"></span>
                   <div className="checkbox-content">
-                    <i className="fas fa-school"></i>
+                    <School size={16} />
                     <span>Regular School</span>
                   </div>
                 </label>
@@ -259,7 +260,7 @@ const ManageChildren: React.FC = () => {
                   />
                   <span className="checkmark"></span>
                   <div className="checkbox-content">
-                    <i className="fas fa-home"></i>
+                    <Home size={16} />
                     <span>Homeschooled</span>
                   </div>
                 </label>
@@ -269,7 +270,7 @@ const ManageChildren: React.FC = () => {
             <div className="form-group">
               <label>Special Needs or Requirements</label>
               <div className="input-group">
-                <i className="fas fa-info-circle"></i>
+                <Info size={16} />
                 <textarea
                   value={formData.specialNeeds}
                   onChange={(e) => setFormData({ ...formData, specialNeeds: e.target.value })}
@@ -288,12 +289,12 @@ const ManageChildren: React.FC = () => {
               >
                 {isSaving ? (
                   <>
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <LoaderCircle size={16} className="spin" />
                     <span>Saving...</span>
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-check"></i>
+                    <Check size={16} />
                     <span>Save Child</span>
                   </>
                 )}
@@ -306,7 +307,7 @@ const ManageChildren: React.FC = () => {
         <div className="children-container">
           {children.length === 0 && !isAdding ? (
             <div className="empty-state-text">
-              <i className="fas fa-baby"></i>
+              <Baby size={16} />
               <p>No children added yet. Click "Add Child" above to get started.</p>
             </div>
           ) : (
@@ -316,11 +317,11 @@ const ManageChildren: React.FC = () => {
                   <>
                     <div className="item-header">
                       <div className="section-card-title">
-                        <i className="fas fa-child"></i>
+                        <Baby size={16} />
                         <span>Edit Child {index + 1}</span>
                       </div>
                       <button type="button" onClick={handleCancel} className="remove-btn">
-                        <i className="fas fa-times"></i>
+                        <X size={16} />
                       </button>
                     </div>
 
@@ -328,7 +329,7 @@ const ManageChildren: React.FC = () => {
                       <div className="form-group">
                         <label>Child's Name *</label>
                         <div className="input-group">
-                          <i className="fas fa-user"></i>
+                          <User size={16} />
                           <input
                             type="text"
                             value={formData.name}
@@ -341,7 +342,7 @@ const ManageChildren: React.FC = () => {
                       <div className="form-group">
                         <label>Age *</label>
                         <div className="input-group">
-                          <i className="fas fa-calendar-alt"></i>
+                          <Calendar size={16} />
                           <input
                             type="number"
                             value={formData.age}
@@ -356,7 +357,7 @@ const ManageChildren: React.FC = () => {
                     <div className="form-group">
                       <label>Hobbies & Interests</label>
                       <div className="input-group">
-                        <i className="fas fa-heart"></i>
+                        <Heart size={16} />
                         <textarea
                           value={formData.hobbies}
                           onChange={(e) => setFormData({ ...formData, hobbies: e.target.value })}
@@ -379,7 +380,7 @@ const ManageChildren: React.FC = () => {
                           />
                           <span className="checkmark"></span>
                           <div className="checkbox-content">
-                            <i className="fas fa-school"></i>
+                            <School size={16} />
                             <span>Regular School</span>
                           </div>
                         </label>
@@ -393,7 +394,7 @@ const ManageChildren: React.FC = () => {
                           />
                           <span className="checkmark"></span>
                           <div className="checkbox-content">
-                            <i className="fas fa-home"></i>
+                            <Home size={16} />
                             <span>Homeschooled</span>
                           </div>
                         </label>
@@ -403,7 +404,7 @@ const ManageChildren: React.FC = () => {
                     <div className="form-group">
                       <label>Special Needs or Requirements</label>
                       <div className="input-group">
-                        <i className="fas fa-info-circle"></i>
+                        <Info size={16} />
                         <textarea
                           value={formData.specialNeeds}
                           onChange={(e) => setFormData({ ...formData, specialNeeds: e.target.value })}
@@ -422,12 +423,12 @@ const ManageChildren: React.FC = () => {
                       >
                         {isSaving ? (
                           <>
-                            <i className="fas fa-spinner fa-spin"></i>
+                            <LoaderCircle size={16} className="spin" />
                             <span>Saving...</span>
                           </>
                         ) : (
                           <>
-                            <i className="fas fa-check"></i>
+                            <Check size={16} />
                             <span>Save Changes</span>
                           </>
                         )}
@@ -438,7 +439,7 @@ const ManageChildren: React.FC = () => {
                   <>
                     <div className="item-header">
                       <div className="section-card-title">
-                        <i className="fas fa-child"></i>
+                        <Baby size={16} />
                         <span>Child {index + 1}</span>
                       </div>
                       <div className="item-actions">
@@ -448,7 +449,7 @@ const ManageChildren: React.FC = () => {
                           className="edit-btn"
                           title="Edit"
                         >
-                          <i className="fas fa-pen"></i>
+                          <Pen size={16} />
                         </button>
                         <button 
                           type="button" 
@@ -456,7 +457,7 @@ const ManageChildren: React.FC = () => {
                           className="remove-btn"
                           title="Delete"
                         >
-                          <i className="fas fa-trash"></i>
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
@@ -464,7 +465,7 @@ const ManageChildren: React.FC = () => {
                     <div className="child-details">
                       <div className="detail-item">
                         <span className="detail-label">
-                          <i className="fas fa-user"></i>
+                          <User size={16} />
                           Name
                         </span>
                         <span className="detail-value">{child.name}</span>
@@ -472,7 +473,7 @@ const ManageChildren: React.FC = () => {
 
                       <div className="detail-item">
                         <span className="detail-label">
-                          <i className="fas fa-calendar-alt"></i>
+                          <Calendar size={16} />
                           Age
                         </span>
                         <span className="detail-value">{child.age} years old</span>
@@ -480,7 +481,7 @@ const ManageChildren: React.FC = () => {
 
                       <div className="detail-item">
                         <span className="detail-label">
-                          <i className="fas fa-school"></i>
+                          <School size={16} />
                           School Schedule
                         </span>
                         <span className="detail-value">
@@ -491,7 +492,7 @@ const ManageChildren: React.FC = () => {
                       {child.hobbies && (
                         <div className="detail-item">
                           <span className="detail-label">
-                            <i className="fas fa-heart"></i>
+                            <Heart size={16} />
                             Hobbies & Interests
                           </span>
                           <span className="detail-value">{child.hobbies}</span>
@@ -501,7 +502,7 @@ const ManageChildren: React.FC = () => {
                       {child.special_needs && (
                         <div className="detail-item">
                           <span className="detail-label">
-                            <i className="fas fa-info-circle"></i>
+                            <Info size={16} />
                             Special Needs
                           </span>
                           <span className="detail-value">{child.special_needs}</span>
@@ -510,7 +511,7 @@ const ManageChildren: React.FC = () => {
 
                       <div className="detail-item">
                         <span className="detail-label">
-                          <i className="fas fa-calendar-plus"></i>
+                          <CalendarPlus size={16} />
                           Added On
                         </span>
                         <span className="detail-value">{formatDate(child.created_at)}</span>

@@ -1,0 +1,37 @@
+.hearth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.hearth-badge--terracotta {
+  background: var(--terracotta-tint);
+  color: var(--terracotta-d);
+}
+
+.hearth-badge--olive {
+  background: var(--olive-tint);
+  color: var(--olive-d);
+}
+
+.hearth-badge--sand {
+  background: var(--sand);
+  color: var(--ink-soft);
+}
+
+.hearth-badge--brass {
+  background: transparent;
+  border-color: var(--brass);
+  color: #8a6d2f;
+}
+
+.hearth-badge--error {
+  background: var(--error-tint);
+  color: var(--error);
+}

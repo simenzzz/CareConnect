@@ -1,0 +1,21 @@
+.hearth-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--space-6);
+}
+
+.hearth-card--accent {
+  border-left: 3px solid var(--terracotta);
+}
+
+.hearth-card--interactive {
+  transition: transform var(--t-med), box-shadow var(--t-med),
+    border-color var(--t-med);
+}
+
+.hearth-card--interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--line-strong);
+}

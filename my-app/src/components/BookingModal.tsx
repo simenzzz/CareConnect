@@ -1,7 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { logger } from '../utils/logger';
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import {
+  X,
+  Lock,
+  LogIn,
+  UserPlus,
+  TriangleAlert,
+  CircleAlert,
+  CircleCheck,
+  MapPin,
+  Calendar,
+  Clock,
+  StickyNote,
+  CalendarCheck,
+  LoaderCircle,
+} from 'lucide-react'
 import { auth } from '../config/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { authService } from '../services/authService'
@@ -20,6 +35,14 @@ interface BookingModalProps {
   sitterId: number
   sitterType: 'pet' | 'baby'
   isLoggedIn: boolean
+  initialBookingContext?: {
+    selectedEntityIds: number[]
+    selectedLocationId: string
+    bookingDate: string
+    startTime: string
+    endTime: string
+    matchEventId?: number
+  }
 }
 
 const BookingModal: React.FC<BookingModalProps> = ({
@@ -28,7 +51,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
   sitterName,
   sitterId,
   sitterType,
-  isLoggedIn: propIsLoggedIn
+  isLoggedIn: propIsLoggedIn,
+  initialBookingContext
 }) => {
   // Authentication state
   const [actualIsLoggedIn, setActualIsLoggedIn] = useState(propIsLoggedIn)
@@ -41,11 +65,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [isLoadingData, setIsLoadingData] = useState(false)
   
   // Form state
-  const [selectedEntityIds, setSelectedEntityIds] = useState<number[]>([])
-  const [selectedLocationId, setSelectedLocationId] = useState('')
-  const [bookingDate, setBookingDate] = useState('')
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
+  const [selectedEntityIds, setSelectedEntityIds] = useState<number[]>(initialBookingContext?.selectedEntityIds ?? [])
+  const [selectedLocationId, setSelectedLocationId] = useState(initialBookingContext?.selectedLocationId ?? '')
+  const [bookingDate, setBookingDate] = useState(initialBookingContext?.bookingDate ?? '')
+  const [startTime, setStartTime] = useState(initialBookingContext?.startTime ?? '')
+  const [endTime, setEndTime] = useState(initialBookingContext?.endTime ?? '')
   const [notes, setNotes] = useState('')
 
   // Handle entity selection toggle
@@ -104,30 +128,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Check Firebase auth state and user type
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setActualIsLoggedIn(!!user)
-      
-      if (user) {
-        const profileResult = await authService.getProfile()
-        if (profileResult.success && profileResult.data) {
-          setUserType(profileResult.data.user.userType)
-          
-          // Load children/pets if customer
-          if (profileResult.data.user.userType === 'customer') {
-            await loadCustomerData()
-          }
-        }
-      } else {
-        setUserType(null)
-      }
-    })
-    return () => unsubscribe()
-  }, [])
-
   // Load customer's children, pets, and locations
-  const loadCustomerData = async () => {
+  const loadCustomerData = useCallback(async () => {
     setIsLoadingData(true)
     
     try {
@@ -150,7 +152,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         
         // Auto-select default location if exists
         const defaultLocation = locationsResponse.data.find((loc: Location) => loc.is_default)
-        if (defaultLocation) {
+        if (defaultLocation && !initialBookingContext?.selectedLocationId) {
           setSelectedLocationId(String(defaultLocation.id))
         }
       }
@@ -159,7 +161,29 @@ const BookingModal: React.FC<BookingModalProps> = ({
     } finally {
       setIsLoadingData(false)
     }
-  }
+  }, [initialBookingContext?.selectedLocationId])
+
+  // Check Firebase auth state and user type
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setActualIsLoggedIn(!!user)
+
+      if (user) {
+        const profileResult = await authService.getProfile()
+        if (profileResult.success && profileResult.data) {
+          setUserType(profileResult.data.user.userType)
+
+          // Load children/pets if customer
+          if (profileResult.data.user.userType === 'customer') {
+            await loadCustomerData()
+          }
+        }
+      } else {
+        setUserType(null)
+      }
+    })
+    return () => unsubscribe()
+  }, [loadCustomerData])
 
   // Handle modal mount/unmount
   useEffect(() => {
@@ -169,11 +193,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
       document.body.classList.add('modal-open')
       
       // Reset form when opening
-      setSelectedEntityIds([])
-      setSelectedLocationId('')
-      setBookingDate('')
-      setStartTime('')
-      setEndTime('')
+      setSelectedEntityIds(initialBookingContext?.selectedEntityIds ?? [])
+      setSelectedLocationId(initialBookingContext?.selectedLocationId ?? '')
+      setBookingDate(initialBookingContext?.bookingDate ?? '')
+      setStartTime(initialBookingContext?.startTime ?? '')
+      setEndTime(initialBookingContext?.endTime ?? '')
       setNotes('')
       setError(null)
       setShowAddForm(false)
@@ -189,7 +213,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       document.body.style.overflow = 'unset'
       document.body.classList.remove('modal-open')
     }
-  }, [isOpen])
+  }, [isOpen, initialBookingContext])
 
   // Initialize add entity form
   const handleAddEntityClick = () => {
@@ -383,13 +407,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
         discount: 0,
         additionalNotes: notes || null,
         typeOfBooking: (sitterType === 'pet' ? 'PET' : 'CHILD') as 'PET' | 'CHILD',
+        matchEventId: initialBookingContext?.matchEventId,
         ...(sitterType === 'pet' 
           ? { petIds: selectedEntityIds }
           : { childrenIds: selectedEntityIds }
         )
       }
-      
-      logger.debug('Submitting booking:', bookingData)
       
       // Call booking API endpoint
       const response = await bookingService.createBooking(bookingData)
@@ -423,8 +446,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
       <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
         <div className="booking-modal-header">
           <h2>Book a Session with {sitterName}</h2>
-          <button className="close-btn" onClick={onClose}>
-            <i className="fas fa-times"></i>
+          <button className="close-btn" onClick={onClose} aria-label="Close">
+            <X size={20} />
           </button>
         </div>
 
@@ -433,17 +456,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
             // Login Section
             <div className="login-section">
               <div className="login-icon">
-                <i className="fas fa-user-lock"></i>
+                <Lock size={32} />
               </div>
               <h3>Sign in to Book a Session</h3>
               <p>You need to be logged in to book a session with our sitters.</p>
               <div className="login-buttons">
                 <Link to="/customer-login" className="btn-login">
-                  <i className="fas fa-sign-in-alt"></i>
+                  <LogIn size={18} />
                   Sign In
                 </Link>
                 <Link to="/customer-signup" className="btn-signup">
-                  <i className="fas fa-user-plus"></i>
+                  <UserPlus size={18} />
                   Sign Up
                 </Link>
               </div>
@@ -452,17 +475,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
             // Sitter Warning Section
             <div className="login-section">
               <div className="login-icon">
-                <i className="fas fa-exclamation-triangle"></i>
+                <TriangleAlert size={32} />
               </div>
               <h3>You need to be signed in as a Customer to book a session!</h3>
               <p>Sitters cannot book sessions. Please sign in with a customer account or create one.</p>
               <div className="login-buttons">
                 <Link to="/customer-login" className="btn-login">
-                  <i className="fas fa-sign-in-alt"></i>
+                  <LogIn size={18} />
                   Sign In as Customer
                 </Link>
                 <Link to="/customer-signup" className="btn-signup">
-                  <i className="fas fa-user-plus"></i>
+                  <UserPlus size={18} />
                   Sign Up as Customer
                 </Link>
               </div>
@@ -472,34 +495,46 @@ const BookingModal: React.FC<BookingModalProps> = ({
             <form onSubmit={handleSubmit} className="booking-form">
               {error && (
                 <div className="form-error">
-                  <i className="fas fa-exclamation-circle"></i>
+                  <CircleAlert size={18} />
                   {error}
                 </div>
               )}
-              
+
               {successMessage && (
                 <div className="form-success">
-                  <i className="fas fa-check-circle"></i>
+                  <CircleCheck size={18} />
                   {successMessage}
                 </div>
               )}
-              
+
               {/* Entity Selection or Add Form */}
-              <EntitySection
-                sitterType={sitterType}
-                childItems={children}
-                petItems={pets}
-                selectedEntityIds={selectedEntityIds}
-                onToggleSelect={toggleEntitySelection}
-                isLoadingData={isLoadingData}
-                showAddForm={showAddForm}
-                onAddClick={handleAddEntityClick}
-                onCancelAdd={() => setShowAddForm(false)}
-                entityFormData={entityFormData}
-                setEntityFormData={setEntityFormData}
-                isSavingEntity={isSavingEntity}
-                onSaveEntity={handleSaveEntity}
-              />
+              {initialBookingContext ? (
+                <div className="prefilled-booking-summary">
+                  <h3>
+                    <CircleCheck size={18} />
+                    Request details selected
+                  </h3>
+                  <p>
+                    {bookingDate} from {startTime} to {endTime}
+                  </p>
+                </div>
+              ) : (
+                <EntitySection
+                  sitterType={sitterType}
+                  childItems={children}
+                  petItems={pets}
+                  selectedEntityIds={selectedEntityIds}
+                  onToggleSelect={toggleEntitySelection}
+                  isLoadingData={isLoadingData}
+                  showAddForm={showAddForm}
+                  onAddClick={handleAddEntityClick}
+                  onCancelAdd={() => setShowAddForm(false)}
+                  entityFormData={entityFormData}
+                  setEntityFormData={setEntityFormData}
+                  isSavingEntity={isSavingEntity}
+                  onSaveEntity={handleSaveEntity}
+                />
+              )}
 
               {/* Add Location Form */}
               {showAddLocationForm && (
@@ -514,12 +549,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 />
               )}
 
-              {!showAddForm && !showAddLocationForm && (
+              {!showAddForm && !showAddLocationForm && !initialBookingContext && (
                 <>
                   {/* Location Selection */}
                   <div className="form-group">
                     <label htmlFor="location-select">
-                      <i className="fas fa-map-marker-alt"></i>
+                      <MapPin size={16} />
                       Select Location
                     </label>
                     <select
@@ -551,7 +586,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   {/* Date Selection */}
                   <div className="form-group">
                     <label htmlFor="booking-date">
-                      <i className="fas fa-calendar"></i>
+                      <Calendar size={16} />
                       Booking Date
                     </label>
                     <input
@@ -568,7 +603,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <div className="time-selection">
                 <div className="form-group">
                   <label htmlFor="start-time">
-                    <i className="fas fa-clock"></i>
+                    <Clock size={16} />
                     Start Time
                   </label>
                   <select
@@ -588,7 +623,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
                 <div className="form-group">
                   <label htmlFor="end-time">
-                    <i className="fas fa-clock"></i>
+                    <Clock size={16} />
                     End Time
                   </label>
                   <select
@@ -620,7 +655,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   {/* Additional Notes */}
               <div className="form-group">
                 <label htmlFor="notes">
-                  <i className="fas fa-sticky-note"></i>
+                  <StickyNote size={16} />
                   Additional Notes (Optional)
                 </label>
                 <textarea
@@ -640,17 +675,54 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <>
-                          <i className="fas fa-spinner fa-spin"></i>
+                          <LoaderCircle size={18} className="spin" />
                           Submitting...
                         </>
                       ) : (
                         <>
-                  <i className="fas fa-calendar-check"></i>
-                  Book Session
+                          <CalendarCheck size={18} />
+                          Book Session
                         </>
                       )}
                 </button>
               </div>
+                </>
+              )}
+
+              {initialBookingContext && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="notes">
+                      <StickyNote size={16} />
+                      Additional Notes (Optional)
+                    </label>
+                    <textarea
+                      id="notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={`Any special instructions for ${sitterName}?`}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="form-actions">
+                    <button type="button" className="btn-cancel" onClick={onClose}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <LoaderCircle size={18} className="spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <CalendarCheck size={18} />
+                          Book Session
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </>
               )}
             </form>

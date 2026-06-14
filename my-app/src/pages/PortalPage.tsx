@@ -1,4 +1,5 @@
 import React from 'react'
+import { Clock, Heart, Home, ShieldCheck, Star, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
@@ -20,11 +21,11 @@ const PortalPage: React.FC = () => {
               <h3>Already have an account?</h3>
               <div className="login-buttons">
                 <Link to="/customer-login" className="btn-login-type customer-login">
-                  <i className="fas fa-home"></i>
+                  <Home size={16} />
                   <span>Customer Login</span>
                 </Link>
                 <Link to="/login" className="btn-login-type sitter-login">
-                  <i className="fas fa-user-tie"></i>
+                  <UserRound size={16} />
                   <span>Sitter Login</span>
                 </Link>
               </div>
@@ -38,12 +39,12 @@ const PortalPage: React.FC = () => {
               <h3>New to CareConnect?</h3>
               <div className="portal-buttons">
                 <Link to="/customer-signup" className="btn-portal customer-btn">
-                  <i className="fas fa-home"></i>
+                  <Home size={16} />
                   <span>Customer Signup</span>
                 </Link>
                 
                 <Link to="/signup" className="btn-portal sitter-btn">
-                  <i className="fas fa-user-tie"></i>
+                  <UserRound size={16} />
                   <span>Sitter Signup</span>
                 </Link>
               </div>
@@ -56,19 +57,19 @@ const PortalPage: React.FC = () => {
               <p>Join Lebanon's most trusted caregiving community</p>
               <div className="benefits">
                 <div className="benefit-item">
-                  <i className="fas fa-shield-alt"></i>
+                  <ShieldCheck size={16} />
                   <span>Background verified</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-star"></i>
+                  <Star size={16} />
                   <span>Rated and reviewed</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-clock"></i>
+                  <Clock size={16} />
                   <span>Flexible scheduling</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-heart"></i>
+                  <Heart size={16} />
                   <span>Personalized care</span>
                 </div>
               </div>

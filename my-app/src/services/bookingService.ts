@@ -14,6 +14,9 @@ export interface CreateBookingData {
   typeOfBooking: 'PET' | 'CHILD';
   petId?: number;
   childId?: number;
+  petIds?: number[];
+  childrenIds?: number[];
+  matchEventId?: number;
 }
 
 interface ApiResponse {

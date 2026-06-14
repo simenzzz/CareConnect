@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Baby, Calendar, CalendarX, ChevronDown, ChevronUp, CircleAlert, CircleCheck, Clock, DollarSign, History, MapPin, PawPrint, User } from 'lucide-react'
 import { logger } from '../utils/logger';
 import bookingService from '../services/bookingService'
 import './ManageEntities.css'
@@ -132,7 +133,7 @@ const SitterMyBookings: React.FC = () => {
           {/* Booking Date & Time */}
           <div className="info-item" style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <i className="fas fa-calendar-alt" style={{ fontSize: '1.1rem', color: '#667eea' }}></i>
+              <Calendar size={16} />
               <span style={{ fontWeight: 600 }}>Booking Date & Time</span>
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '30px' }}>
@@ -144,7 +145,7 @@ const SitterMyBookings: React.FC = () => {
           {/* Customer Info */}
           <div className="info-item" style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <i className="fas fa-user" style={{ fontSize: '1.1rem', color: '#667eea' }}></i>
+              <User size={16} />
               <span style={{ fontWeight: 600 }}>Customer</span>
             </label>
             <div style={{ paddingLeft: '30px' }}>
@@ -156,7 +157,7 @@ const SitterMyBookings: React.FC = () => {
           {pets.length > 0 && (
             <div className="info-item" style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <i className="fas fa-paw" style={{ fontSize: '1.1rem', color: '#667eea' }}></i>
+                <PawPrint size={16} />
                 <span style={{ fontWeight: 600 }}>{pets.length > 1 ? 'Pets' : 'Pet'}</span>
               </label>
               <ul style={{ 
@@ -168,7 +169,7 @@ const SitterMyBookings: React.FC = () => {
                 gap: '4px'
               }}>
                 {pets.map(pet => (
-                  <li key={pet.id} style={{ color: '#2c3e50' }}>
+                  <li key={pet.id} style={{ color: 'var(--ink)' }}>
                     <strong>{pet.name}</strong> - {pet.type}, {pet.breed}, {pet.age} years old
                   </li>
                 ))}
@@ -180,7 +181,7 @@ const SitterMyBookings: React.FC = () => {
           {children.length > 0 && (
             <div className="info-item" style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <i className="fas fa-baby" style={{ fontSize: '1.1rem', color: '#667eea' }}></i>
+                <Baby size={16} />
                 <span style={{ fontWeight: 600 }}>{children.length > 1 ? 'Children' : 'Child'}</span>
               </label>
               <ul style={{ 
@@ -192,7 +193,7 @@ const SitterMyBookings: React.FC = () => {
                 gap: '4px'
               }}>
                 {children.map(child => (
-                  <li key={child.id} style={{ color: '#2c3e50' }}>
+                  <li key={child.id} style={{ color: 'var(--ink)' }}>
                     <strong>{child.fullName}</strong> - {child.gender}, {child.age} years old
                   </li>
                 ))}
@@ -204,7 +205,7 @@ const SitterMyBookings: React.FC = () => {
           {booking.location && (
             <div className="info-item" style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <i className="fas fa-map-marker-alt" style={{ fontSize: '1.1rem', color: '#667eea' }}></i>
+                <MapPin size={16} />
                 <span style={{ fontWeight: 600 }}>Location</span>
               </label>
               <div style={{ paddingLeft: '30px' }}>
@@ -216,7 +217,7 @@ const SitterMyBookings: React.FC = () => {
           {/* Earnings */}
           <div className="info-item" style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <i className="fas fa-dollar-sign" style={{ fontSize: '1.1rem', color: '#27ae60' }}></i>
+              <DollarSign size={16} />
               <span style={{ fontWeight: 600 }}>Earnings</span>
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '30px' }}>
@@ -224,20 +225,20 @@ const SitterMyBookings: React.FC = () => {
                 <>
                   <span style={{ 
                     textDecoration: 'line-through', 
-                    color: '#95a5a6',
+                    color: 'var(--ink-faint)',
                     fontSize: '0.9rem'
                   }}>
                     ${booking.priceUsd.toFixed(2)}
                   </span>
-                  <span style={{ 
-                    color: '#27ae60', 
+                  <span style={{
+                    color: 'var(--olive)',
                     fontWeight: 600,
                     fontSize: '1.1rem'
                   }}>
                     + ${finalPrice.toFixed(2)} USD
                   </span>
                   <span style={{ 
-                    backgroundColor: '#e74c3c',
+                    backgroundColor: 'var(--error)',
                     color: 'white',
                     padding: '2px 8px',
                     borderRadius: '12px',
@@ -248,10 +249,10 @@ const SitterMyBookings: React.FC = () => {
                   </span>
                 </>
               ) : (
-                <span style={{ 
-                  color: '#27ae60', 
-                  fontWeight: 600, 
-                  fontSize: '1.1rem' 
+                <span style={{
+                  color: 'var(--olive)',
+                  fontWeight: 600,
+                  fontSize: '1.1rem'
                 }}>
                   + ${booking.priceUsd.toFixed(2)} USD
                 </span>
@@ -283,7 +284,7 @@ const SitterMyBookings: React.FC = () => {
 
       {error && (
         <div className="general-error">
-          <i className="fas fa-exclamation-circle"></i>
+          <CircleAlert size={16} />
           {error}
         </div>
       )}
@@ -294,15 +295,15 @@ const SitterMyBookings: React.FC = () => {
         justifyContent: 'center',
         gap: '10px', 
         marginBottom: '30px',
-        borderBottom: '2px solid #ecf0f1'
+        borderBottom: '2px solid var(--line)'
       }}>
         <button
           onClick={() => setActiveTab('pet')}
           style={{
             padding: '12px 32px',
             border: 'none',
-            background: activeTab === 'pet' ? '#667eea' : 'transparent',
-            color: activeTab === 'pet' ? 'white' : '#7f8c8d',
+            background: activeTab === 'pet' ? 'var(--terracotta)' : 'transparent',
+            color: activeTab === 'pet' ? 'white' : 'var(--ink-faint)',
             fontWeight: 600,
             fontSize: '1.05rem',
             cursor: 'pointer',
@@ -312,7 +313,7 @@ const SitterMyBookings: React.FC = () => {
             bottom: '-2px'
           }}
         >
-          <i className="fas fa-paw" style={{ marginRight: '8px' }}></i>
+          <PawPrint size={16} />
           Pet Sittings ({petBookings.length})
         </button>
         <button
@@ -320,8 +321,8 @@ const SitterMyBookings: React.FC = () => {
           style={{
             padding: '12px 32px',
             border: 'none',
-            background: activeTab === 'child' ? '#667eea' : 'transparent',
-            color: activeTab === 'child' ? 'white' : '#7f8c8d',
+            background: activeTab === 'child' ? 'var(--terracotta)' : 'transparent',
+            color: activeTab === 'child' ? 'white' : 'var(--ink-faint)',
             fontWeight: 600,
             fontSize: '1.05rem',
             cursor: 'pointer',
@@ -331,7 +332,7 @@ const SitterMyBookings: React.FC = () => {
             bottom: '-2px'
           }}
         >
-          <i className="fas fa-baby" style={{ marginRight: '8px' }}></i>
+          <Baby size={16} />
           Child Sittings ({childBookings.length})
         </button>
       </div>
@@ -344,7 +345,7 @@ const SitterMyBookings: React.FC = () => {
             style={{
               width: '100%',
               padding: '15px 20px',
-              border: '2px solid #667eea',
+              border: '2px solid var(--terracotta)',
               background: 'white',
               borderRadius: '8px',
               cursor: 'pointer',
@@ -353,30 +354,30 @@ const SitterMyBookings: React.FC = () => {
               alignItems: 'center',
               fontSize: '1.1rem',
               fontWeight: 600,
-              color: '#2c3e50',
+              color: 'var(--ink)',
               transition: 'all 0.3s ease',
               marginBottom: upcomingExpanded ? '15px' : '0'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f8f9fa'
+              e.currentTarget.style.backgroundColor = 'var(--paper-deep)'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'white'
             }}
           >
             <span>
-              <i className="fas fa-clock" style={{ color: '#f39c12', marginRight: '10px' }}></i>
+              <Clock size={16} />
               Upcoming Bookings ({upcomingBookings.length})
             </span>
-            <i className={`fas fa-chevron-${upcomingExpanded ? 'up' : 'down'}`} style={{ color: '#667eea' }}></i>
+            {(upcomingExpanded) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
           {upcomingExpanded && (
             <div className="children-list">
               {upcomingBookings.length > 0 ? (
                 upcomingBookings.map(renderBookingCard)
               ) : (
-                <div style={{ textAlign: 'center', padding: '30px 20px', color: '#7f8c8d' }}>
-                  <i className="fas fa-calendar-times" style={{ fontSize: '2rem', marginBottom: '10px', opacity: 0.3 }}></i>
+                <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--ink-faint)' }}>
+                  <CalendarX size={16} />
                   <p>No upcoming sessions</p>
                 </div>
               )}
@@ -391,7 +392,7 @@ const SitterMyBookings: React.FC = () => {
             style={{
               width: '100%',
               padding: '15px 20px',
-              border: '2px solid #27ae60',
+              border: '2px solid var(--olive)',
               background: 'white',
               borderRadius: '8px',
               cursor: 'pointer',
@@ -400,30 +401,30 @@ const SitterMyBookings: React.FC = () => {
               alignItems: 'center',
               fontSize: '1.1rem',
               fontWeight: 600,
-              color: '#2c3e50',
+              color: 'var(--ink)',
               transition: 'all 0.3s ease',
               marginBottom: finishedExpanded ? '15px' : '0'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f8f9fa'
+              e.currentTarget.style.backgroundColor = 'var(--paper-deep)'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'white'
             }}
           >
             <span>
-              <i className="fas fa-check-circle" style={{ color: '#27ae60', marginRight: '10px' }}></i>
+              <CircleCheck size={16} />
               Finished Bookings ({finishedBookings.length})
             </span>
-            <i className={`fas fa-chevron-${finishedExpanded ? 'up' : 'down'}`} style={{ color: '#27ae60' }}></i>
+            {(finishedExpanded) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
           {finishedExpanded && (
             <div className="children-list">
               {finishedBookings.length > 0 ? (
                 finishedBookings.map(renderBookingCard)
               ) : (
-                <div style={{ textAlign: 'center', padding: '30px 20px', color: '#7f8c8d' }}>
-                  <i className="fas fa-history" style={{ fontSize: '2rem', marginBottom: '10px', opacity: 0.3 }}></i>
+                <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--ink-faint)' }}>
+                  <History size={16} />
                   <p>No finished sessions</p>
                 </div>
               )}
@@ -436,10 +437,9 @@ const SitterMyBookings: React.FC = () => {
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
-            color: '#7f8c8d'
+            color: 'var(--ink-faint)'
           }}>
-            <i className={`fas ${activeTab === 'pet' ? 'fa-paw' : 'fa-baby'}`} 
-               style={{ fontSize: '4rem', marginBottom: '20px', opacity: 0.3 }}></i>
+            {activeTab === 'pet' ? <PawPrint size={56} /> : <Baby size={56} />}
             <p style={{ fontSize: '1.2rem', marginBottom: '10px', fontWeight: 600 }}>
               No {activeTab === 'pet' ? 'pet' : 'child'} sitting sessions yet
             </p>
@@ -454,4 +454,3 @@ const SitterMyBookings: React.FC = () => {
 }
 
 export default SitterMyBookings
-

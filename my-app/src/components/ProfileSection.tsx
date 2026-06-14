@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Building2, Cake, Calendar, Check, CircleAlert, CircleCheck, LoaderCircle, Mail, MapPin, Pen, Phone, User, X } from 'lucide-react'
 import authService from '../services/authService';
 import './ProfileSection.css';
 
@@ -120,7 +121,7 @@ const ProfileSection: React.FC = () => {
   if (isLoading) {
     return (
       <div className="profile-loading">
-        <i className="fas fa-spinner fa-spin"></i>
+        <LoaderCircle size={16} className="spin" />
         <p>Loading profile...</p>
       </div>
     );
@@ -135,14 +136,14 @@ const ProfileSection: React.FC = () => {
 
       {error && (
         <div className="alert alert-error">
-          <i className="fas fa-exclamation-circle"></i>
+          <CircleAlert size={16} />
           {error}
         </div>
       )}
 
       {successMessage && (
         <div className="alert alert-success">
-          <i className="fas fa-check-circle"></i>
+          <CircleCheck size={16} />
           {successMessage}
         </div>
       )}
@@ -154,7 +155,7 @@ const ProfileSection: React.FC = () => {
           <div className="profile-fields">
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-envelope"></i>
+                <Mail size={16} />
                 Email Address
               </div>
               <div className="field-value readonly">
@@ -164,7 +165,7 @@ const ProfileSection: React.FC = () => {
 
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-calendar-alt"></i>
+                <Calendar size={16} />
                 Member Since
               </div>
               <div className="field-value readonly">
@@ -181,7 +182,7 @@ const ProfileSection: React.FC = () => {
             {/* Full Name */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-user"></i>
+                <User size={16} />
                 Full Name
               </div>
               {editingField === 'full_name' ? (
@@ -200,9 +201,9 @@ const ProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -210,7 +211,7 @@ const ProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -222,7 +223,7 @@ const ProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -231,7 +232,7 @@ const ProfileSection: React.FC = () => {
             {/* Phone Number */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-phone"></i>
+                <Phone size={16} />
                 Phone Number
               </div>
               {editingField === 'phone' ? (
@@ -251,9 +252,9 @@ const ProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -261,7 +262,7 @@ const ProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -273,7 +274,7 @@ const ProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -282,7 +283,7 @@ const ProfileSection: React.FC = () => {
             {/* Date of Birth */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-birthday-cake"></i>
+                <Cake size={16} />
                 Date of Birth
               </div>
               {editingField === 'date_of_birth' ? (
@@ -301,9 +302,9 @@ const ProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -311,7 +312,7 @@ const ProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -325,7 +326,7 @@ const ProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -334,7 +335,7 @@ const ProfileSection: React.FC = () => {
             {/* Area */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-map-marker-alt"></i>
+                <MapPin size={16} />
                 Area
               </div>
               {editingField === 'area' ? (
@@ -353,9 +354,9 @@ const ProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -363,7 +364,7 @@ const ProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -375,7 +376,7 @@ const ProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -384,7 +385,7 @@ const ProfileSection: React.FC = () => {
             {/* City */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-city"></i>
+                <Building2 size={16} />
                 City
               </div>
               {editingField === 'city' ? (
@@ -403,9 +404,9 @@ const ProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -413,7 +414,7 @@ const ProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -425,7 +426,7 @@ const ProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}

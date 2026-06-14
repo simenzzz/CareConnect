@@ -1,53 +1,51 @@
 .about-us {
-  padding: 80px 0;
-  background: white;
+  padding: var(--space-9) 0;
+  background: var(--paper);
 }
 
 .about-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(var(--space-6), 6vw, 80px);
   align-items: center;
 }
 
 .about-text h2 {
-  font-size: 36px;
-  color: #2c3e50;
-  margin-bottom: 25px;
-  font-weight: 700;
+  font-size: var(--fs-h2);
+  margin: var(--space-4) 0 var(--space-5);
 }
 
 .about-text p {
-  color: #7f8c8d;
-  font-size: 16px;
+  color: var(--ink-soft);
+  font-size: 1.08rem;
   line-height: 1.8;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-4);
 }
 
 .about-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  margin-top: 40px;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 
 .stat {
   text-align: center;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 10px;
+  padding: var(--space-5) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
 }
 
 .stat h3 {
-  font-size: 32px;
-  color: #2c5aa0;
-  margin-bottom: 10px;
-  font-weight: 700;
+  font-size: 2.1rem;
+  color: var(--terracotta);
+  margin-bottom: var(--space-1);
 }
 
 .stat p {
-  color: #7f8c8d;
-  font-size: 14px;
+  color: var(--ink-faint);
+  font-size: var(--fs-sm);
   margin: 0;
   font-weight: 500;
 }
@@ -59,30 +57,46 @@
 }
 
 .about-placeholder {
-  width: 300px;
-  height: 300px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
+  width: min(340px, 100%);
+  aspect-ratio: 1;
+  background: var(--ink);
+  border-radius: var(--r-xl);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 80px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--brass);
+  position: relative;
+  overflow: hidden;
+}
+
+.about-placeholder::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(201, 163, 91, 0.22),
+    transparent 60%
+  );
 }
 
 @media (max-width: 768px) {
   .about-content {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: var(--space-6);
     text-align: center;
   }
-  
-  .about-text h2 {
-    font-size: 28px;
+
+  .about-text :where(.hearth-eyebrow) {
+    justify-content: center;
   }
-  
+
   .about-stats {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: var(--space-3);
+  }
+
+  .about-image {
+    order: -1;
   }
 }

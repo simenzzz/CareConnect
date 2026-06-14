@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { CalendarCheck, User, Wallet } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
@@ -39,7 +40,7 @@ const SitterPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'profile' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('profile')}
               >
-                <i className="fas fa-user"></i>
+                <User size={16} />
                 <span>Profile</span>
               </button>
               
@@ -47,7 +48,7 @@ const SitterPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'bookings' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('bookings')}
               >
-                <i className="fas fa-calendar-check"></i>
+                <CalendarCheck size={16} />
                 <span>Bookings</span>
               </button>
               
@@ -55,7 +56,7 @@ const SitterPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'balance' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('balance')}
               >
-                <i className="fas fa-wallet"></i>
+                <Wallet size={16} />
                 <span>My Balance</span>
               </button>
             </nav>

@@ -1,4 +1,5 @@
 import React from 'react'
+import { User, Star } from 'lucide-react'
 import './SitterCard.css'
 
 interface SitterCardProps {
@@ -23,7 +24,7 @@ const SitterCard: React.FC<SitterCardProps> = ({ sitter }) => {
           <img src={sitter.image} alt={sitter.name} />
         ) : (
           <div className="sitter-placeholder">
-            <i className="fas fa-user"></i>
+            <User size={56} strokeWidth={1.25} />
           </div>
         )}
       </div>
@@ -41,10 +42,12 @@ const SitterCard: React.FC<SitterCardProps> = ({ sitter }) => {
         <div className="sitter-rating">
           <div className="stars">
             {[...Array(5)].map((_, i) => (
-              <i 
-                key={i} 
-                className={`fas fa-star ${i < sitter.rating ? 'filled' : ''}`}
-              ></i>
+              <Star
+                key={i}
+                size={15}
+                className={i < sitter.rating ? 'filled' : ''}
+                fill={i < sitter.rating ? 'currentColor' : 'none'}
+              />
             ))}
           </div>
           <span className="rating-text">{sitter.rating}/5</span>

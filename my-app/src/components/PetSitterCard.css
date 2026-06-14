@@ -1,10 +1,15 @@
+/*
+ * Pet sitter card. Shares the generic .sitter-* internals defined in
+ * BabySitterCard.css (both cards always render together on the sitter pages);
+ * this file only carries the pet-specific wrapper + olive accent overrides.
+ */
 .pet-sitter-card {
-  background: white;
-  border-radius: 15px;
-  padding: 25px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border-left: 4px solid #3498db;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--olive);
+  border-radius: var(--r-lg);
+  padding: var(--space-5);
+  transition: transform var(--t-med), box-shadow var(--t-med);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -12,161 +17,23 @@
 
 .pet-sitter-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
-/* Disable hover effects when modal is open */
 body.modal-open .pet-sitter-card:hover {
   transform: none;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
-body.modal-open .book-session-btn:hover {
-  transform: none;
+.pet-sitter-card .sitter-avatar {
+  background: var(--olive);
 }
 
-.sitter-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
+.pet-sitter-card .sitter-location svg {
+  color: var(--olive);
 }
 
-.sitter-avatar {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  flex-shrink: 0;
-}
-
-.sitter-avatar i {
-  font-size: 1.5rem;
-  color: white;
-}
-
-.sitter-info {
-  flex: 1;
-}
-
-.sitter-info h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0 0 5px 0;
-}
-
-.sitter-location {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-.sitter-location i {
-  margin-right: 5px;
-  color: #e74c3c;
-}
-
-.sitter-rating {
-  display: flex;
-  align-items: center;
-  background: #f8f9fa;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.sitter-rating i {
-  color: #f39c12;
-  margin-right: 5px;
-}
-
-.sitter-details {
-  margin-bottom: 20px;
-  flex: 1;
-}
-
-.sitter-experience {
-  color: #7f8c8d;
-  line-height: 1.6;
-  margin-bottom: 15px;
-  font-size: 0.95rem;
-}
-
-.sitter-specialties {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.specialty-tag {
-  background: #e8f4fd;
-  color: #2980b9;
-  padding: 4px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.sitter-contact {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 15px;
-  border-top: 1px solid #ecf0f1;
-}
-
-.book-session-btn {
-  background: #27ae60;
-  color: white;
-  border: none;
-  padding: 12px 25px;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  justify-content: center;
-}
-
-.book-session-btn:hover {
-  background: #229954;
-  transform: translateY(-2px);
-}
-
-.book-session-btn i {
-  font-size: 1.1rem;
-}
-
-@media (max-width: 768px) {
-  .sitter-header {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .sitter-avatar {
-    margin-right: 0;
-    margin-bottom: 15px;
-  }
-  
-  .sitter-contact {
-    flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
-  }
-  
-  .whatsapp-btn {
-    justify-content: center;
-  }
+.pet-sitter-card .specialty-tag {
+  background: var(--olive-tint);
+  color: var(--olive-d);
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Baby, CalendarCheck, CreditCard, MapPin, PawPrint, User } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
@@ -42,7 +43,7 @@ const UserPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'profile' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('profile')}
               >
-                <i className="fas fa-user"></i>
+                <User size={16} />
                 <span>Profile</span>
               </button>
               
@@ -50,7 +51,7 @@ const UserPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'manage-children' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('manage-children')}
               >
-                <i className="fas fa-baby"></i>
+                <Baby size={16} />
                 <span>Manage Children</span>
               </button>
               
@@ -58,7 +59,7 @@ const UserPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'manage-pets' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('manage-pets')}
               >
-                <i className="fas fa-paw"></i>
+                <PawPrint size={16} />
                 <span>Manage Pets</span>
               </button>
               
@@ -66,7 +67,7 @@ const UserPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'my-locations' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('my-locations')}
               >
-                <i className="fas fa-map-marker-alt"></i>
+                <MapPin size={16} />
                 <span>My Locations</span>
               </button>
               
@@ -74,7 +75,7 @@ const UserPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'my-bookings' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('my-bookings')}
               >
-                <i className="fas fa-calendar-check"></i>
+                <CalendarCheck size={16} />
                 <span>My Bookings</span>
               </button>
               
@@ -82,7 +83,7 @@ const UserPortalPage: React.FC = () => {
                 className={`sidebar-item ${activeSection === 'payment-methods' ? 'active' : ''}`}
                 onClick={() => handleSectionChange('payment-methods')}
               >
-                <i className="fas fa-credit-card"></i>
+                <CreditCard size={16} />
                 <span>Payment Methods</span>
               </button>
             </nav>

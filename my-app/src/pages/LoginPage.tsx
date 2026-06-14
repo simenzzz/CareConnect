@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Home, UserRound, Eye, EyeOff, CircleAlert, Check } from 'lucide-react'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
+import Button from '../components/ui/Button'
+import { GoogleIcon, FacebookIcon } from '../components/ui/icons'
 import authService from '../services/authService'
 import './AuthPage.css'
 
@@ -30,29 +33,29 @@ const LoginPage: React.FC = () => {
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {}
-    
+
     if (!formData.email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid'
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
-    
+
     setIsLoading(true)
     setErrors({}) // Clear any previous errors
-    
+
     try {
       // Call the login API
       const result = await authService.login({
@@ -61,7 +64,7 @@ const LoginPage: React.FC = () => {
         expectedUserType: 'sitter',
         rememberMe: formData.rememberMe
       })
-      
+
       if (result.success) {
         // Send sitters to their dashboard.
         navigate('/sitter-portal')
@@ -87,37 +90,30 @@ const LoginPage: React.FC = () => {
           <div className="auth-form-container">
             <div className="login-type-tabs">
               <Link to="/customer-login" className="tab-link">
-                <i className="fas fa-home"></i>
+                <Home size={16} />
                 Customer
               </Link>
               <Link to="/login" className="tab-link active">
-                <i className="fas fa-user-tie"></i>
+                <UserRound size={16} />
                 Sitter
               </Link>
             </div>
 
             <div className="auth-header">
-              <h1>Welcome Back</h1>
+              <h1>Welcome back</h1>
               <p>Sign in to your sitter account</p>
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
               {errors.general && (
-                <div className="error-message" style={{ 
-                  display: 'block', 
-                  marginBottom: '20px', 
-                  padding: '12px', 
-                  background: '#fee', 
-                  border: '1px solid #fcc', 
-                  borderRadius: '8px',
-                  color: '#c33'
-                }}>
-                  {errors.general}
+                <div className="general-error">
+                  <CircleAlert size={18} />
+                  <span>{errors.general}</span>
                 </div>
               )}
 
               <div className="form-group">
-                <label htmlFor="email">Email Address</label>
+                <label htmlFor="email">Email address</label>
                 <input
                   type="email"
                   id="email"
@@ -146,8 +142,9 @@ const LoginPage: React.FC = () => {
                     type="button"
                     className="password-toggle"
                     onClick={togglePassword}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {errors.password && <span className="error-message">{errors.password}</span>}
@@ -155,25 +152,21 @@ const LoginPage: React.FC = () => {
 
               <div className="form-options">
                 <label className="checkbox-container">
-                  <input 
-                    type="checkbox" 
-                    id="rememberMe" 
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
                     name="rememberMe"
                     checked={formData.rememberMe}
                     onChange={handleInputChange}
                   />
-                  <span className="checkmark"></span>
                   Remember me
                 </label>
-                <a href="#" className="forgot-password">Forgot Password?</a>
+                <a href="#" className="forgot-password">Forgot password?</a>
               </div>
 
-              <button type="submit" className="btn-auth" disabled={isLoading}>
-                <span className="btn-text">Sign In</span>
-                <div className="btn-loader" style={{ display: isLoading ? 'block' : 'none' }}>
-                  <i className="fas fa-spinner fa-spin"></i>
-                </div>
-              </button>
+              <Button type="submit" loading={isLoading} fullWidth>
+                Sign in
+              </Button>
             </form>
 
             <div className="auth-divider">
@@ -181,12 +174,12 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="social-login">
-              <button className="social-btn google-btn">
-                <i className="fab fa-google"></i>
+              <button type="button" className="social-btn google-btn">
+                <GoogleIcon size={18} />
                 Continue with Google
               </button>
-              <button className="social-btn facebook-btn">
-                <i className="fab fa-facebook-f"></i>
+              <button type="button" className="social-btn facebook-btn">
+                <FacebookIcon size={18} />
                 Continue with Facebook
               </button>
             </div>
@@ -199,13 +192,13 @@ const LoginPage: React.FC = () => {
 
           <div className="auth-side">
             <div className="auth-side-content">
-              <h2>Join Our Community</h2>
-              <p>Connect with families who need your care services</p>
+              <h2>Join our community</h2>
+              <p>Connect with families across Lebanon who need your care.</p>
               <ul>
-                <li>✓ Flexible scheduling</li>
-                <li>✓ Competitive rates</li>
-                <li>✓ Safe environment</li>
-                <li>✓ Support team</li>
+                <li><Check size={18} /> Flexible scheduling</li>
+                <li><Check size={18} /> Competitive rates</li>
+                <li><Check size={18} /> A safe, vetted environment</li>
+                <li><Check size={18} /> A support team behind you</li>
               </ul>
             </div>
           </div>

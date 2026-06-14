@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Briefcase, Building2, Cake, Calendar, Check, CircleAlert, CircleCheck, Clock, LoaderCircle, Mail, MapPin, Pen, Phone, Plus, Star, TextAlignStart, Trash2, User, X } from 'lucide-react'
 import authService from '../services/authService';
+import sitterProfileService, { type AvailabilitySlot } from '../services/sitterProfileService';
 import './ProfileSection.css';
 
 interface SitterProfileData {
@@ -40,6 +42,8 @@ const SitterProfileSection: React.FC = () => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -49,7 +53,10 @@ const SitterProfileSection: React.FC = () => {
     setIsLoading(true);
     setError(null);
     
-    const response = await authService.getProfile();
+    const [response, availabilityResponse] = await Promise.all([
+      authService.getProfile(),
+      sitterProfileService.getAvailability(),
+    ]);
     
     if (response.success && response.data) {
       setUserData(response.data.user);
@@ -57,8 +64,39 @@ const SitterProfileSection: React.FC = () => {
     } else {
       setError(response.error || 'Failed to load profile');
     }
+
+    if (availabilityResponse.success && availabilityResponse.data) {
+      setAvailability(availabilityResponse.data);
+    }
     
     setIsLoading(false);
+  };
+
+  const addAvailabilitySlot = () => {
+    setAvailability(prev => [...prev, { dayOfWeek: 1, startTime: '09:00', endTime: '17:00' }]);
+  };
+
+  const updateAvailabilitySlot = (index: number, patch: Partial<AvailabilitySlot>) => {
+    setAvailability(prev => prev.map((slot, i) => i === index ? { ...slot, ...patch } : slot));
+  };
+
+  const removeAvailabilitySlot = (index: number) => {
+    setAvailability(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const saveAvailability = async () => {
+    setIsSavingAvailability(true);
+    setError(null);
+    setSuccessMessage(null);
+    const response = await sitterProfileService.updateAvailability(availability);
+    if (response.success) {
+      setAvailability(response.data || availability);
+      setSuccessMessage('Availability updated successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } else {
+      setError(response.error || 'Failed to update availability');
+    }
+    setIsSavingAvailability(false);
   };
 
   const handleEdit = (field: string, currentValue: string) => {
@@ -122,10 +160,12 @@ const SitterProfileSection: React.FC = () => {
     }
   };
 
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
   if (isLoading) {
     return (
       <div className="profile-loading">
-        <i className="fas fa-spinner fa-spin"></i>
+        <LoaderCircle size={16} className="spin" />
         <p>Loading profile...</p>
       </div>
     );
@@ -140,14 +180,14 @@ const SitterProfileSection: React.FC = () => {
 
       {error && (
         <div className="alert alert-error">
-          <i className="fas fa-exclamation-circle"></i>
+          <CircleAlert size={16} />
           {error}
         </div>
       )}
 
       {successMessage && (
         <div className="alert alert-success">
-          <i className="fas fa-check-circle"></i>
+          <CircleCheck size={16} />
           {successMessage}
         </div>
       )}
@@ -159,7 +199,7 @@ const SitterProfileSection: React.FC = () => {
           <div className="profile-fields">
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-envelope"></i>
+                <Mail size={16} />
                 Email Address
               </div>
               <div className="field-value readonly">
@@ -169,7 +209,7 @@ const SitterProfileSection: React.FC = () => {
 
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-calendar-alt"></i>
+                <Calendar size={16} />
                 Member Since
               </div>
               <div className="field-value readonly">
@@ -186,7 +226,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Full Name */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-user"></i>
+                <User size={16} />
                 Full Name
               </div>
               {editingField === 'full_name' ? (
@@ -205,9 +245,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -215,7 +255,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -227,7 +267,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -236,7 +276,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Date of Birth */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-birthday-cake"></i>
+                <Cake size={16} />
                 Date of Birth
               </div>
               {editingField === 'date_of_birth' ? (
@@ -255,9 +295,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -265,7 +305,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -279,7 +319,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -288,7 +328,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Phone */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-phone"></i>
+                <Phone size={16} />
                 Phone Number
               </div>
               {editingField === 'phone' ? (
@@ -307,9 +347,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -317,7 +357,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -329,7 +369,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -338,7 +378,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Area */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-map-marker-alt"></i>
+                <MapPin size={16} />
                 Area
               </div>
               {editingField === 'area' ? (
@@ -357,9 +397,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -367,7 +407,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -379,7 +419,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -388,7 +428,7 @@ const SitterProfileSection: React.FC = () => {
             {/* City */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-city"></i>
+                <Building2 size={16} />
                 City
               </div>
               {editingField === 'city' ? (
@@ -407,9 +447,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -417,7 +457,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -429,7 +469,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -444,7 +484,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Sitter Type */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-briefcase"></i>
+                <Briefcase size={16} />
                 Sitter Type
               </div>
               {editingField === 'sitter_type' ? (
@@ -466,9 +506,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -476,7 +516,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -488,7 +528,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -497,7 +537,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Hours Per Week */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-clock"></i>
+                <Clock size={16} />
                 Hours Per Week
               </div>
               {editingField === 'hours_per_week' ? (
@@ -518,9 +558,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -528,7 +568,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -540,7 +580,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -549,7 +589,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Experience */}
             <div className="profile-field">
               <div className="field-label">
-                <i className="fas fa-star"></i>
+                <Star size={16} />
                 Years of Experience
               </div>
               {editingField === 'experience' ? (
@@ -569,9 +609,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -579,7 +619,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -591,7 +631,7 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
@@ -600,7 +640,7 @@ const SitterProfileSection: React.FC = () => {
             {/* Description */}
             <div className="profile-field full-width">
               <div className="field-label">
-                <i className="fas fa-align-left"></i>
+                <TextAlignStart size={16} />
                 About Me / Description
               </div>
               {editingField === 'description' ? (
@@ -620,9 +660,9 @@ const SitterProfileSection: React.FC = () => {
                       disabled={isSaving}
                     >
                       {isSaving ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <LoaderCircle size={16} className="spin" />
                       ) : (
-                        <i className="fas fa-check"></i>
+                        <Check size={16} />
                       )}
                     </button>
                     <button 
@@ -630,7 +670,7 @@ const SitterProfileSection: React.FC = () => {
                       className="btn-cancel"
                       disabled={isSaving}
                     >
-                      <i className="fas fa-times"></i>
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
@@ -642,12 +682,59 @@ const SitterProfileSection: React.FC = () => {
                     className="btn-edit"
                     title="Edit"
                   >
-                    <i className="fas fa-pen"></i>
+                    <Pen size={16} />
                   </button>
                 </div>
               )}
             </div>
           </div>
+        </div>
+
+        <div className="card-section">
+          <div className="availability-header">
+            <h3>Weekly Availability</h3>
+            <button type="button" className="btn-edit" onClick={addAvailabilitySlot} title="Add slot">
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="availability-slots">
+            {availability.length === 0 ? (
+              <p className="availability-empty">No availability set yet.</p>
+            ) : (
+              availability.map((slot, index) => (
+                <div className="availability-slot" key={`${slot.dayOfWeek}-${slot.startTime}-${index}`}>
+                  <select
+                    value={slot.dayOfWeek}
+                    onChange={(e) => updateAvailabilitySlot(index, { dayOfWeek: Number(e.target.value) })}
+                  >
+                    {dayNames.map((day, dayIndex) => (
+                      <option key={day} value={dayIndex}>{day}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="time"
+                    value={slot.startTime}
+                    onChange={(e) => updateAvailabilitySlot(index, { startTime: e.target.value })}
+                  />
+                  <input
+                    type="time"
+                    value={slot.endTime}
+                    onChange={(e) => updateAvailabilitySlot(index, { endTime: e.target.value })}
+                  />
+                  <button type="button" className="btn-cancel" onClick={() => removeAvailabilitySlot(index)} title="Remove slot">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+          <button type="button" className="btn-save-availability" onClick={saveAvailability} disabled={isSavingAvailability}>
+            {isSavingAvailability ? (
+              <><LoaderCircle size={16} className="spin" /> Saving...</>
+            ) : (
+              <><Check size={16} /> Save Availability</>
+            )}
+          </button>
         </div>
       </div>
     </div>
@@ -655,5 +742,4 @@ const SitterProfileSection: React.FC = () => {
 };
 
 export default SitterProfileSection;
-
 

@@ -1,7 +1,27 @@
 import React, { useState } from 'react'
 import { logger } from '../utils/logger';
 import { Link, useNavigate } from 'react-router-dom'
+import {
+  User,
+  Cake,
+  MapPin,
+  Building2,
+  Mail,
+  Phone,
+  Lock,
+  Eye,
+  EyeOff,
+  CircleCheck,
+  TriangleAlert,
+  ShieldCheck,
+  Star,
+  Clock,
+  Smartphone,
+  Heart,
+  DollarSign,
+} from 'lucide-react'
 import SubPageHeader from '../components/SubPageHeader'
+import Button from '../components/ui/Button'
 import { authService } from '../services/authService'
 import { lebanonAreas } from '../data/lebanon'
 import {
@@ -457,19 +477,19 @@ const CustomerSignupPage: React.FC = () => {
         <div className="customer-signup-container">
           <div className="customer-signup-form-container">
             <div className="customer-signup-header">
-              <h1>Join as a Customer</h1>
+              <h1>Join as a customer</h1>
               <p>Create your account and find trusted care for your family</p>
             </div>
 
             <form onSubmit={handleSubmit} className="customer-signup-form">
               {/* Personal Information */}
               <div className="form-section">
-                <h3>Personal Information</h3>
-                
+                <h3>Personal information</h3>
+
                 <div className="form-group">
                   <label htmlFor="customerName">Full Name *</label>
                   <div className="input-group">
-                    <i className="fas fa-user"></i>
+                    <User size={18} />
                     <input
                       type="text"
                       id="customerName"
@@ -486,7 +506,7 @@ const CustomerSignupPage: React.FC = () => {
                 <div className="form-group">
                   <label htmlFor="customerDOB">Date of Birth *</label>
                   <div className="input-group">
-                    <i className="fas fa-birthday-cake"></i>
+                    <Cake size={18} />
                     <input
                       type="date"
                       id="customerDOB"
@@ -502,7 +522,7 @@ const CustomerSignupPage: React.FC = () => {
                 <div className="form-group">
                   <label htmlFor="customerArea">Area in Lebanon *</label>
                   <div className="input-group">
-                    <i className="fas fa-map-marker-alt"></i>
+                    <MapPin size={18} />
                     <select
                       id="customerArea"
                       name="customerArea"
@@ -525,7 +545,7 @@ const CustomerSignupPage: React.FC = () => {
                 <div className="form-group">
                   <label htmlFor="customerLocation">Location *</label>
                   <div className="input-group">
-                    <i className="fas fa-location-dot"></i>
+                    <Building2 size={18} />
                     <select
                       id="customerLocation"
                       name="customerLocation"
@@ -548,12 +568,12 @@ const CustomerSignupPage: React.FC = () => {
 
               {/* Contact Information */}
               <div className="form-section">
-                <h3>Contact Information</h3>
-                
+                <h3>Contact information</h3>
+
                 <div className="form-group">
                   <label htmlFor="customerEmail">Email Address *</label>
                   <div className="input-group">
-                    <i className="fas fa-envelope"></i>
+                    <Mail size={18} />
                     <input
                       type="email"
                       id="customerEmail"
@@ -570,7 +590,7 @@ const CustomerSignupPage: React.FC = () => {
                 <div className="form-group">
                   <label htmlFor="customerPhone">Phone Number *</label>
                   <div className="input-group">
-                    <i className="fas fa-phone"></i>
+                    <Phone size={18} />
                     <input
                       type="tel"
                       id="customerPhone"
@@ -587,7 +607,7 @@ const CustomerSignupPage: React.FC = () => {
                 <div className="form-group">
                   <label htmlFor="customerPassword">Password *</label>
                   <div className="input-group">
-                    <i className="fas fa-lock"></i>
+                    <Lock size={18} />
                     <input
                       type={showPassword ? "text" : "password"}
                       id="customerPassword"
@@ -597,8 +617,8 @@ const CustomerSignupPage: React.FC = () => {
                       className={errors.customerPassword ? 'error' : ''}
                       placeholder="Create a password"
                     />
-                    <button type="button" className="password-toggle" onClick={togglePassword}>
-                      <i className={`fas fa-${showPassword ? 'eye-slash' : 'eye'}`}></i>
+                    <button type="button" className="password-toggle" onClick={togglePassword} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {errors.customerPassword && <span className="error-message">{errors.customerPassword}</span>}
@@ -607,7 +627,7 @@ const CustomerSignupPage: React.FC = () => {
                 <div className="form-group">
                   <label htmlFor="customerConfirmPassword">Confirm Password *</label>
                   <div className="input-group">
-                    <i className="fas fa-lock"></i>
+                    <Lock size={18} />
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       id="customerConfirmPassword"
@@ -617,8 +637,8 @@ const CustomerSignupPage: React.FC = () => {
                       className={errors.customerConfirmPassword ? 'error' : ''}
                       placeholder="Confirm your password"
                     />
-                    <button type="button" className="password-toggle" onClick={toggleConfirmPassword}>
-                      <i className={`fas fa-${showConfirmPassword ? 'eye-slash' : 'eye'}`}></i>
+                    <button type="button" className="password-toggle" onClick={toggleConfirmPassword} aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}>
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {errors.customerConfirmPassword && <span className="error-message">{errors.customerConfirmPassword}</span>}
@@ -644,19 +664,12 @@ const CustomerSignupPage: React.FC = () => {
               {/* Terms and Conditions */}
               <div className="form-group">
                 <div className="terms-agreement">
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', fontSize: '14px', color: '#2c3e50' }}>
+                  <label className="terms-checkbox">
                     <input
                       type="checkbox"
                       name="termsAccepted"
                       checked={formData.termsAccepted}
                       onChange={handleCheckboxChange}
-                      style={{ 
-                        width: '18px', 
-                        height: '18px', 
-                        marginTop: '2px',
-                        accentColor: '#e74c3c',
-                        cursor: 'pointer'
-                      }}
                     />
                     <span>
                       I agree to the <a href="#" className="terms-link">Terms and Conditions</a> and <a href="#" className="terms-link">Privacy Policy</a> *
@@ -669,25 +682,22 @@ const CustomerSignupPage: React.FC = () => {
                 {/* Success Message Display */}
                 {successMessage && (
                   <div className="success-message">
-                    <i className="fas fa-check-circle"></i>
+                    <CircleCheck size={18} />
                     {successMessage}
                   </div>
                 )}
 
                 {/* General Error Display */}
                 {errors.general && (
-                  <div className="error-message general-error">
-                    <i className="fas fa-exclamation-triangle"></i>
+                  <div className="general-error">
+                    <TriangleAlert size={18} />
                     {errors.general}
                   </div>
                 )}
 
-              <button type="submit" className="btn-auth" disabled={isLoading}>
-                <span className="btn-text">Create Customer Account</span>
-                <div className="btn-loader" style={{ display: isLoading ? 'block' : 'none' }}>
-                  <i className="fas fa-spinner fa-spin"></i>
-                </div>
-              </button>
+              <Button type="submit" loading={isLoading} fullWidth size="lg">
+                Create customer account
+              </Button>
             </form>
 
             <div className="auth-footer">
@@ -698,31 +708,31 @@ const CustomerSignupPage: React.FC = () => {
 
           <div className="auth-side">
             <div className="auth-side-content">
-              <h2>Find Trusted Care</h2>
+              <h2>Find trusted care</h2>
               <p>Connect with verified sitters who will care for your children and pets like their own.</p>
               <div className="benefits">
                 <div className="benefit-item">
-                  <i className="fas fa-shield-alt"></i>
+                  <ShieldCheck size={18} />
                   <span>Background verified sitters</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-star"></i>
+                  <Star size={18} />
                   <span>Rated and reviewed</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-clock"></i>
+                  <Clock size={18} />
                   <span>Flexible scheduling</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-mobile-alt"></i>
+                  <Smartphone size={18} />
                   <span>Easy booking system</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-heart"></i>
+                  <Heart size={18} />
                   <span>Personalized care</span>
                 </div>
                 <div className="benefit-item">
-                  <i className="fas fa-dollar-sign"></i>
+                  <DollarSign size={18} />
                   <span>Transparent pricing</span>
                 </div>
               </div>

@@ -1,0 +1,22 @@
+.hearth-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--olive-d);
+}
+
+.hearth-eyebrow__rule {
+  width: 34px;
+  height: 1.5px;
+  background: var(--olive);
+  display: inline-block;
+}
+
+.hearth-eyebrow--center {
+  justify-content: center;
+}

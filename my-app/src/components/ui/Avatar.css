@@ -1,0 +1,24 @@
+.hearth-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--olive-tint);
+  color: var(--olive-d);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variation-settings: var(--opsz-text);
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+
+.hearth-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hearth-avatar__initials {
+  line-height: 1;
+}
