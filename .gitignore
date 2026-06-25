@@ -9,6 +9,7 @@ backend/dist/
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 # Firebase service account keys
 careconnect-*-firebase-adminsdk-*.json

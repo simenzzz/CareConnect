@@ -15,11 +15,11 @@
     "@fontsource-variable/hanken-grotesk": "^5.2.8",
     "@fontsource/fraunces": "^5.2.9",
     "@fontsource/hanken-grotesk": "^5.2.8",
-    "firebase": "^10.14.1",
+    "firebase": "^12.15.0",
     "lucide-react": "^1.17.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.3"
+    "react-router-dom": "^7.18.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
