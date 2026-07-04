@@ -62,6 +62,9 @@ export const NEUTRAL_SCORE = 0.5;
 /** Maximum number of "why this match" reasons surfaced per sitter. */
 export const MAX_REASONS = 3;
 
+/** Maximum number of matched need terms listed in the needs-fit reason string. */
+export const MAX_NEEDS_IN_REASON = 3;
+
 /** sitter_type values eligible for a given booking type ('T' = does both). */
 export const ELIGIBLE_SITTER_TYPES: Record<BookingType, readonly SitterType[]> = {
   CHILD: ['B', 'T'],

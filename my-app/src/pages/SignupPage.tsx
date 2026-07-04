@@ -23,6 +23,7 @@ import {
   Users,
   Smartphone,
   Heart,
+  Camera,
 } from 'lucide-react'
 import SubPageHeader from '../components/SubPageHeader'
 import Button from '../components/ui/Button'
@@ -56,6 +57,7 @@ interface FormData {
   hoursPerWeek: string
   sitterType: string[]
   description: string
+  profileImage: File | null
   skills: string[]
   cv: File | null
   identityDocument: File | null
@@ -82,6 +84,7 @@ const SignupPage: React.FC = () => {
     hoursPerWeek: '',
     sitterType: [],
     description: '',
+    profileImage: null,
     skills: [],
     cv: null,
     identityDocument: null,
@@ -95,6 +98,8 @@ const SignupPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [uploadingCV, setUploadingCV] = useState(false)
   const [uploadingID, setUploadingID] = useState(false)
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false)
+  const [profileImagePreview, setProfileImagePreview] = useState('')
   const [mapLocationData, setMapLocationData] = useState<LocationFormData>({
     location_name: 'Sitter location',
     address_name: '',
@@ -119,6 +124,16 @@ const SignupPage: React.FC = () => {
       location: mapLocationData.city || prev.location
     }))
   }, [mapLocationData.latitude, mapLocationData.longitude, mapLocationData.area, mapLocationData.city])
+
+  useEffect(() => {
+    if (!formData.profileImage) {
+      setProfileImagePreview('')
+      return
+    }
+    const objectUrl = URL.createObjectURL(formData.profileImage)
+    setProfileImagePreview(objectUrl)
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [formData.profileImage])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -316,6 +331,7 @@ const SignupPage: React.FC = () => {
     if (formData.sitterType.length === 0) newErrors.sitterType = 'Please select at least one sitter type'
 
     // Check if files are selected
+    if (!formData.profileImage) newErrors.profileImage = 'Please select a profile photo'
     if (!formData.cv) newErrors.cv = 'Please select your CV'
     if (!formData.identityDocument) newErrors.identityDocument = 'Please select your identity document'
 
@@ -344,11 +360,23 @@ const SignupPage: React.FC = () => {
 
     setIsLoading(true)
 
+    const uploadedPaths: string[] = []
+    let createdFirebaseAccount = false
+
     try {
       logger.debug('🚀 Starting sitter signup...')
 
-      // Step 1: Create Firebase account first (without documents)
+      // Step 1: Create Firebase account first so Storage writes are UID-scoped.
       logger.debug('👤 Creating sitter signup...')
+      const accountResult = await authService.createFirebaseAccount(formData.email, formData.password)
+      if (!accountResult.success) {
+        setErrors(prev => ({
+          ...prev,
+          general: accountResult.error || 'Account creation failed. Please try again.'
+        }))
+        return
+      }
+      createdFirebaseAccount = true
 
       // Convert sitterType array to single character: B (baby), P (pet), T (both)
       let sitterTypeChar = 'T'
@@ -358,7 +386,54 @@ const SignupPage: React.FC = () => {
         sitterTypeChar = 'T' // Both types selected
       }
 
-      const profileDataWithoutDocs = {
+      logger.debug('✅ Firebase account created successfully')
+
+      // Step 2: Upload required profile photo and private documents to Firebase Storage.
+      logger.debug('📤 Uploading profile photo and documents...')
+      let uploadedProfileImageUrl = ''
+      let uploadedProfileImagePath = ''
+      let uploadedCvUrl = ''
+      let uploadedIdUrl = ''
+
+      if (formData.profileImage) {
+        setUploadingProfileImage(true)
+        const profileImageResult = await storageService.uploadProfileImage(formData.profileImage)
+        setUploadingProfileImage(false)
+
+        if (!profileImageResult.success || !profileImageResult.url || !profileImageResult.path) {
+          throw new Error(profileImageResult.error || 'Profile photo upload failed. Please try again.')
+        }
+        uploadedProfileImageUrl = profileImageResult.url
+        uploadedProfileImagePath = profileImageResult.path
+        uploadedPaths.push(profileImageResult.path)
+      }
+
+      if (formData.cv) {
+        setUploadingCV(true)
+        const cvResult = await storageService.uploadCV(formData.cv, formData.fullName)
+        setUploadingCV(false)
+
+        if (!cvResult.success || !cvResult.url) {
+          throw new Error(cvResult.error || 'CV upload failed. Please try again.')
+        }
+        uploadedCvUrl = cvResult.url
+        if (cvResult.path) uploadedPaths.push(cvResult.path)
+      }
+
+      if (formData.identityDocument) {
+        setUploadingID(true)
+        const idResult = await storageService.uploadIdentityDocument(formData.identityDocument, formData.fullName)
+        setUploadingID(false)
+
+        if (!idResult.success || !idResult.url) {
+          throw new Error(idResult.error || 'Identity document upload failed. Please try again.')
+        }
+        uploadedIdUrl = idResult.url
+        if (idResult.path) uploadedPaths.push(idResult.path)
+      }
+
+      // Step 3: Register the app profile with all Storage object references.
+      const profileData = {
         fullName: formData.fullName,
         dateOfBirth: formData.dateOfBirth,
         area: formData.area,
@@ -370,109 +445,35 @@ const SignupPage: React.FC = () => {
         sitterType: sitterTypeChar, // B, P, or T
         experience: 'Not specified',
         description: formData.description,
+        profileImageUrl: uploadedProfileImageUrl,
+        profileImagePath: uploadedProfileImagePath,
+        cvUrl: uploadedCvUrl,
+        identityDocumentUrl: uploadedIdUrl,
         skills: formData.skills
       }
 
-      const signupResult = await authService.signup({
-        email: formData.email,
-        password: formData.password,
-        userType: 'sitter',
-        profileData: profileDataWithoutDocs
-      })
-
-      if (!signupResult.success) {
-        logger.error('❌ Account creation failed:', signupResult.error)
-        setErrors(prev => ({
-          ...prev,
-          general: signupResult.error || 'Account creation failed. Please try again.'
-        }))
-        setIsLoading(false)
-        return
-      }
-
-      logger.debug('✅ Firebase account created successfully')
-
-      // Step 2: Now upload documents to Firebase Storage
-      logger.debug('📤 Uploading documents...')
-      let uploadedCvUrl = ''
-      let uploadedIdUrl = ''
-
-      if (formData.cv) {
-        setUploadingCV(true)
-        const cvResult = await storageService.uploadCV(formData.cv, formData.fullName)
-        setUploadingCV(false)
-
-        if (!cvResult.success) {
-          logger.error('❌ CV upload failed:', cvResult.error)
-          // Account is created but document upload failed - log this
-          setErrors(prev => ({
-            ...prev,
-            general: 'Account created but CV upload failed. You can update it later from your profile.'
-          }))
-          setIsLoading(false)
-          return
-        }
-        uploadedCvUrl = cvResult.url || ''
-        logger.debug('✅ CV uploaded:', uploadedCvUrl)
-      }
-
-      if (formData.identityDocument) {
-        setUploadingID(true)
-        const idResult = await storageService.uploadIdentityDocument(formData.identityDocument, formData.fullName)
-        setUploadingID(false)
-
-        if (!idResult.success) {
-          logger.error('❌ Identity document upload failed:', idResult.error)
-          // Account is created but document upload failed - log this
-          setErrors(prev => ({
-            ...prev,
-            general: 'Account created but identity document upload failed. You can update it later from your profile.'
-          }))
-          setIsLoading(false)
-          return
-        }
-        uploadedIdUrl = idResult.url || ''
-        logger.debug('✅ Identity Document uploaded:', uploadedIdUrl)
-      }
-
-      // Step 3: Update the user profile with document URLs in the database
-      logger.debug('📝 Updating database with document URLs...')
-      const updateResult = await authService.updateSitterDocuments(uploadedCvUrl, uploadedIdUrl)
-
-      if (!updateResult.success) {
-        logger.error('❌ Failed to update documents in database:', updateResult.error)
-        setErrors(prev => ({
-          ...prev,
-          general: 'Account created but failed to save document links. Please contact support.'
-        }))
-        setIsLoading(false)
-        return
-      }
-
-      logger.debug('✅ Documents saved to database')
-
-      const result = signupResult
-
-      if (result.success) {
-        logger.debug('✅ Signup successful:', result.data)
-        // Redirect to homepage with success message
-        navigate('/?signup=success')
-      } else {
-        // Show error in the UI instead of alert
-        setErrors(prev => ({
-          ...prev,
-          general: result.error || 'Account creation failed'
-        }))
-        logger.error('❌ Signup failed:', result.error)
-      }
+      const result = await authService.registerProfile(accountResult.user, 'sitter', profileData)
+      logger.debug('✅ Signup successful:', result.data)
+      navigate('/?signup=success')
 
     } catch (error) {
       logger.error('Error creating account:', error)
+      await Promise.all(
+        uploadedPaths.map((path) =>
+          storageService.deleteFile(path).catch((deleteError) => logger.error('Failed to cleanup uploaded file:', deleteError)),
+        ),
+      )
+      if (createdFirebaseAccount) {
+        await authService.deleteCurrentFirebaseUser()
+      }
       setErrors(prev => ({
         ...prev,
-        general: 'Error creating account. Please try again.'
+        general: error instanceof Error ? error.message : 'Error creating account. Please try again.'
       }))
     } finally {
+      setUploadingProfileImage(false)
+      setUploadingCV(false)
+      setUploadingID(false)
       setIsLoading(false)
     }
   }
@@ -759,6 +760,41 @@ const SignupPage: React.FC = () => {
                 </div>
               </div>
 
+              <div className="form-section">
+                <h3>Profile photo *</h3>
+                <div className="form-group">
+                  <label htmlFor="profileImage">Public sitter profile photo *</label>
+                  <p className="help-text">This photo appears on your sitter card after verification.</p>
+                  <div className={`file-upload profile-photo-upload ${formData.profileImage ? 'has-file' : ''}`}>
+                    <input
+                      type="file"
+                      id="profileImage"
+                      name="profileImage"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      onChange={handleFileChange}
+                      className={errors.profileImage ? 'error' : ''}
+                      disabled={uploadingProfileImage}
+                    />
+                    <label htmlFor="profileImage" className="file-upload-label">
+                      {profileImagePreview ? (
+                        <>
+                          <img src={profileImagePreview} alt="" className="profile-photo-preview" />
+                          <span className="file-text">Photo selected</span>
+                          <span className="file-info">{formData.profileImage?.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Camera size={28} />
+                          <span className="file-text">Choose profile photo</span>
+                          <span className="file-info">JPG, PNG, or WebP (Max 5MB)</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  {errors.profileImage && <span className="error-message">{errors.profileImage}</span>}
+                </div>
+              </div>
+
               <DocumentUploadSection
                 cv={formData.cv}
                 identityDocument={formData.identityDocument}
@@ -809,7 +845,7 @@ const SignupPage: React.FC = () => {
             </form>
 
             <div className="auth-footer">
-              <p>Already have an account? <Link to="/login">Sign in here</Link></p>
+              <p>Already have an account? <Link to="/careers/sitter/login">Sign in here</Link></p>
               <p>Are you a customer? <Link to="/customer-signup">Sign up as a customer</Link></p>
             </div>
           </div>

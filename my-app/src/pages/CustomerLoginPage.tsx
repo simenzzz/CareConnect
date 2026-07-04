@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Home, UserRound, Eye, EyeOff, CircleAlert, Check } from 'lucide-react'
+import { Eye, EyeOff, CircleAlert, Check } from 'lucide-react'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
 import Button from '../components/ui/Button'
@@ -89,17 +89,6 @@ const CustomerLoginPage: React.FC = () => {
       <main className="auth-main">
         <div className="auth-container">
           <div className="auth-form-container">
-            <div className="login-type-tabs">
-              <Link to="/customer-login" className="tab-link active">
-                <Home size={16} />
-                Customer
-              </Link>
-              <Link to="/login" className="tab-link">
-                <UserRound size={16} />
-                Sitter
-              </Link>
-            </div>
-
             <div className="auth-header">
               <h1>Welcome back</h1>
               <p>Sign in to your customer account</p>
@@ -187,7 +176,6 @@ const CustomerLoginPage: React.FC = () => {
 
             <div className="auth-footer">
               <p>Don't have an account? <Link to="/customer-signup">Sign up as a customer</Link></p>
-              <p>Are you a sitter? <Link to="/login">Sign in as a sitter</Link></p>
             </div>
           </div>
 

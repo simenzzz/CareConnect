@@ -18,6 +18,7 @@ export const SITTER_CARD_COLUMNS = `
   s.hours_per_week,
   s.sitter_type,
   s.description,
+  s.profile_image_url,
   s.rating,
   s.experience,
   s.created_at`;
@@ -36,6 +37,7 @@ export interface SitterCardRow {
   hours_per_week: number;
   sitter_type: 'B' | 'P' | 'T';
   description: string | null;
+  profile_image_url: string;
   rating: string;
   experience: string | null;
   created_at: string;
@@ -55,6 +57,7 @@ export interface SitterCard {
   hoursPerWeek: number;
   sitterType: 'B' | 'P' | 'T';
   description: string | null;
+  profileImageUrl: string;
   rating: number;
   experience: string | null;
   skills: string[];
@@ -70,6 +73,7 @@ export const toCard = (sitter: SitterCardRow, skills: string[]): SitterCard => (
   hoursPerWeek: sitter.hours_per_week,
   sitterType: sitter.sitter_type, // 'B' = Baby, 'P' = Pet, 'T' = Both
   description: sitter.description,
+  profileImageUrl: sitter.profile_image_url,
   rating: parseFloat(sitter.rating) || 0,
   experience: sitter.experience,
   skills,

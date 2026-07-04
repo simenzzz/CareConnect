@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 }
 
 const loginPathFor = (role?: UserType): string =>
-  role === 'sitter' ? '/login' : role === 'customer' ? '/customer-login' : '/portal';
+  role === 'sitter' ? '/careers/sitter/login' : role === 'customer' ? '/customer-login' : '/customer-login';
 
 const portalPathFor = (role: UserType): string =>
   role === 'sitter' ? '/sitter-portal' : '/user-portal';
@@ -38,8 +38,8 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   if (requiredRole && userType !== requiredRole) {
-    // Logged in but wrong role: send to their own portal, or the chooser if unknown.
-    return <Navigate to={userType ? portalPathFor(userType) : '/portal'} replace />;
+    // Logged in but wrong role: send to their own portal, or home if profile lookup failed.
+    return <Navigate to={userType ? portalPathFor(userType) : '/'} replace />;
   }
 
   return <>{children}</>;

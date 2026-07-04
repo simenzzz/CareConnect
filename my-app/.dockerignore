@@ -2,7 +2,9 @@ node_modules
 dist
 dist-ssr
 coverage
-.env
+# NOTE: `.env` is intentionally NOT ignored — the production Vite build reads its
+# VITE_* (public browser config, not secrets) at build time. Only the final nginx
+# stage is shipped, and it copies just `dist/`, so `.env` is not in the runtime image.
 .env.*
 !.env.example
 *.log

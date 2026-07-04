@@ -24,6 +24,7 @@ export const initializeFirebase = () => {
       firebaseApp = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
         projectId: env.FIREBASE_PROJECT_ID,
+        storageBucket: env.FIREBASE_STORAGE_BUCKET,
       });
       
       logger.info('✅ Firebase Admin initialized successfully');
@@ -48,5 +49,24 @@ export const verifyIdToken = async (idToken: string) => {
   } catch (error) {
     logger.error('Error verifying ID token:', error);
     throw new Error('Invalid ID token');
+  }
+};
+
+export interface StorageFileMetadata {
+  contentType: string;
+  size: number;
+}
+
+export const getStorageFileMetadata = async (path: string): Promise<StorageFileMetadata> => {
+  try {
+    const env = getEnv();
+    const [metadata] = await admin.storage().bucket(env.FIREBASE_STORAGE_BUCKET).file(path).getMetadata();
+    return {
+      contentType: metadata.contentType ?? '',
+      size: Number(metadata.size ?? 0),
+    };
+  } catch (error) {
+    logger.error('Error reading Firebase Storage metadata:', error);
+    throw new Error('Storage object not found');
   }
 };

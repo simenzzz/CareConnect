@@ -58,6 +58,25 @@ const toLocalMoment = (d: Date): LocalMoment => {
 };
 
 /**
+ * Core check on already-computed local moments: does a same-local-day window fit
+ * entirely inside one recurring slot? A shared `dateKey` uniquely determines the
+ * weekday, so a same-day window has a single `dayOfWeek`; cross-day windows fail
+ * the `dateKey` equality and return false (v1 supports same-day bookings only).
+ */
+const coversWindow = (
+  slots: readonly AvailabilitySlot[],
+  start: LocalMoment,
+  end: LocalMoment,
+): boolean =>
+  start.dateKey === end.dateKey &&
+  slots.some(
+    (slot) =>
+      slot.dayOfWeek === start.dayOfWeek &&
+      slot.startMinutes <= start.minutes &&
+      slot.endMinutes >= end.minutes,
+  );
+
+/**
  * True when the requested [from, to) window fits entirely inside one of the
  * sitter's recurring weekly slots. Windows that span more than one local calendar
  * day are treated as not covered (v1 supports same-day bookings only).
@@ -66,16 +85,34 @@ export const isWindowCovered = (
   slots: readonly AvailabilitySlot[],
   from: Date,
   to: Date,
+): boolean => coversWindow(slots, toLocalMoment(from), toLocalMoment(to));
+
+/**
+ * Hard-filter predicate: a sitter should be EXCLUDED when they have declared
+ * availability that positively conflicts with the requested window. This is
+ * deliberately narrower than `!isWindowCovered`:
+ *   - Undeclared availability ([]) never excludes — unknown ≠ unavailable, the
+ *     same "missing data never excludes" philosophy the radius filter uses.
+ *   - Cross-midnight / multi-day windows never exclude — `coversWindow` can't yet
+ *     reason about them (v1 same-day only), so we must not drop every
+ *     declared-availability sitter for an overnight booking; those fall back to
+ *     the soft availability score instead. This `dateKey` short-circuit is NOT
+ *     redundant with the one inside `coversWindow`: without it, a cross-midnight
+ *     window would (correctly) be "not covered" and thus wrongly excluded here.
+ * Only a same-local-day window that no declared slot covers is a real conflict.
+ */
+export const availabilityExcludes = (
+  slots: readonly AvailabilitySlot[],
+  from: Date,
+  to: Date,
 ): boolean => {
+  if (slots.length === 0) {
+    return false;
+  }
   const start = toLocalMoment(from);
   const end = toLocalMoment(to);
   if (start.dateKey !== end.dateKey) {
     return false;
   }
-  return slots.some(
-    (slot) =>
-      slot.dayOfWeek === start.dayOfWeek &&
-      slot.startMinutes <= start.minutes &&
-      slot.endMinutes >= end.minutes,
-  );
+  return !coversWindow(slots, start, end);
 };

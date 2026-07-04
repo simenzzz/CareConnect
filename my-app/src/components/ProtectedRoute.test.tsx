@@ -22,10 +22,10 @@ const renderAt = (requiredRole?: UserType) =>
           }
         />
         <Route path="/customer-login" element={<div>CUSTOMER LOGIN</div>} />
-        <Route path="/login" element={<div>SITTER LOGIN</div>} />
+        <Route path="/careers/sitter/login" element={<div>SITTER LOGIN</div>} />
         <Route path="/sitter-portal" element={<div>SITTER PORTAL</div>} />
         <Route path="/user-portal" element={<div>USER PORTAL</div>} />
-        <Route path="/portal" element={<div>PORTAL CHOOSER</div>} />
+        <Route path="/" element={<div>HOME</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -45,16 +45,22 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('CUSTOMER LOGIN')).toBeInTheDocument();
   });
 
+  it('redirects an unauthenticated sitter route to the careers sitter login', () => {
+    mockUseAuth.mockReturnValue({ user: null, userType: null, isLoading: false });
+    renderAt('sitter');
+    expect(screen.getByText('SITTER LOGIN')).toBeInTheDocument();
+  });
+
   it('redirects a wrong-role user to their own portal', () => {
     mockUseAuth.mockReturnValue({ user: { uid: 'x' }, userType: 'sitter', isLoading: false });
     renderAt('customer');
     expect(screen.getByText('SITTER PORTAL')).toBeInTheDocument();
   });
 
-  it('redirects a logged-in user with unknown role to the chooser', () => {
+  it('redirects a logged-in user with unknown role to home', () => {
     mockUseAuth.mockReturnValue({ user: { uid: 'x' }, userType: null, isLoading: false });
     renderAt('customer');
-    expect(screen.getByText('PORTAL CHOOSER')).toBeInTheDocument();
+    expect(screen.getByText('HOME')).toBeInTheDocument();
   });
 
   it('renders children for the matching role', () => {

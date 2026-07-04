@@ -161,6 +161,16 @@ describe('GET /api/bookings/suggestions', () => {
     expect(res.status).toBe(400);
   });
 
+  it('dedupes duplicate recipient ids so a valid request is not rejected as unowned', async () => {
+    // "childrenIds=7,7" coerces to [7,7]; the ownership check compares against the
+    // single DB row for child 7. Without dedup the counts (2 vs 1) mismatch → 400.
+    installQuery();
+    const res = await request(makeApp()).get(url.replace('&childrenIds=7', '&childrenIds=7,7'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
   it('validates that selected children are supplied for child suggestions', async () => {
     installQuery();
     const res = await request(makeApp()).get(

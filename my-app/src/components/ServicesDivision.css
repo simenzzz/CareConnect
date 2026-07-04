@@ -30,19 +30,18 @@
 }
 
 .pet-service .service-header {
-  background: var(--olive);
-  color: var(--paper);
+  background: var(--terracotta-tint);
+  color: var(--ink);
 }
 
 .baby-service .service-header {
-  background: var(--terracotta);
-  color: var(--paper);
+  background: var(--sand);
+  color: var(--ink);
 }
 
 .service-icon {
   width: 64px;
   height: 64px;
-  background: rgba(255, 255, 255, 0.18);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -50,9 +49,19 @@
   flex-shrink: 0;
 }
 
+.pet-service .service-icon {
+  background: var(--surface);
+  color: var(--terracotta-d);
+}
+
+.baby-service .service-icon {
+  background: var(--ink);
+  color: var(--brass);
+}
+
 .service-header h3 {
   font-size: 1.85rem;
-  color: var(--paper);
+  color: var(--ink);
   margin: 0;
 }
 
@@ -76,7 +85,7 @@
 }
 
 .service-features svg {
-  color: var(--olive);
+  color: var(--terracotta);
   flex-shrink: 0;
 }
 
@@ -98,6 +107,32 @@
 .price-unit {
   color: var(--ink-faint);
   font-size: var(--fs-sm);
+}
+
+/* Each CTA is filled with its header's background color, dark ink text for
+   legibility: Pet = terracotta-tint band, Baby = sand band. */
+.pet-service .hearth-btn--primary {
+  background: var(--terracotta-tint);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(31, 27, 22, 0.08);
+}
+
+.baby-service .hearth-btn--primary {
+  background: var(--sand);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(31, 27, 22, 0.08);
+}
+
+.pet-service .hearth-btn--primary:not(:disabled):hover {
+  background: var(--terracotta-tint);
+  filter: brightness(0.96);
+  box-shadow: 0 10px 26px rgba(31, 27, 22, 0.12);
+}
+
+.baby-service .hearth-btn--primary:not(:disabled):hover {
+  background: var(--sand);
+  filter: brightness(0.96);
+  box-shadow: 0 10px 26px rgba(31, 27, 22, 0.12);
 }
 
 @media (max-width: 768px) {

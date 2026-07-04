@@ -16,11 +16,15 @@ const dateString = z
 // a pathological multi-year window that excludes every sitter via the overlap check
 // and bloats the candidate scan.
 const MAX_WINDOW_MS = 24 * 60 * 60 * 1000;
+// Dedupe after coercion: the recipient-ownership check downstream compares the
+// requested-id count against the distinct rows the DB returns, so duplicate ids
+// (e.g. "5,5") would otherwise fail that count check with a misleading ownership
+// error. The min/max bounds still apply to the raw list before dedup.
 const idList = z.preprocess((value) => {
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') return value.split(',').filter(Boolean);
   return value;
-}, z.array(z.coerce.number().int().positive()).min(1).max(20));
+}, z.array(z.coerce.number().int().positive()).min(1).max(20).transform((ids) => [...new Set(ids)]));
 
 export const suggestionsQuerySchema = z
   .looseObject({

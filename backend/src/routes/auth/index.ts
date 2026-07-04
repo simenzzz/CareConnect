@@ -1,6 +1,7 @@
 import express from 'express';
 import { logger } from '../../utils/logger';
-import { verifyIdToken } from '../../config/firebase';
+import { getStorageFileMetadata, verifyIdToken } from '../../config/firebase';
+import { getEnv } from '../../config/env';
 import { query } from '../../config/database';
 import { errorDetails, BadRequestError } from '../../utils/errors';
 import { validateBody } from '../../middleware/validate';
@@ -22,6 +23,59 @@ const optionalCoordinate = (value: unknown, min: number, max: number, field: str
     throw new BadRequestError(`${field} out of range`);
   }
   return n;
+};
+
+const requireOwnedSitterProfileImagePath = (path: unknown, firebaseUid: string): string => {
+  if (typeof path !== 'string' || path.trim() === '') {
+    throw new BadRequestError('Profile image is required');
+  }
+  const trimmedPath = path.trim();
+  const expectedPrefix = `sitter-profile-images/${firebaseUid}/`;
+  if (!trimmedPath.startsWith(expectedPrefix)) {
+    throw new BadRequestError('Profile image path does not match authenticated user');
+  }
+  return trimmedPath;
+};
+
+const requireProfileImageUrlForPath = (url: unknown, path: string): string => {
+  if (typeof url !== 'string' || url.trim() === '') {
+    throw new BadRequestError('Profile image is required');
+  }
+  try {
+    const parsedUrl = new URL(url);
+    const pathMatch = /^\/v0\/b\/([^/]+)\/o\/(.+)$/.exec(parsedUrl.pathname);
+    const objectName = pathMatch?.[2] ? decodeURIComponent(pathMatch[2]) : '';
+    if (
+      parsedUrl.protocol !== 'https:' ||
+      parsedUrl.hostname !== 'firebasestorage.googleapis.com' ||
+      pathMatch?.[1] !== getEnv().FIREBASE_STORAGE_BUCKET ||
+      objectName !== path
+    ) {
+      throw new BadRequestError('Profile image URL does not match uploaded Storage object');
+    }
+    return parsedUrl.toString();
+  } catch (error) {
+    if (error instanceof BadRequestError) {
+      throw error;
+    }
+    throw new BadRequestError('Profile image URL is invalid');
+  }
+};
+
+const requireValidProfileImageObject = async (path: string): Promise<void> => {
+  let metadata;
+  try {
+    metadata = await getStorageFileMetadata(path);
+  } catch {
+    throw new BadRequestError('Profile image object was not found');
+  }
+  const allowedTypes = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+  if (!allowedTypes.has(metadata.contentType)) {
+    throw new BadRequestError('Profile image must be JPG, PNG, or WebP');
+  }
+  if (metadata.size <= 0 || metadata.size > 5 * 1024 * 1024) {
+    throw new BadRequestError('Profile image must be less than 5MB');
+  }
 };
 
 // Register new user
@@ -107,23 +161,43 @@ router.post('/register', validateBody(registerSchema), async (req, res): Promise
           }
         }
       } else if (userType === 'sitter') {
-        const { fullName, dateOfBirth, area, city, latitude, longitude, phone, hoursPerWeek, sitterType, experience, description, skills, cvUrl, identityDocumentUrl } = profileData;
+        const {
+          fullName,
+          dateOfBirth,
+          area,
+          city,
+          latitude,
+          longitude,
+          phone,
+          hoursPerWeek,
+          sitterType,
+          experience,
+          description,
+          skills,
+          profileImageUrl,
+          profileImagePath,
+          cvUrl,
+          identityDocumentUrl,
+        } = profileData;
 
-        if (!fullName || !dateOfBirth || !area || !city || !phone || !hoursPerWeek || !sitterType) {
-          throw new Error('Missing required sitter fields');
+        if (!fullName || !dateOfBirth || !area || !city || !phone || !hoursPerWeek || !sitterType || !profileImageUrl) {
+          throw new BadRequestError('Missing required sitter fields');
         }
 
         // sitterType should be 'B' (baby-sitter), 'P' (pet-sitter), or 'T' (both)
+        const ownedProfileImagePath = requireOwnedSitterProfileImagePath(profileImagePath, firebaseUid);
+        const ownedProfileImageUrl = requireProfileImageUrlForPath(profileImageUrl, ownedProfileImagePath);
+        await requireValidProfileImageObject(ownedProfileImagePath);
         const sitterLatitude = optionalCoordinate(latitude, -90, 90, 'latitude');
         const sitterLongitude = optionalCoordinate(longitude, -180, 180, 'longitude');
         const sitterResult = await query(
           `INSERT INTO sitters
-          (user_id, full_name, date_of_birth, area, city, latitude, longitude, phone, hours_per_week, sitter_type, experience, description, cv_url, identity_document_url, cv_uploaded_at, identity_document_uploaded_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          (user_id, full_name, date_of_birth, area, city, latitude, longitude, phone, hours_per_week, sitter_type, experience, description, profile_image_url, profile_image_path, cv_url, identity_document_url, cv_uploaded_at, identity_document_uploaded_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
           RETURNING id`,
           [
             userId, fullName, dateOfBirth, area, city, sitterLatitude, sitterLongitude, phone, hoursPerWeek, sitterType, experience,
-            description || null, cvUrl || null, identityDocumentUrl || null,
+            description || null, ownedProfileImageUrl, ownedProfileImagePath, cvUrl || null, identityDocumentUrl || null,
             cvUrl ? new Date() : null, identityDocumentUrl ? new Date() : null,
           ],
         );

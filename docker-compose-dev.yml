@@ -1,20 +1,29 @@
-name: careconnect
+name: careconnect-dev
+
+# Full dev stack: Postgres + backend (hot-reload) + frontend (Vite). Run with:
+#   docker compose -f docker-compose-dev.yml up --build
+# Containerized checks live under the `test` profile (see backend-check / frontend-check):
+#   docker compose -f docker-compose-dev.yml --profile test run --rm backend-check
+# (The production-like stack lives in docker-compose-prod.yml.)
 
 services:
   postgres:
     image: postgres:16-alpine
-    profiles: ["dev", "prod"]
+    # Feed the official Postgres image from the backend Docker env file so the
+    # dev stack can run without CLI --env-file interpolation flags.
+    env_file:
+      - ${BACKEND_ENV_FILE:-./backend/.env.docker}
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      NODE_ENV: development
     ports:
       - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+      - ./backend/fixtures/dev_seed.sh:/docker-entrypoint-initdb.d/002-dev-seed.sh:ro
+      - ./backend/fixtures:/dev-seed:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -23,9 +32,13 @@ services:
     build:
       context: ./backend
       target: dev
-    profiles: ["dev"]
     env_file:
       - ${BACKEND_ENV_FILE:-./backend/.env.docker}
+    # Pin development mode here so this stack always runs in dev regardless of the
+    # env file (compose `environment` wins over `env_file`). The prod stack pins
+    # NODE_ENV=production in docker-compose-prod.yml.
+    environment:
+      NODE_ENV: development
     ports:
       - "${PORT:-5000}:${PORT:-5000}"
     volumes:
@@ -40,7 +53,6 @@ services:
     build:
       context: ./my-app
       target: dev
-    profiles: ["dev"]
     env_file:
       - ./my-app/.env
     ports:
@@ -51,39 +63,6 @@ services:
     depends_on:
       - api-dev
     command: npm run dev -- --host 0.0.0.0
-
-  api-prod:
-    build:
-      context: ./backend
-      target: prod
-    profiles: ["prod"]
-    env_file:
-      - ${BACKEND_ENV_FILE:-./backend/.env.docker}
-    ports:
-      - "${PORT:-5000}:${PORT:-5000}"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  web-prod:
-    build:
-      context: ./my-app
-      target: prod
-      args:
-        VITE_API_URL: ${VITE_API_URL:-}
-        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
-        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
-        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
-        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-}
-        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
-        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
-        VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID:-}
-        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
-    profiles: ["prod"]
-    ports:
-      - "8080:80"
-    depends_on:
-      - api-prod
 
   backend-check:
     build:

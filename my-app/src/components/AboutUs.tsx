@@ -1,11 +1,15 @@
 import React from 'react'
-import { Users } from 'lucide-react'
 import SectionLabel from './ui/SectionLabel'
+import aboutCare from '../assets/images/about-care.jpg'
 import './AboutUs.css'
 
 const AboutUs: React.FC = () => {
   return (
     <section className="about-us">
+      <div className="about-photo" aria-hidden="true">
+        <img src={aboutCare} alt="" width={1100} height={1300} loading="lazy" />
+        <div className="about-photo__veil" />
+      </div>
       <div className="container">
         <div className="about-content">
           <div className="about-text">
@@ -34,11 +38,6 @@ const AboutUs: React.FC = () => {
                 <h3>5,000+</h3>
                 <p>Bookings made</p>
               </div>
-            </div>
-          </div>
-          <div className="about-image">
-            <div className="about-placeholder">
-              <Users size={72} strokeWidth={1.25} />
             </div>
           </div>
         </div>

@@ -23,6 +23,7 @@ const SubPageHeader: React.FC = () => {
           <ul className="nav-list">
             <li><Link to="/">Home</Link></li>
             <li><Link to="/sitters">Find Sitters</Link></li>
+            <li><Link to="/careers">Careers</Link></li>
             <li><ScrollLink to="/#about">About Us</ScrollLink></li>
             <li><ScrollLink to="/#faq">FAQ</ScrollLink></li>
           </ul>

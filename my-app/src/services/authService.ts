@@ -47,36 +47,62 @@ const friendlyAuthError = (error: unknown, fallback: string, codeMap: Record<str
 };
 
 class AuthService {
+  async createFirebaseAccount(email: string, password: string): Promise<{ success: true; user: User } | { success: false; error: string }> {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      return { success: true, user: userCredential.user };
+    } catch (error) {
+      return {
+        success: false,
+        error: friendlyAuthError(error, 'Registration failed. Please try again.', {
+          'auth/email-already-in-use':
+            'This email address is already in use. Please use a different email or try logging in.',
+          'auth/weak-password': 'Password is too weak. Please choose a stronger password.',
+          'auth/invalid-email': 'Please enter a valid email address.',
+          'auth/operation-not-allowed': 'Account creation is currently unavailable. Please contact support.',
+          'auth/network-request-failed': 'Network error. Please check your internet connection.',
+        }),
+      };
+    }
+  }
+
+  async deleteCurrentFirebaseUser(): Promise<void> {
+    await auth.currentUser?.delete().catch(() => undefined);
+  }
+
+  async registerProfile(user: User, userType: 'customer' | 'sitter', profileData: Record<string, unknown>): Promise<ApiResponse> {
+    const idToken = await user.getIdToken();
+    let response: Response;
+    try {
+      response = await fetch(`${env.apiBaseUrl}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, userType, profileData }),
+      });
+    } catch {
+      throw new Error(NETWORK_ERROR);
+    }
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Registration failed');
+    }
+    return { success: true, data: result };
+  }
+
   // Create a Firebase account, then register the profile with our API.
   async signup(signupData: SignupData): Promise<ApiResponse> {
     let createdUser: User | null = null;
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, signupData.email, signupData.password);
-      createdUser = userCredential.user;
-      const idToken = await createdUser.getIdToken();
+      const account = await this.createFirebaseAccount(signupData.email, signupData.password);
+      if (!account.success) {
+        throw new Error(account.error);
+      }
+      createdUser = account.user;
 
       // Registration carries the token in the body (the app user doesn't exist yet),
       // so this call is intentionally unauthenticated at the client layer.
-      let response: Response;
-      try {
-        response = await fetch(`${env.apiBaseUrl}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            idToken,
-            userType: signupData.userType,
-            profileData: signupData.profileData,
-          }),
-        });
-      } catch {
-        throw new Error(NETWORK_ERROR);
-      }
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Registration failed');
-      }
-      return { success: true, data: result };
+      return await this.registerProfile(createdUser, signupData.userType, signupData.profileData);
     } catch (error) {
       // Any failure after the Firebase account was created (network OR a backend
       // rejection) must roll it back, so we don't leave an orphaned account that

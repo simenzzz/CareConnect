@@ -7,6 +7,8 @@ import {
   availabilityScore,
 } from '../src/services/matching/scoring';
 import { haversineKm } from '../src/services/matching/geo';
+import { availabilityExcludes } from '../src/services/matching/availability';
+import { normalizeToken } from '../src/services/matching/text';
 import { WEIGHTS } from '../src/services/matching/weights';
 import { rankSitters } from '../src/services/matching';
 import type {
@@ -130,6 +132,42 @@ describe('needsFitScore', () => {
     expect(needsFitScore(['allergy', 'wheelchair'], sitter).score).toBe(0.5);
     expect(needsFitScore(['wheelchair'], sitter).score).toBe(0);
   });
+
+  it('collapses morphological variants via stemming (allergy ↔ allergies)', () => {
+    const sitter = makeSitter({ skills: ['Allergy management'], description: 'Loves walking dogs.' });
+    // Recipient text says "allergies"; sitter skill says "Allergy" → still matches.
+    expect(needsFitScore(['allergies'], sitter).score).toBe(1);
+    // And the reverse direction, plus another stem pair (walking ↔ walks).
+    expect(needsFitScore(['walks'], sitter).score).toBe(1);
+  });
+
+  it('folds curated care-domain synonyms (asd → autism, meds → medication)', () => {
+    const autismSitter = makeSitter({ description: 'Ten years supporting children with autism.' });
+    expect(needsFitScore(['asd'], autismSitter).score).toBe(1);
+
+    const medsSitter = makeSitter({ skills: ['Medication reminders'] });
+    expect(needsFitScore(['meds'], medsSitter).score).toBe(1);
+  });
+
+  it('dedupes needs by canonical form so a variant pair counts once', () => {
+    const sitter = makeSitter({ skills: ['Cooking'] }); // no overlap
+    // 'allergy' and 'allergies' collapse to one need; neither matches → 0, not a
+    // denominator of 2 that could dilute the score.
+    expect(needsFitScore(['allergy', 'allergies'], sitter).score).toBe(0);
+  });
+
+  it('keeps the human-readable surface form in the reason, not the stem', () => {
+    const sitter = makeSitter({ skills: ['Allergy management'] });
+    expect(needsFitScore(['allergies'], sitter).reason).toMatch(/allergies/);
+  });
+});
+
+describe('normalizeToken', () => {
+  it('is idempotent and folds variants onto a shared canonical token', () => {
+    expect(normalizeToken('allergies')).toBe(normalizeToken('allergy'));
+    expect(normalizeToken('asd')).toBe(normalizeToken('autism'));
+    expect(normalizeToken(normalizeToken('allergies'))).toBe(normalizeToken('allergies'));
+  });
 });
 
 describe('availabilityScore', () => {
@@ -155,6 +193,33 @@ describe('availabilityScore', () => {
     const tooShort = makeSitter({ availability: [slot({ endMinutes: 15 * 60 })] }); // ends 15:00, window to 16:00
     expect(availabilityScore(wrongDay, makeRequest()).score).toBe(0);
     expect(availabilityScore(tooShort, makeRequest()).score).toBe(0);
+  });
+});
+
+describe('availabilityExcludes (hard filter)', () => {
+  const req = makeRequest(); // Tue 13:00–16:00 local
+  const slot = (o: Partial<AvailabilitySlot> = {}): AvailabilitySlot => ({
+    dayOfWeek: 2, startMinutes: 11 * 60, endMinutes: 17 * 60, ...o,
+  });
+
+  it('never excludes a sitter who declared no availability (unknown ≠ unavailable)', () => {
+    expect(availabilityExcludes([], req.bookingFrom, req.bookingTo)).toBe(false);
+  });
+
+  it('does not exclude when a declared slot covers the window', () => {
+    expect(availabilityExcludes([slot()], req.bookingFrom, req.bookingTo)).toBe(false);
+  });
+
+  it('excludes when declared availability positively misses the window', () => {
+    expect(availabilityExcludes([slot({ dayOfWeek: 3 })], req.bookingFrom, req.bookingTo)).toBe(true);
+    expect(availabilityExcludes([slot({ endMinutes: 15 * 60 })], req.bookingFrom, req.bookingTo)).toBe(true);
+  });
+
+  it('never excludes a cross-midnight window (v1 same-day limitation must not nuke sitters)', () => {
+    // 20:00Z–23:00Z on 2026-06-09 → 23:00 Tue to 02:00 Wed local: spans two days.
+    const from = new Date('2026-06-09T20:00:00Z');
+    const to = new Date('2026-06-09T23:00:00Z');
+    expect(availabilityExcludes([slot()], from, to)).toBe(false);
   });
 });
 

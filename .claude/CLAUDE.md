@@ -28,7 +28,7 @@ cd backend && npm install && npm run dev      # API on http://localhost:5000  (G
 # Frontend (terminal 2) — needs my-app/.env with VITE_API_URL + VITE_FIREBASE_*
 cd my-app && npm install && npm run dev        # Vite dev server (see terminal for URL)
 ```
-> Copy `backend/.env.example` and `my-app/.env.example` to `.env` and fill them in — see §10 for the full var list.
+> Copy `backend/.env.docker.example` → `backend/.env.docker` and `my-app/.env.example` → `my-app/.env`, then fill them in — see §10 for the full var list.
 
 Monorepo with two independently-built apps:
 
@@ -71,9 +71,12 @@ verified token and scope queries by it, e.g.
   `backend/cleanup-bookings-table.sql`. Use the junction tables.
 - **Soft delete** via `is_active = false` (children, pets, locations).
 - Sitters are bookable only when `is_active = true AND is_verified = true`.
-- Schema today is created ad-hoc; migration SQL lives loosely in `backend/*.sql`.
-  Intended direction: an ordered `backend/migrations/` folder (and keep test fixtures
-  like `create-test-bookings.sql` out of any deploy path).
+- The product is still in development / pre-launch. **Do not create new migration
+  files for schema changes yet.** Update the authoritative fresh-DB schema in
+  `backend/migrations/init.sql`, and update matching seed data in
+  `backend/fixtures/dev_seed.sql` whenever required columns or seed shape change.
+  Recreate disposable dev databases from the init script instead of maintaining
+  live-table `ALTER` steps until production data exists.
 
 ## 5. API surface
 
@@ -108,6 +111,11 @@ target 200–400, comprehensive error handling, validate at boundaries). Project
 - **Config:** all secrets and URLs come from env vars. **No hardcoded `localhost`**, and
   **no insecure fallbacks** like `process.env.X || 'placeholder'` / `|| 'password'`.
   Validate required env vars at startup and **fail fast** if any are missing.
+  - **Sanctioned exception:** the four `WHISH_*` payment creds fall back to obviously-fake,
+    non-resolving `.invalid` placeholders **only when `NODE_ENV !== 'production'`**, decided
+    in one place (`backend/src/config/env.ts`'s schema — not scattered `||` in code). In
+    production they remain hard-required and fail fast. This lets devs boot without a Whish
+    account and is safe because a booking is only confirmed on a genuine Whish `success`.
   - Frontend must read config via `import.meta.env.VITE_*` (today it's all hardcoded —
     fix when touched).
 - **Validation:** standardize on **`zod`** schemas at every write boundary (signup,
@@ -147,11 +155,11 @@ and HIGH before reporting done.
   - Backend: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `NODE_ENV`,
     `PORT`, `FRONTEND_URL`, `BACKEND_URL`, `FIREBASE_PROJECT_ID`,
     `FIREBASE_PRIVATE_KEY_ID`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL`,
-    `FIREBASE_CLIENT_ID`, `WHISH_API_URL`, `WHISH_CHANNEL`, `WHISH_SECRET`,
+    `FIREBASE_CLIENT_ID`, `FIREBASE_STORAGE_BUCKET`, `WHISH_API_URL`, `WHISH_CHANNEL`, `WHISH_SECRET`,
     `WHISH_WEBSITE_URL`, `PAYMENT_CURRENCY`.
   - Frontend: `VITE_API_URL`, plus `VITE_FIREBASE_*` for the web config.
-- Committed `.env.example` templates (names only, no values) exist for both apps:
-  `backend/.env.example`, `my-app/.env.example`.
+- Committed `.env*.example` templates (names only, no values) exist for both apps:
+  `backend/.env.docker.example` (the app runs via Docker Compose), `my-app/.env.example`.
 - **Never commit** `.env` files or Firebase service-account JSON (already in `.gitignore`).
 
 ## 11. Security must-knows & do-not-regress list
@@ -163,9 +171,15 @@ and HIGH before reporting done.
 - If a real secret is ever leaked (e.g. a payment/API key), **rotate it** and purge it
   from git history.
 
+**Sitter discovery is intentionally public.** `/api/sitters/fetchSitters` and
+`/api/sitters/searchByName` are unauthenticated by design so anonymous visitors can
+browse the directory. This is safe because they return only the PII-safe
+`SITTER_CARD_COLUMNS` projection (`backend/src/repositories/sitterRepository.ts`) —
+no phone/contact, address, or KYC. Contact details and booking stay behind auth; do
+**not** re-gate these two endpoints with `verifyToken`.
+
 **Open hardening items (don't reintroduce / fix before launch):** forgeable Whish
-callback (test-mode fallback), DB `password`/`ssl:false` fallbacks, unauthenticated
-sitter-PII endpoint (`/api/sitters/fetchSitters`), hardcoded `http://localhost:5000` in
-frontend services, missing route guards, no input validation, no rate limiting,
-non-transactional booking creation, no double-booking check. Full audit + sequencing:
-`.claude/plans/careconnect-hardening.md`.
+callback (test-mode fallback), DB `password`/`ssl:false` fallbacks, hardcoded
+`http://localhost:5000` in frontend services, missing route guards, no input
+validation, no rate limiting, non-transactional booking creation, no double-booking
+check. Full audit + sequencing: `.claude/plans/careconnect-hardening.md`.

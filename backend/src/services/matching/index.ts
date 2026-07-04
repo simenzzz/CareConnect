@@ -17,6 +17,7 @@ import {
   availabilityScore,
 } from './scoring';
 import { haversineKm } from './geo';
+import { availabilityExcludes } from './availability';
 import { WEIGHTS, MAX_RADIUS_KM, MAX_REASONS } from './weights';
 
 export type {
@@ -84,12 +85,20 @@ const byRank = (a: ScoredSitter, b: ScoredSitter): number =>
   b.sitter.createdAt.localeCompare(a.sitter.createdAt) ||
   a.sitter.id - b.sitter.id;
 
+/**
+ * Hard availability guard: drop a sitter who has declared recurring availability
+ * that does not cover the requested window. Undeclared availability never excludes
+ * (see availabilityExcludes) — same "missing data never excludes" rule as radius.
+ */
+const availabilityAllows = (sitter: SitterCandidate, request: MatchRequest): boolean =>
+  !availabilityExcludes(sitter.availability, request.bookingFrom, request.bookingTo);
+
 /** Rank candidate sitters for a request, best match first. Returns a new array. */
 export const rankSitters = (
   request: MatchRequest,
   candidates: readonly SitterCandidate[],
 ): ScoredSitter[] =>
   candidates
-    .filter((c) => withinRadius(c, request))
+    .filter((c) => withinRadius(c, request) && availabilityAllows(c, request))
     .map((c) => scoreSitter(request, c))
     .sort(byRank);

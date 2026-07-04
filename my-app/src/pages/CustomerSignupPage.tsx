@@ -702,7 +702,6 @@ const CustomerSignupPage: React.FC = () => {
 
             <div className="auth-footer">
               <p>Already have an account? <Link to="/customer-login">Sign in here</Link></p>
-              <p>Are you a sitter? <Link to="/signup">Join as a sitter</Link></p>
             </div>
           </div>
 

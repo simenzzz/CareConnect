@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS sitters (
   sitter_type                   VARCHAR(1)   NOT NULL CHECK (sitter_type IN ('B', 'P', 'T')),
   experience                    TEXT,
   description                   TEXT,
+  profile_image_url             TEXT         NOT NULL,
+  profile_image_path            TEXT         NOT NULL,
   cv_url                        TEXT,
   identity_document_url         TEXT,
   cv_uploaded_at                TIMESTAMP,

@@ -8,7 +8,7 @@
 import type { MatchRequest, SitterCandidate, SubScore } from './types';
 import { haversineKm, distanceDecay } from './geo';
 import { isWindowCovered } from './availability';
-import { tokenize } from './text';
+import { tokenize, normalizeToken } from './text';
 import {
   RATING_PRIOR_MEAN,
   RATING_PRIOR_COUNT,
@@ -18,6 +18,7 @@ import {
   AREA_MATCH_SCORE,
   NO_LOCATION_MATCH_SCORE,
   NEUTRAL_SCORE,
+  MAX_NEEDS_IN_REASON,
 } from './weights';
 
 const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
@@ -86,15 +87,35 @@ export const needsFitScore = (needKeywords: string[], sitter: SitterCandidate): 
   if (needKeywords.length === 0) {
     return { score: NEUTRAL_SCORE };
   }
-  const haystack = new Set<string>([
-    ...sitter.skills.flatMap(tokenize),
-    ...tokenize(sitter.description),
-    ...tokenize(sitter.experience),
-  ]);
-  const matched = needKeywords.filter((k) => haystack.has(k));
-  const score = clamp01(matched.length / needKeywords.length);
+  // Compare on the canonical (stemmed + synonym-folded) form so variants match
+  // (allergy/allergies, asd/autism), while keeping the surface word for the reason.
+  const haystack = new Set<string>(
+    [
+      ...sitter.skills.flatMap(tokenize),
+      ...tokenize(sitter.description),
+      ...tokenize(sitter.experience),
+    ].map(normalizeToken),
+  );
+  // Dedupe needs by canonical token (so 'allergy' + 'allergies' count once) and
+  // keep the first surface form seen for display.
+  const canonicalNeeds = new Map<string, string>();
+  for (const keyword of needKeywords) {
+    for (const token of tokenize(keyword)) {
+      const canonical = normalizeToken(token);
+      if (!canonicalNeeds.has(canonical)) {
+        canonicalNeeds.set(canonical, token);
+      }
+    }
+  }
+  if (canonicalNeeds.size === 0) {
+    return { score: NEUTRAL_SCORE };
+  }
+  const matched = [...canonicalNeeds].filter(([canonical]) => haystack.has(canonical));
+  const score = clamp01(matched.length / canonicalNeeds.size);
   const reason =
-    matched.length > 0 ? `Matches needs: ${matched.slice(0, 3).join(', ')}` : undefined;
+    matched.length > 0
+      ? `Matches needs: ${matched.slice(0, MAX_NEEDS_IN_REASON).map(([, surface]) => surface).join(', ')}`
+      : undefined;
   return { score, reason };
 };
 
@@ -103,6 +124,15 @@ export const needsFitScore = (needKeywords: string[], sitter: SitterCandidate): 
  * window. Neutral when the sitter has declared no availability (unknown, not a
  * negative signal). Note: the hard double-booking guard lives in SQL — this is
  * the softer "do they generally work then" signal.
+ *
+ * Interaction with the hard availability filter (see availabilityExcludes): for
+ * SAME-DAY windows a declared-but-uncovered sitter is already excluded upstream,
+ * so this soft score only ever returns 1 (covered) or 0.5 (undeclared) — it
+ * simply keeps confirmed-available ranked above unknown. The `score: 0` branch is
+ * now reachable only for CROSS-MIDNIGHT windows (which the hard filter leaves in):
+ * there, declaring availability the engine can't yet parse scores 0 while
+ * declaring nothing scores 0.5. That overnight quirk is a known v1 limitation of
+ * isWindowCovered, not a bug — revisit when overnight bookings are supported.
  */
 export const availabilityScore = (sitter: SitterCandidate, request: MatchRequest): SubScore => {
   if (sitter.availability.length === 0) {

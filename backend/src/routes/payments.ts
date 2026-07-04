@@ -10,8 +10,11 @@ import { BOOKING_STATUS, PAYMENT_STATUS } from '../constants/bookingStatus'
 
 const router = express.Router()
 
-// Whish API configuration is read at request time from the validated env (no
-// insecure placeholder fallbacks — the process refuses to boot without real creds).
+// Whish API configuration is read at request time from the validated env. In
+// production these are hard-required and the process refuses to boot without real
+// creds; outside production they may be dev-only placeholders pointing at a
+// reserved `.invalid` host (see config/env.ts), so any real call fails loudly
+// rather than fabricating a payment.
 const whishConfig = () => {
   const env = getEnv()
   return {

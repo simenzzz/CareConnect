@@ -3,11 +3,23 @@ import { Link } from 'react-router-dom'
 import { PawPrint, Baby, ShieldCheck, ArrowRight } from 'lucide-react'
 import { buttonClasses } from './ui/buttonClasses'
 import SectionLabel from './ui/SectionLabel'
+import heroPets from '../assets/images/hero-pets.jpg'
 import './Hero.css'
 
 const Hero: React.FC = () => {
   return (
     <section id="home" className="hero">
+      <div className="hero-bg" aria-hidden="true">
+        <img
+          src={heroPets}
+          alt=""
+          width={1600}
+          height={1000}
+          loading="eager"
+          fetchPriority="high"
+        />
+        <div className="hero-bg__veil" />
+      </div>
       <div className="hero-container">
         <div className="hero-content">
           <SectionLabel className="reveal" style={{ '--i': 0 } as React.CSSProperties}>
@@ -53,7 +65,7 @@ const Hero: React.FC = () => {
           </article>
           <article
             className="hero-card hero-card--baby reveal"
-            style={{ '--i': 5 } as React.CSSProperties}
+            style={{ '--i': 4 } as React.CSSProperties}
           >
             <span className="hero-card__icon">
               <Baby size={26} />

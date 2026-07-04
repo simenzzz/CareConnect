@@ -1,13 +1,14 @@
 .about-us {
   padding: var(--space-9) 0;
   background: var(--paper);
+  position: relative;
+  overflow: hidden;
 }
 
 .about-content {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: clamp(var(--space-6), 6vw, 80px);
-  align-items: center;
+  position: relative;
+  z-index: 1;
+  max-width: min(56%, 620px);
 }
 
 .about-text h2 {
@@ -50,40 +51,52 @@
   font-weight: 500;
 }
 
-.about-image {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* ---- Full-height photo band on the right. Its right edge aligns to the
+   centered content boundary (not the raw browser edge) so it reads as more
+   centered on the page; size is unchanged. ---- */
+.about-photo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: max((100vw - var(--container)) / 2, var(--space-6));
+  width: min(52vw, 720px);
+  z-index: 0;
+  pointer-events: none;
 }
 
-.about-placeholder {
-  width: min(340px, 100%);
-  aspect-ratio: 1;
-  background: var(--ink);
-  border-radius: var(--r-xl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--brass);
-  position: relative;
-  overflow: hidden;
+.about-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.about-placeholder::after {
-  content: '';
+/* Cream veil: left edge dissolves into --paper toward the text; a gentle
+   right-edge feather (the right side is now interior) + top/bottom feather.
+   rgba stops mirror --paper (#f7f1e6) at partial alpha. */
+.about-photo__veil {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at 30% 25%,
-    rgba(201, 163, 91, 0.22),
-    transparent 60%
-  );
+  background:
+    linear-gradient(
+      to left,
+      transparent 30%,
+      rgba(247, 241, 230, 0.78) 60%,
+      var(--paper) 100%
+    ),
+    linear-gradient(to right, transparent 88%, var(--paper) 100%),
+    linear-gradient(
+      to bottom,
+      var(--paper) 0%,
+      transparent 18%,
+      transparent 82%,
+      var(--paper) 100%
+    );
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .about-content {
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
+    max-width: 100%;
     text-align: center;
   }
 
@@ -96,7 +109,21 @@
     gap: var(--space-3);
   }
 
-  .about-image {
+  /* Photo becomes a static full-width band above the text */
+  .about-us {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .about-photo {
+    position: static;
     order: -1;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    margin-bottom: var(--space-7);
+  }
+
+  .about-photo__veil {
+    background: linear-gradient(to bottom, transparent 55%, var(--paper) 100%);
   }
 }

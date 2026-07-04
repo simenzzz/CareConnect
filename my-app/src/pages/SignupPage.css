@@ -492,6 +492,20 @@
   color: var(--olive-d);
 }
 
+.profile-photo-upload .file-upload-label {
+  min-height: 190px;
+}
+
+.profile-photo-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--r-pill);
+  object-fit: cover;
+  border: 3px solid var(--surface-2);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-3);
+}
+
 .help-text {
   font-size: var(--fs-xs);
   color: var(--ink-faint);

@@ -37,6 +37,11 @@
   --line-strong: #d2c2a2;
   --line-ink: rgba(31, 27, 22, 0.12);
 
+  /* ---- Frosted glass (chips floating over full-bleed photos) ---- */
+  --glass-bg: color-mix(in srgb, var(--surface) 62%, transparent);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-blur: 12px;
+
   /* ---- Typography ---- */
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman',
     serif;

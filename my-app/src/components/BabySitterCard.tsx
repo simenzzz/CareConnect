@@ -10,6 +10,7 @@ interface BabySitter {
   experience: string
   rating: number
   specialties: string[]
+  profileImageUrl?: string
   matchReasons?: string[]
   matchScore?: number
   matchEventId?: number
@@ -29,6 +30,7 @@ interface BabySitterCardProps {
 
 const BabySitterCard: React.FC<BabySitterCardProps> = ({ sitter, initialBookingContext }) => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
+  const [imageFailed, setImageFailed] = useState(false)
   
   // Note: isLoggedIn is checked inside BookingModal via Firebase
   const isLoggedIn = false
@@ -41,7 +43,11 @@ const BabySitterCard: React.FC<BabySitterCardProps> = ({ sitter, initialBookingC
     <div className="baby-sitter-card">
       <div className="sitter-header">
         <div className="sitter-avatar">
-          <Baby size={26} />
+          {sitter.profileImageUrl && !imageFailed ? (
+            <img src={sitter.profileImageUrl} alt="" onError={() => setImageFailed(true)} />
+          ) : (
+            <Baby size={26} />
+          )}
         </div>
         <div className="sitter-info">
           <h3>{sitter.name}</h3>

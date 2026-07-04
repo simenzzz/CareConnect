@@ -3,7 +3,6 @@ import { logger } from '../utils/logger';
 import type { Response } from 'express';
 import { z } from 'zod';
 import { query } from '../config/database';
-import { verifyToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateQuery } from '../middleware/validate';
 import { errorDetails } from '../utils/errors';
 import { SITTER_CARD_COLUMNS, buildCards } from '../repositories/sitterRepository';
@@ -20,12 +19,13 @@ const searchSchema = paginationSchema.extend({
   name: z.string().trim().min(1, 'Search name is required').max(100),
 });
 
-// Get all active and verified sitters (paginated). Requires authentication.
+// Get all active and verified sitters (paginated). Public: returns only the
+// PII-safe SITTER_CARD_COLUMNS projection (no contact info), so discovery is
+// open to anonymous visitors. Booking a sitter is what requires auth.
 router.get(
   '/fetchSitters',
-  verifyToken,
   validateQuery(paginationSchema),
-  async (_req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
+  async (_req: express.Request, res: Response): Promise<express.Response> => {
     try {
       const { limit, offset } = res.locals.query as { limit: number; offset: number };
 
@@ -63,12 +63,12 @@ router.get(
   },
 );
 
-// Search sitters by name (paginated). Requires authentication.
+// Search sitters by name (paginated). Public: same PII-safe projection as
+// /fetchSitters, so anonymous visitors can search the directory.
 router.get(
   '/searchByName',
-  verifyToken,
   validateQuery(searchSchema),
-  async (_req: AuthenticatedRequest, res: Response): Promise<express.Response> => {
+  async (_req: express.Request, res: Response): Promise<express.Response> => {
     try {
       const { name, limit, offset } = res.locals.query as {
         name: string;

@@ -25,6 +25,7 @@ export interface SitterCandidate {
   city: string;
   sitterType: SitterType;
   description: string | null;
+  profileImageUrl: string;
   experience: string | null;
   hoursPerWeek: number;
   rating: number; // stored average; 0 when there are no reviews yet

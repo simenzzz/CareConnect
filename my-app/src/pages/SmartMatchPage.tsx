@@ -19,6 +19,7 @@ const toCard = (sitter: SitterSuggestion) => ({
   experience: sitter.description || sitter.experience || 'Verified CareConnect sitter',
   rating: sitter.rating,
   specialties: sitter.skills,
+  profileImageUrl: sitter.profileImageUrl,
   matchReasons: sitter.matchReasons,
   matchScore: sitter.matchScore,
   matchEventId: sitter.matchEventId,

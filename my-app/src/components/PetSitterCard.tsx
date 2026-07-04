@@ -10,6 +10,7 @@ interface PetSitter {
   experience: string
   rating: number
   specialties: string[]
+  profileImageUrl?: string
   matchReasons?: string[]
   matchScore?: number
   matchEventId?: number
@@ -29,6 +30,7 @@ interface PetSitterCardProps {
 
 const PetSitterCard: React.FC<PetSitterCardProps> = ({ sitter, initialBookingContext }) => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
+  const [imageFailed, setImageFailed] = useState(false)
   
   // Note: isLoggedIn is checked inside BookingModal via Firebase
   const isLoggedIn = false
@@ -41,7 +43,11 @@ const PetSitterCard: React.FC<PetSitterCardProps> = ({ sitter, initialBookingCon
     <div className="pet-sitter-card">
       <div className="sitter-header">
         <div className="sitter-avatar">
-          <PawPrint size={26} />
+          {sitter.profileImageUrl && !imageFailed ? (
+            <img src={sitter.profileImageUrl} alt="" onError={() => setImageFailed(true)} />
+          ) : (
+            <PawPrint size={26} />
+          )}
         </div>
         <div className="sitter-info">
           <h3>{sitter.name}</h3>

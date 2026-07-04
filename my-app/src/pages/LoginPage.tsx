@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Home, UserRound, Eye, EyeOff, CircleAlert, Check } from 'lucide-react'
+import { Eye, EyeOff, CircleAlert, Check } from 'lucide-react'
 import SubPageHeader from '../components/SubPageHeader'
 import Footer from '../components/Footer'
 import Button from '../components/ui/Button'
@@ -88,20 +88,9 @@ const LoginPage: React.FC = () => {
       <main className="auth-main">
         <div className="auth-container">
           <div className="auth-form-container">
-            <div className="login-type-tabs">
-              <Link to="/customer-login" className="tab-link">
-                <Home size={16} />
-                Customer
-              </Link>
-              <Link to="/login" className="tab-link active">
-                <UserRound size={16} />
-                Sitter
-              </Link>
-            </div>
-
             <div className="auth-header">
               <h1>Welcome back</h1>
-              <p>Sign in to your sitter account</p>
+              <p>Sign in to your CareConnect sitter account</p>
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
@@ -185,7 +174,7 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="auth-footer">
-              <p>Don't have an account? <Link to="/signup">Sign up as a sitter</Link></p>
+              <p>Don't have an account? <Link to="/careers/sitter/apply">Apply as a sitter</Link></p>
               <p>Are you a customer? <Link to="/customer-login">Sign in as a customer</Link></p>
             </div>
           </div>

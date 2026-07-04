@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { Heart, Phone, Mail, MapPin } from 'lucide-react'
 import {
   FacebookIcon,
@@ -35,6 +36,14 @@ const Footer: React.FC = () => {
               <li><a href="#services">Baby sitting</a></li>
               <li><a href="#services">Dog walking</a></li>
               <li><a href="#services">Overnight care</a></li>
+            </ul>
+          </div>
+          <div className="footer-section">
+            <h3>Caregivers</h3>
+            <ul>
+              <li><Link to="/careers">Careers</Link></li>
+              <li><Link to="/careers/sitter/apply">Apply as a sitter</Link></li>
+              <li><Link to="/careers/sitter/login">Sitter login</Link></li>
             </ul>
           </div>
           <div className="footer-section">

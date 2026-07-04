@@ -1,25 +1,29 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { logger } from '../utils/logger';
 import { storage, auth } from '../config/firebase';
 
 export type DocumentType = 'cv' | 'identity';
+export type UploadType = DocumentType | 'profile-image';
 
 interface UploadResult {
   success: boolean;
   url?: string;
+  path?: string;
   error?: string;
 }
 
 class StorageService {
   // Validate file type and size
-  private validateFile(file: File, type: DocumentType): { valid: boolean; error?: string } {
+  private validateFile(file: File, type: UploadType): { valid: boolean; error?: string } {
     // File size limits (in bytes)
     const MAX_CV_SIZE = 5 * 1024 * 1024; // 5MB
     const MAX_ID_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
     
     // Allowed file types
     const CV_TYPES = ['application/pdf'];
     const ID_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    const PROFILE_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     
     if (type === 'cv') {
       if (file.size > MAX_CV_SIZE) {
@@ -35,13 +39,40 @@ class StorageService {
       if (!ID_TYPES.includes(file.type)) {
         return { valid: false, error: 'Identity document must be PDF, JPG, or PNG' };
       }
+    } else if (type === 'profile-image') {
+      if (file.size > MAX_PROFILE_IMAGE_SIZE) {
+        return { valid: false, error: 'Profile photo must be less than 5MB' };
+      }
+      if (!PROFILE_IMAGE_TYPES.includes(file.type)) {
+        return { valid: false, error: 'Profile photo must be JPG, PNG, or WebP' };
+      }
     }
     
     return { valid: true };
   }
+
+  private extensionFor(file: File): string {
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (extension) {
+      return extension;
+    }
+    if (file.type === 'image/jpeg' || file.type === 'image/jpg') return 'jpg';
+    if (file.type === 'image/png') return 'png';
+    if (file.type === 'image/webp') return 'webp';
+    if (file.type === 'application/pdf') return 'pdf';
+    return 'bin';
+  }
+
+  private requireCurrentUid(): string {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      throw new Error('You must be signed in before uploading files.');
+    }
+    return uid;
+  }
   
   // Upload file to Firebase Storage
-  async uploadDocument(file: File, type: DocumentType, userName?: string, forceUniqueName: boolean = false): Promise<UploadResult> {
+  async uploadDocument(file: File, type: DocumentType, userName?: string): Promise<UploadResult> {
     try {
       // Validate file
       const validation = this.validateFile(file, type);
@@ -54,45 +85,30 @@ class StorageService {
       
       // Create a unique filename with user name and timestamp
       const timestamp = Date.now();
-      const dateString = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      const fileExtension = file.name.split('.').pop();
+      const fileExtension = this.extensionFor(file);
+      const uid = this.requireCurrentUid();
       
-      // Sanitize user name for folder/filename (remove special characters, replace spaces with underscores)
-      const sanitizedName = userName 
-        ? userName.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
-        : 'user';
-      
-      // Create a unique folder name: FullName_YYYY-MM-DD_timestamp
-      const uniqueFolderName = `${sanitizedName}_${dateString}_${timestamp}`;
-      
-      const fileName = `${type}.${fileExtension}`;
-      
-      // For signup (before authentication), use a folder structure with user's full name and timestamp
-      // Files can be moved/reorganized after user is created if needed
-      const user = auth.currentUser;
-      const uploadPath = (user && !forceUniqueName)
-        ? `documents/${user.uid}/${type}/${fileName}` // Authenticated user (not during signup)
-        : `documents/${uniqueFolderName}/${fileName}`; // Use unique folder name for signup
+      const fileName = `${type}-${timestamp}.${fileExtension}`;
+      const uploadPath = `sitter-documents/${uid}/${type}/${fileName}`;
       
       const storageRef = ref(storage, uploadPath);
       
       logger.debug(`📤 Uploading ${type} to Firebase Storage:`, fileName);
-      logger.debug(`📂 Unique folder name: ${uniqueFolderName}`);
       logger.debug(`📂 Full upload path: ${uploadPath}`);
       logger.debug(`🪣 Storage bucket:`, storage.app.options.storageBucket);
       logger.debug(`📍 Full reference path:`, storageRef.fullPath);
-      logger.debug(`👤 Current user:`, user ? user.uid : 'Not authenticated (signup)');
+      logger.debug(`👤 Current user:`, uid);
       
       // Upload file
       const snapshot = await uploadBytes(storageRef, file, {
         contentType: file.type,
         customMetadata: {
-          uploadedBy: user?.uid || 'pending-signup',
+          uploadedBy: uid,
           uploadedAt: new Date().toISOString(),
           originalName: file.name,
           documentType: type,
           userName: userName || 'unknown',
-          uniqueFolderId: uniqueFolderName
+          uploaderUid: uid,
         }
       });
       
@@ -114,7 +130,8 @@ class StorageService {
       
       return {
         success: true,
-        url: downloadURL
+        url: downloadURL,
+        path: snapshot.ref.fullPath,
       };
       
     } catch (error) {
@@ -143,17 +160,54 @@ class StorageService {
     }
   }
   
-  // Upload CV (always use unique folder name during signup)
+  // Upload CV under the authenticated sitter's private document path.
   async uploadCV(file: File, userName?: string): Promise<UploadResult> {
-    return this.uploadDocument(file, 'cv', userName, true); // Force unique name
+    return this.uploadDocument(file, 'cv', userName);
   }
   
-  // Upload Identity Document (always use unique folder name during signup)
+  // Upload identity document under the authenticated sitter's private document path.
   async uploadIdentityDocument(file: File, userName?: string): Promise<UploadResult> {
-    return this.uploadDocument(file, 'identity', userName, true); // Force unique name
+    return this.uploadDocument(file, 'identity', userName);
+  }
+
+  async uploadProfileImage(file: File): Promise<UploadResult> {
+    try {
+      const validation = this.validateFile(file, 'profile-image');
+      if (!validation.valid) {
+        return { success: false, error: validation.error };
+      }
+
+      const uid = this.requireCurrentUid();
+      const fileExtension = this.extensionFor(file);
+      const uploadPath = `sitter-profile-images/${uid}/profile-${Date.now()}.${fileExtension}`;
+      const storageRef = ref(storage, uploadPath);
+
+      const snapshot = await uploadBytes(storageRef, file, {
+        contentType: file.type,
+        customMetadata: {
+          uploadedBy: uid,
+          uploadedAt: new Date().toISOString(),
+          originalName: file.name,
+          documentType: 'profile-image',
+        },
+      });
+      const url = await getDownloadURL(snapshot.ref);
+      return { success: true, url, path: snapshot.ref.fullPath };
+    } catch (error) {
+      const fbError = error as { code?: string; message?: string };
+      logger.error('Profile image upload failed:', error);
+      return {
+        success: false,
+        error: fbError.message || 'Failed to upload profile photo. Please try again.',
+      };
+    }
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    if (!path) return;
+    await deleteObject(ref(storage, path));
   }
 }
 
 const storageService = new StorageService();
 export default storageService;
-

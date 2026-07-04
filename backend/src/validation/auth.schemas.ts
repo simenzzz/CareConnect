@@ -26,6 +26,20 @@ export const registerSchema = z.looseObject({
   idToken: z.string().min(1, 'idToken is required'),
   userType: z.enum(['customer', 'sitter']),
   profileData: z.looseObject({}),
+}).superRefine((value, ctx) => {
+  if (value.userType !== 'sitter') {
+    return;
+  }
+  const profile = value.profileData as Record<string, unknown>;
+  for (const key of ['profileImageUrl', 'profileImagePath']) {
+    if (typeof profile[key] !== 'string' || profile[key].trim() === '') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['profileData', key],
+        message: `${key} is required for sitter registration`,
+      });
+    }
+  }
 });
 
 export const profileUpdateSchema = z.looseObject({

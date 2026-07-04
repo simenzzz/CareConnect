@@ -61,6 +61,7 @@ const Header: React.FC = () => {
           <ul className="nav-list">
             <li><Link to="/">Home</Link></li>
             <li><Link to="/sitters">Find Sitters</Link></li>
+            <li><Link to="/careers">Careers</Link></li>
             <li><a href="#about">About Us</a></li>
             <li><a href="#faq">FAQ</a></li>
             {isLoggedIn ? (
@@ -181,7 +182,7 @@ const Header: React.FC = () => {
             ) : (
               <>
                 <li><Link to="/customer-login" className="btn-signin">Sign In</Link></li>
-                <li><Link to="/portal" className="btn-signup">Sign Up</Link></li>
+                <li><Link to="/customer-signup" className="btn-signup">Sign Up</Link></li>
               </>
             )}
           </ul>

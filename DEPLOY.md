@@ -67,8 +67,8 @@ npm run build         # tsc -b && vite build → dist/   (serve dist/ from any s
 Both apps refuse to start without a complete `.env`. Copy the examples and fill them in:
 
 ```bash
-cp backend/.env.example  backend/.env
-cp my-app/.env.example   my-app/.env
+cp backend/.env.docker.example backend/.env.docker   # backend (see Docker section below)
+cp my-app/.env.example          my-app/.env          # frontend
 ```
 
 - **Backend** (`backend/src/config/env.ts`): a Zod schema validates every required var at
@@ -96,6 +96,7 @@ cp my-app/.env.example   my-app/.env
 | `FIREBASE_PRIVATE_KEY` | ✅ | single line with `\n` escapes |
 | `FIREBASE_CLIENT_EMAIL` | ✅ | |
 | `FIREBASE_CLIENT_ID` | ✅ | |
+| `FIREBASE_STORAGE_BUCKET` | ✅ | validates sitter profile-photo objects server-side |
 | `WHISH_API_URL` | ✅ | valid URL |
 | `WHISH_CHANNEL` | ✅ | |
 | `WHISH_SECRET` | ✅ | |
@@ -118,10 +119,21 @@ cp my-app/.env.example   my-app/.env
 
 ### Docker Compose
 
-Docker uses the same split-env model as the apps instead of a duplicated root `.env`:
+Docker uses the same split-env model as the apps instead of a duplicated root `.env`. The
+stacks are split into **two compose files** — pick one with `-f` (there is no default
+`docker-compose.yml`):
 
-- `backend/.env.docker` for the backend container and local Postgres container.
-- `my-app/.env` for the Vite dev server and production frontend build.
+- `docker-compose-dev.yml` — full dev stack (Postgres + hot-reload backend + Vite frontend),
+  pinned to `NODE_ENV=development`. Also hosts the containerized checks (`test` profile).
+- `docker-compose-prod.yml` — production-like stack (Postgres + built backend + built
+  frontend), pinned to `NODE_ENV=production`.
+
+Env wiring (no `--env-file` flags needed — each service is fed via in-file `env_file:`):
+
+- `backend/.env.docker` — backend container **and** the Postgres container (the latter via its
+  `POSTGRES_*` keys, which must mirror `DB_NAME`/`DB_USER`/`DB_PASSWORD`).
+- `my-app/.env` — the Vite dev server (runtime) and the production frontend build (read at
+  `npm run build` time; `.env` is kept in the build context — see `my-app/.dockerignore`).
 
 Create the Docker backend env file:
 
@@ -129,66 +141,57 @@ Create the Docker backend env file:
 cp backend/.env.docker.example backend/.env.docker
 ```
 
-Fill in the same backend secrets as `backend/.env`. Keep `DB_HOST=postgres` and
-`DB_PORT=5432` in `backend/.env.docker` because the backend container reaches PostgreSQL
-through the Compose service name. If host port `5432` is already taken, change
-`POSTGRES_HOST_PORT` instead. Keep `NODE_ENV=development` for the local Compose database;
-the backend requires PostgreSQL SSL when `NODE_ENV=production`.
+Fill in the backend secrets. Keep `DB_HOST=postgres` and `DB_PORT=5432` because the backend
+container reaches PostgreSQL through the Compose service name. Set `POSTGRES_DB`/`POSTGRES_USER`/
+`POSTGRES_PASSWORD` to the same values as `DB_NAME`/`DB_USER`/`DB_PASSWORD` (the Postgres image
+only reads the `POSTGRES_*` names). If host port `5432` is taken, change `POSTGRES_HOST_PORT`.
+`NODE_ENV` in the env file is informational only — each compose file pins `NODE_ENV` on its API
+service (dev → `development`, prod → `production`), and the backend requires PostgreSQL SSL when
+`NODE_ENV=production`.
 
 Run the full dev stack:
 
 ```bash
-docker compose \
-  --env-file backend/.env.docker \
-  --env-file my-app/.env \
-  --profile dev \
-  up --build
+docker compose -f docker-compose-dev.yml up --build
 ```
 
 - API: `http://localhost:5000`
 - API health: `http://localhost:5000/health`
 - Frontend: `http://localhost:5173`
-- PostgreSQL data lives in the `careconnect_postgres_data` Docker volume.
+- PostgreSQL data lives in the `careconnect-dev_postgres_data` Docker volume.
 
-Run containerized checks:
+Run containerized checks (`test` profile in the dev file):
 
 ```bash
-docker compose \
-  --env-file backend/.env.docker \
-  --profile test \
-  run --rm backend-check
-
-docker compose \
-  --env-file backend/.env.docker \
-  --env-file my-app/.env \
-  --profile test \
-  run --rm frontend-check
+docker compose -f docker-compose-dev.yml --profile test run --rm backend-check
+docker compose -f docker-compose-dev.yml --profile test run --rm frontend-check
 ```
 
 Run the production-like local stack:
 
 ```bash
-docker compose \
-  --env-file backend/.env.docker \
-  --env-file my-app/.env \
-  --profile prod \
-  up --build
+docker compose -f docker-compose-prod.yml up --build
 ```
 
 - API: `http://localhost:5000`
 - Frontend: `http://localhost:8080`
+- PostgreSQL data lives in the `careconnect-prod_postgres_data` Docker volume.
+
+> Need a custom host port? `POSTGRES_HOST_PORT` / `PORT` are still read for the published port
+> mapping via interpolation, which uses their defaults (5432 / 5000) when run flag-free. To map a
+> non-default host port, pass `--env-file backend/.env.docker` (or edit the compose file).
 
 Stop and remove containers:
 
 ```bash
-docker compose --profile dev down
-docker compose --profile prod down
+docker compose -f docker-compose-dev.yml down
+docker compose -f docker-compose-prod.yml down
 ```
 
 Reset the local Docker database:
 
 ```bash
-docker compose --profile dev down -v
+docker compose -f docker-compose-dev.yml down -v
 ```
 
 ---

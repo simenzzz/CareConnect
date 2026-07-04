@@ -8,6 +8,7 @@ export interface Sitter {
   hoursPerWeek: string;
   sitterType: 'B' | 'P' | 'T'; // B = Baby Sitter, P = Pet Sitter, T = Both
   description: string | null;
+  profileImageUrl: string;
   rating: number;
   experience: string;
   skills: string[];
@@ -40,7 +41,9 @@ const toError = (error: unknown, fallback: string): { success: false; error: str
 class SittersService {
   async fetchSitters(): Promise<FetchSittersResponse> {
     try {
-      const result = await apiRequest<{ data: SittersData }>('/sitters/fetchSitters');
+      const result = await apiRequest<{ data: SittersData }>('/sitters/fetchSitters', {
+        auth: false,
+      });
       return { success: true, data: result.data };
     } catch (error) {
       return toError(error, 'Failed to fetch sitters');
@@ -56,6 +59,7 @@ class SittersService {
     try {
       const result = await apiRequest<{ data: Sitter[]; message?: string }>(
         `/sitters/searchByName?name=${encodeURIComponent(name)}`,
+        { auth: false },
       );
       return { success: true, data: result.data, message: result.message };
     } catch (error) {

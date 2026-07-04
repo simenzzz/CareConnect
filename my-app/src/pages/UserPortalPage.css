@@ -1,6 +1,6 @@
 /* Customer & sitter dashboard shell (shared by UserPortalPage + SitterPortalPage).
    Layout selectors are scoped under .user-portal-page / .sitter-portal-page so
-   .portal-main / .portal-container don't collide with PortalPage's. */
+   .portal-main / .portal-container stay dashboard-specific. */
 .user-portal-page,
 .sitter-portal-page {
   min-height: 100vh;
