@@ -21,8 +21,7 @@ const renderAt = (requiredRole?: UserType) =>
             </ProtectedRoute>
           }
         />
-        <Route path="/customer-login" element={<div>CUSTOMER LOGIN</div>} />
-        <Route path="/careers/sitter/login" element={<div>SITTER LOGIN</div>} />
+        <Route path="/login" element={<div>LOGIN</div>} />
         <Route path="/sitter-portal" element={<div>SITTER PORTAL</div>} />
         <Route path="/user-portal" element={<div>USER PORTAL</div>} />
         <Route path="/" element={<div>HOME</div>} />
@@ -39,16 +38,16 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByText('SECRET CONTENT')).toBeNull();
   });
 
-  it('redirects an unauthenticated user to the matching login', () => {
+  it('redirects an unauthenticated user to the unified login', () => {
     mockUseAuth.mockReturnValue({ user: null, userType: null, isLoading: false });
     renderAt('customer');
-    expect(screen.getByText('CUSTOMER LOGIN')).toBeInTheDocument();
+    expect(screen.getByText('LOGIN')).toBeInTheDocument();
   });
 
-  it('redirects an unauthenticated sitter route to the careers sitter login', () => {
+  it('redirects an unauthenticated sitter route to the unified login', () => {
     mockUseAuth.mockReturnValue({ user: null, userType: null, isLoading: false });
     renderAt('sitter');
-    expect(screen.getByText('SITTER LOGIN')).toBeInTheDocument();
+    expect(screen.getByText('LOGIN')).toBeInTheDocument();
   });
 
   it('redirects a wrong-role user to their own portal', () => {

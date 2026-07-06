@@ -4,7 +4,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
-import CustomerLoginPage from './pages/CustomerLoginPage'
 import SignupPage from './pages/SignupPage'
 import CustomerSignupPage from './pages/CustomerSignupPage'
 import CareersPage from './pages/CareersPage'
@@ -19,10 +18,11 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/customer-login" element={<CustomerLoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/customer-login" element={<Navigate to="/login" replace />} />
       <Route path="/customer-signup" element={<CustomerSignupPage />} />
       <Route path="/careers" element={<CareersPage />} />
-      <Route path="/careers/sitter/login" element={<LoginPage />} />
+      <Route path="/careers/sitter/login" element={<Navigate to="/login" replace />} />
       <Route path="/careers/sitter/apply" element={<SignupPage />} />
       <Route path="/sitters" element={<SittersPage />} />
       <Route

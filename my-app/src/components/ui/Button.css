@@ -48,11 +48,12 @@
 .hearth-btn--primary {
   background: var(--terracotta);
   color: var(--paper);
-  box-shadow: 0 6px 18px rgba(197, 87, 46, 0.25);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--terracotta) 25%, transparent);
 }
 .hearth-btn--primary:not(:disabled):hover {
   background: var(--terracotta-d);
-  box-shadow: 0 10px 26px rgba(197, 87, 46, 0.32);
+  color: var(--paper);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--terracotta) 32%, transparent);
 }
 
 .hearth-btn--secondary {

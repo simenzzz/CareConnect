@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, CircleAlert, Check } from 'lucide-react'
-import SubPageHeader from '../components/SubPageHeader'
+import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Button from '../components/ui/Button'
 import { GoogleIcon, FacebookIcon } from '../components/ui/icons'
-import authService from '../services/authService'
+import { authService } from '../services/authService'
+import { portalPathFor } from '../utils/portalRouting'
+import type { UserType } from '../context/AuthContext'
 import './AuthPage.css'
 
 const LoginPage: React.FC = () => {
@@ -57,22 +59,22 @@ const LoginPage: React.FC = () => {
     setErrors({}) // Clear any previous errors
 
     try {
-      // Call the login API
+      // Call the login API — the backend resolves the account's role itself,
+      // so we don't need to (and shouldn't) pre-declare an expected user type.
       const result = await authService.login({
         email: formData.email,
         password: formData.password,
-        expectedUserType: 'sitter',
         rememberMe: formData.rememberMe
       })
 
       if (result.success) {
-        // Send sitters to their dashboard.
-        navigate('/sitter-portal')
+        const userType = result.data?.user?.userType as UserType | undefined
+        navigate(userType ? portalPathFor(userType) : '/')
       } else {
         setErrors({ general: result.error || 'Login failed. Please try again.' })
       }
-    } catch (error) {
-      setErrors({ general: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.' })
+    } catch {
+      setErrors({ general: 'An unexpected error occurred. Please try again.' })
     } finally {
       setIsLoading(false)
     }
@@ -84,13 +86,13 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="auth-page">
-      <SubPageHeader />
+      <Header />
       <main className="auth-main">
         <div className="auth-container">
           <div className="auth-form-container">
             <div className="auth-header">
               <h1>Welcome back</h1>
-              <p>Sign in to your CareConnect sitter account</p>
+              <p>Sign in to your CareConnect account</p>
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
@@ -102,7 +104,7 @@ const LoginPage: React.FC = () => {
               )}
 
               <div className="form-group">
-                <label htmlFor="email">Email address</label>
+                <label htmlFor="email">Email Address</label>
                 <input
                   type="email"
                   id="email"
@@ -174,20 +176,22 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="auth-footer">
-              <p>Don't have an account? <Link to="/careers/sitter/apply">Apply as a sitter</Link></p>
-              <p>Are you a customer? <Link to="/customer-login">Sign in as a customer</Link></p>
+              <p>
+                Don't have an account? <Link to="/customer-signup">Sign up as a customer</Link> or{' '}
+                <Link to="/careers/sitter/apply">apply as a sitter</Link>
+              </p>
             </div>
           </div>
 
           <div className="auth-side">
             <div className="auth-side-content">
-              <h2>Join our community</h2>
-              <p>Connect with families across Lebanon who need your care.</p>
+              <h2>Find trusted care</h2>
+              <p>Connect with experienced, vetted sitters for your family's needs.</p>
               <ul>
+                <li><Check size={18} /> Verified sitters</li>
                 <li><Check size={18} /> Flexible scheduling</li>
-                <li><Check size={18} /> Competitive rates</li>
-                <li><Check size={18} /> A safe, vetted environment</li>
-                <li><Check size={18} /> A support team behind you</li>
+                <li><Check size={18} /> Safe &amp; secure</li>
+                <li><Check size={18} /> 24/7 support</li>
               </ul>
             </div>
           </div>

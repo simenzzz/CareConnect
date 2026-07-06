@@ -3,6 +3,7 @@ import { LoaderCircle } from 'lucide-react'
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { UserType } from '../context/AuthContext';
+import { portalPathFor } from '../utils/portalRouting';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -10,11 +11,7 @@ interface ProtectedRouteProps {
   requiredRole?: UserType;
 }
 
-const loginPathFor = (role?: UserType): string =>
-  role === 'sitter' ? '/careers/sitter/login' : role === 'customer' ? '/customer-login' : '/customer-login';
-
-const portalPathFor = (role: UserType): string =>
-  role === 'sitter' ? '/sitter-portal' : '/user-portal';
+const LOGIN_PATH = '/login';
 
 /**
  * Gates a route on authentication and (optionally) user type. While auth is
@@ -34,7 +31,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   if (!user) {
-    return <Navigate to={loginPathFor(requiredRole)} replace />;
+    return <Navigate to={LOGIN_PATH} replace />;
   }
 
   if (requiredRole && userType !== requiredRole) {

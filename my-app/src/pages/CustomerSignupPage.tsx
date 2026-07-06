@@ -20,7 +20,7 @@ import {
   Heart,
   DollarSign,
 } from 'lucide-react'
-import SubPageHeader from '../components/SubPageHeader'
+import Header from '../components/Header'
 import Button from '../components/ui/Button'
 import { authService } from '../services/authService'
 import { lebanonAreas } from '../data/lebanon'
@@ -381,8 +381,17 @@ const CustomerSignupPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
+      // Scroll to the first invalid field once the error classes have rendered
+      requestAnimationFrame(() => {
+        document.querySelector('.error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+
+      setErrors(prev => ({
+        ...prev,
+        general: prev.general || 'Please fill in all required fields correctly before submitting.'
+      }))
       return
     }
 
@@ -448,7 +457,7 @@ const CustomerSignupPage: React.FC = () => {
         })
         // Redirect to customer login page after 2 seconds
         setTimeout(() => {
-          navigate('/customer-login')
+          navigate('/login')
         }, 2000)
       } else {
         // Show error in the UI instead of alert
@@ -472,7 +481,7 @@ const CustomerSignupPage: React.FC = () => {
 
   return (
     <div className="customer-signup-page">
-      <SubPageHeader />
+      <Header />
       <div className="customer-signup-main">
         <div className="customer-signup-container">
           <div className="customer-signup-form-container">
@@ -701,7 +710,7 @@ const CustomerSignupPage: React.FC = () => {
             </form>
 
             <div className="auth-footer">
-              <p>Already have an account? <Link to="/customer-login">Sign in here</Link></p>
+              <p>Already have an account? <Link to="/login">Sign in here</Link></p>
             </div>
           </div>
 

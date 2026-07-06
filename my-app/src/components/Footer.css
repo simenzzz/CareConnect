@@ -1,6 +1,6 @@
 .footer {
   background: var(--ink);
-  color: rgba(247, 241, 230, 0.72);
+  color: color-mix(in srgb, var(--paper) 72%, transparent);
   padding: var(--space-8) 0 var(--space-5);
 }
 
@@ -25,7 +25,7 @@
 }
 
 .footer-section ul li a {
-  color: rgba(247, 241, 230, 0.72);
+  color: color-mix(in srgb, var(--paper) 72%, transparent);
   text-decoration: none;
   transition: color var(--t-fast);
   font-size: var(--fs-sm);
@@ -93,7 +93,7 @@
 .social-links a {
   width: 40px;
   height: 40px;
-  background: rgba(247, 241, 230, 0.08);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
   border-radius: var(--r-pill);
   display: flex;
   align-items: center;
@@ -110,7 +110,7 @@
 .footer-bottom {
   text-align: center;
   padding-top: var(--space-5);
-  border-top: 1px solid rgba(247, 241, 230, 0.12);
+  border-top: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
   font-size: var(--fs-sm);
 }
 

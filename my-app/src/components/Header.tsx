@@ -10,22 +10,36 @@ import {
   CreditCard,
   Wallet,
   LogOut,
+  Menu,
+  X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { buttonClasses } from './ui/buttonClasses'
+import ScrollLink from './ScrollLink'
 import './Header.css'
 
 const Header: React.FC = () => {
   const { user, userType, signOut } = useAuth()
   const isLoggedIn = !!user
   const [showDropdown, setShowDropdown] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLLIElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
   const navigate = useNavigate()
 
-  // Close dropdown when clicking outside
+  // Close dropdown/mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setShowDropdown(false)
+      }
+      if (
+        navRef.current && !navRef.current.contains(target) &&
+        toggleRef.current && !toggleRef.current.contains(target)
+      ) {
+        setMobileMenuOpen(false)
       }
     }
 
@@ -37,11 +51,14 @@ const Header: React.FC = () => {
     try {
       await signOut()
       setShowDropdown(false)
+      setMobileMenuOpen(false)
       navigate('/')
     } catch {
       // Sign-out failures are non-fatal; the user stays on the page.
     }
   }
+
+  const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
     <header className="header">
@@ -52,18 +69,30 @@ const Header: React.FC = () => {
               <div className="logo-icon">
                 <Heart size={18} fill="currentColor" strokeWidth={0} />
               </div>
-              <h1>CareConnect</h1>
+              <span className="logo-text">CareConnect</span>
             </div>
           </Link>
         </div>
 
-        <nav className="nav">
+        <button
+          ref={toggleRef}
+          type="button"
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen(prev => !prev)}
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="primary-navigation"
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+
+        <nav id="primary-navigation" className={`nav ${mobileMenuOpen ? 'nav-open' : ''}`} ref={navRef}>
           <ul className="nav-list">
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/sitters">Find Sitters</Link></li>
-            <li><Link to="/careers">Careers</Link></li>
-            <li><a href="#about">About Us</a></li>
-            <li><a href="#faq">FAQ</a></li>
+            <li><Link to="/" onClick={closeMobileMenu}>Home</Link></li>
+            <li><Link to="/sitters" onClick={closeMobileMenu}>Find Sitters</Link></li>
+            <li><Link to="/careers" onClick={closeMobileMenu}>Careers</Link></li>
+            <li><ScrollLink to="/#about" onNavigate={closeMobileMenu}>About Us</ScrollLink></li>
+            <li><ScrollLink to="/#faq" onNavigate={closeMobileMenu}>FAQ</ScrollLink></li>
             {isLoggedIn ? (
               <li className="user-menu" ref={dropdownRef}>
                 <button
@@ -85,7 +114,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/user-portal?section=profile"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <User size={17} />
                           <span>Profile</span>
@@ -94,7 +123,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/user-portal?section=manage-children"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <Baby size={17} />
                           <span>Manage Children</span>
@@ -103,7 +132,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/user-portal?section=manage-pets"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <PawPrint size={17} />
                           <span>Manage Pets</span>
@@ -112,7 +141,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/user-portal?section=my-locations"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <MapPin size={17} />
                           <span>My Locations</span>
@@ -121,7 +150,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/user-portal?section=my-bookings"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <CalendarCheck size={17} />
                           <span>My Bookings</span>
@@ -130,7 +159,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/user-portal?section=payment-methods"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <CreditCard size={17} />
                           <span>Payment Methods</span>
@@ -141,7 +170,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/sitter-portal?section=profile"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <User size={17} />
                           <span>Profile</span>
@@ -150,7 +179,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/sitter-portal?section=bookings"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <CalendarCheck size={17} />
                           <span>Bookings</span>
@@ -159,7 +188,7 @@ const Header: React.FC = () => {
                         <Link
                           to="/sitter-portal?section=balance"
                           className="dropdown-item"
-                          onClick={() => setShowDropdown(false)}
+                          onClick={() => { setShowDropdown(false); closeMobileMenu() }}
                         >
                           <Wallet size={17} />
                           <span>My Balance</span>
@@ -180,10 +209,10 @@ const Header: React.FC = () => {
                 )}
               </li>
             ) : (
-              <>
-                <li><Link to="/customer-login" className="btn-signin">Sign In</Link></li>
-                <li><Link to="/customer-signup" className="btn-signup">Sign Up</Link></li>
-              </>
+              <li className="nav-auth">
+                <Link to="/login" className={buttonClasses('secondary', 'sm')} onClick={closeMobileMenu}>Sign In</Link>
+                <Link to="/customer-signup" className={buttonClasses('primary', 'sm')} onClick={closeMobileMenu}>Sign Up</Link>
+              </li>
             )}
           </ul>
         </nav>

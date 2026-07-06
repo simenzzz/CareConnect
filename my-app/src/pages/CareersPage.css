@@ -59,22 +59,9 @@
 .careers-hero__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-3);
   margin-top: var(--space-6);
-}
-
-/* On-dark treatment: the shared ghost variant is built for light
-   backgrounds; over the dark hero photo it needs white text + a light border. */
-.careers-hero__actions .hearth-btn--ghost {
-  color: var(--paper);
-  border-color: rgba(247, 241, 230, 0.55); /* --paper at ~55% */
-  background: transparent;
-}
-
-.careers-hero__actions .hearth-btn--ghost:not(:disabled):hover {
-  background: rgba(247, 241, 230, 0.12);
-  border-color: var(--paper);
-  color: var(--paper);
 }
 
 .careers-band {

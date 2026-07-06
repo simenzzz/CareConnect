@@ -11,7 +11,7 @@ import {
   Sparkles,
   UserCheck,
 } from 'lucide-react'
-import SubPageHeader from '../components/SubPageHeader'
+import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { buttonClasses } from '../components/ui/buttonClasses'
 import SectionLabel from '../components/ui/SectionLabel'
@@ -34,7 +34,7 @@ const STEPS = [
 const CareersPage: React.FC = () => {
   return (
     <div className="careers-page">
-      <SubPageHeader />
+      <Header />
       <main>
         <section className="careers-hero">
           <div className="careers-hero__media" aria-hidden="true">
@@ -54,9 +54,6 @@ const CareersPage: React.FC = () => {
             <div className="careers-hero__actions reveal" style={{ '--i': 3 } as React.CSSProperties}>
               <Link to="/careers/sitter/apply" className={buttonClasses('primary', 'lg')}>
                 Apply as a sitter <ArrowRight size={18} />
-              </Link>
-              <Link to="/careers/sitter/login" className={buttonClasses('ghost', 'lg')}>
-                Sitter login
               </Link>
             </div>
           </div>

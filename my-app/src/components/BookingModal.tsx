@@ -461,7 +461,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <h3>Sign in to Book a Session</h3>
               <p>You need to be logged in to book a session with our sitters.</p>
               <div className="login-buttons">
-                <Link to="/customer-login" className="btn-login">
+                <Link to="/login" className="btn-login">
                   <LogIn size={18} />
                   Sign In
                 </Link>
@@ -480,7 +480,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <h3>You need to be signed in as a Customer to book a session!</h3>
               <p>Sitters cannot book sessions. Please sign in with a customer account or create one.</p>
               <div className="login-buttons">
-                <Link to="/customer-login" className="btn-login">
+                <Link to="/login" className="btn-login">
                   <LogIn size={18} />
                   Sign In as Customer
                 </Link>

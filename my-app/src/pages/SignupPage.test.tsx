@@ -23,7 +23,7 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
-vi.mock('../components/SubPageHeader', () => ({ default: () => null }))
+vi.mock('../components/Header', () => ({ default: () => null }))
 vi.mock('../components/booking/useLocationMap', () => ({
   useLocationMap: () => ({ mapRef: { current: null }, searchInputRef: { current: null } }),
 }))

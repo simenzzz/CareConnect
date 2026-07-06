@@ -21,7 +21,6 @@ export interface SignupData {
 export interface LoginData {
   email: string;
   password: string;
-  expectedUserType?: 'customer' | 'sitter';
   rememberMe?: boolean;
 }
 
@@ -137,7 +136,7 @@ class AuthService {
         response = await fetch(`${env.apiBaseUrl}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ expectedUserType: loginData.expectedUserType }),
+          body: JSON.stringify({}),
         });
       } catch {
         await signOut(auth);

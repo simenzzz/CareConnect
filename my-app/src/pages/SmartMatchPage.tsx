@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Baby, PawPrint, WandSparkles, LoaderCircle, ListChecks } from 'lucide-react'
-import PageHeader from '../components/PageHeader'
+import Header from '../components/Header'
 import Footer from '../components/Footer'
 import BabySitterCard from '../components/BabySitterCard'
 import PetSitterCard from '../components/PetSitterCard'
@@ -137,7 +137,7 @@ const SmartMatchPage: React.FC = () => {
 
   return (
     <div className="smart-match-page">
-      <PageHeader />
+      <Header />
       <main className="smart-match-main">
         <section className="smart-match-header">
           <div className="smart-match-container">

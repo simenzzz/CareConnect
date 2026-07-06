@@ -43,7 +43,6 @@ const Footer: React.FC = () => {
             <ul>
               <li><Link to="/careers">Careers</Link></li>
               <li><Link to="/careers/sitter/apply">Apply as a sitter</Link></li>
-              <li><Link to="/careers/sitter/login">Sitter login</Link></li>
             </ul>
           </div>
           <div className="footer-section">

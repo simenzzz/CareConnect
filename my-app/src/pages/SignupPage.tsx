@@ -25,7 +25,7 @@ import {
   Heart,
   Camera,
 } from 'lucide-react'
-import SubPageHeader from '../components/SubPageHeader'
+import Header from '../components/Header'
 import Button from '../components/ui/Button'
 import { authService } from '../services/authService'
 import storageService from '../services/storageService'
@@ -345,10 +345,10 @@ const SignupPage: React.FC = () => {
     e.preventDefault()
 
     if (!validateForm()) {
-      // Scroll to first error
-      const firstErrorField = Object.keys(errors)[0]
-      const errorElement = document.querySelector(`[name="${firstErrorField}"]`) || document.querySelector('.error')
-      errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Scroll to the first invalid field once the error classes have rendered
+      requestAnimationFrame(() => {
+        document.querySelector('.error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
 
       // Show general error message summarizing validation issues
       setErrors(prev => ({
@@ -480,7 +480,7 @@ const SignupPage: React.FC = () => {
 
   return (
     <div className="signup-page">
-      <SubPageHeader />
+      <Header />
       <div className="signup-main">
         <div className="signup-container">
           <div className="signup-form-container">
@@ -845,7 +845,7 @@ const SignupPage: React.FC = () => {
             </form>
 
             <div className="auth-footer">
-              <p>Already have an account? <Link to="/careers/sitter/login">Sign in here</Link></p>
+              <p>Already have an account? <Link to="/login">Sign in here</Link></p>
               <p>Are you a customer? <Link to="/customer-signup">Sign up as a customer</Link></p>
             </div>
           </div>

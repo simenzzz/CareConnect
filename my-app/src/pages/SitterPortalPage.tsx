@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { CalendarCheck, User, Wallet } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
-import SubPageHeader from '../components/SubPageHeader'
+import Header from '../components/Header'
 import Footer from '../components/Footer'
 import SitterProfileSection from '../components/SitterProfileSection'
 import SitterMyBookings from '../components/SitterMyBookings'
@@ -26,7 +26,7 @@ const SitterPortalPage: React.FC = () => {
 
   return (
     <div className="user-portal-page">
-      <SubPageHeader />
+      <Header />
       <main className="portal-main">
         <div className="portal-container">
           {/* Sidebar Navigation */}

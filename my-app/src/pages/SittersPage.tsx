@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { logger } from '../utils/logger';
 import { Link, useLocation } from 'react-router-dom'
 import { PawPrint, Baby, Search, Map, MapPin, X, LoaderCircle, CircleAlert, WandSparkles } from 'lucide-react'
-import PageHeader from '../components/PageHeader'
+import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PetSitterCard from '../components/PetSitterCard'
 import BabySitterCard from '../components/BabySitterCard'
@@ -81,7 +81,7 @@ const SittersPage: React.FC = () => {
 
   return (
     <div className="sitters-page">
-      <PageHeader />
+      <Header />
       <main className="sitters-main">
         <div className="sitters-hero">
           <div className="container">

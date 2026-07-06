@@ -5,23 +5,24 @@ interface ScrollLinkProps {
   to: string
   children: React.ReactNode
   className?: string
+  onNavigate?: () => void
 }
 
-const ScrollLink: React.FC<ScrollLinkProps> = ({ to, children, className }) => {
+const ScrollLink: React.FC<ScrollLinkProps> = ({ to, children, className, onNavigate }) => {
   const navigate = useNavigate()
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    
+
     // Check if the link has a hash (like /#about)
     if (to.includes('#')) {
       const [path, hash] = to.split('#')
-      
+
       // If we're already on the target page, just scroll
       if (path === '/' && window.location.pathname === '/') {
         const element = document.querySelector(`#${hash}`)
         if (element) {
-          element.scrollIntoView({ 
+          element.scrollIntoView({
             behavior: 'smooth',
             block: 'start'
           })
@@ -34,6 +35,8 @@ const ScrollLink: React.FC<ScrollLinkProps> = ({ to, children, className }) => {
       // Regular navigation
       navigate(to)
     }
+
+    onNavigate?.()
   }
 
   return (

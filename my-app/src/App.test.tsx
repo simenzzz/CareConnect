@@ -9,10 +9,9 @@ vi.mock('./context/AuthContext', () => ({
 }))
 
 vi.mock('./pages/HomePage', () => ({ default: () => <div>HOME PAGE</div> }))
-vi.mock('./pages/CustomerLoginPage', () => ({ default: () => <div>CUSTOMER LOGIN PAGE</div> }))
 vi.mock('./pages/CustomerSignupPage', () => ({ default: () => <div>CUSTOMER SIGNUP PAGE</div> }))
 vi.mock('./pages/CareersPage', () => ({ default: () => <div>CAREERS PAGE</div> }))
-vi.mock('./pages/LoginPage', () => ({ default: () => <div>SITTER LOGIN PAGE</div> }))
+vi.mock('./pages/LoginPage', () => ({ default: () => <div>LOGIN PAGE</div> }))
 vi.mock('./pages/SignupPage', () => ({ default: () => <div>SITTER APPLY PAGE</div> }))
 vi.mock('./pages/SittersPage', () => ({ default: () => <div>SITTERS PAGE</div> }))
 vi.mock('./pages/SmartMatchPage', () => ({ default: () => <div>SMART MATCH PAGE</div> }))
@@ -38,17 +37,22 @@ describe('AppRoutes', () => {
     expect(screen.getByText('CAREERS PAGE')).toBeInTheDocument()
   })
 
-  it('keeps sitter auth only on careers URLs', () => {
-    renderRoute('/careers/sitter/login')
-    expect(screen.getByText('SITTER LOGIN PAGE')).toBeInTheDocument()
-  })
-
-  it('shows not found for removed legacy sitter login URL', () => {
+  it('renders the unified login page at /login', () => {
     renderRoute('/login')
-    expect(screen.getByText('NOT FOUND PAGE')).toBeInTheDocument()
+    expect(screen.getByText('LOGIN PAGE')).toBeInTheDocument()
   })
 
-  it('shows not found for removed legacy sitter signup URL', () => {
+  it('redirects the legacy customer-login URL to the unified login', () => {
+    renderRoute('/customer-login')
+    expect(screen.getByText('LOGIN PAGE')).toBeInTheDocument()
+  })
+
+  it('redirects the legacy sitter login URL to the unified login', () => {
+    renderRoute('/careers/sitter/login')
+    expect(screen.getByText('LOGIN PAGE')).toBeInTheDocument()
+  })
+
+  it('shows not found for an unknown URL', () => {
     renderRoute('/signup')
     expect(screen.getByText('NOT FOUND PAGE')).toBeInTheDocument()
   })

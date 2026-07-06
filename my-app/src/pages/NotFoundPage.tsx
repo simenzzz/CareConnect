@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import SubPageHeader from '../components/SubPageHeader'
+import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { buttonClasses } from '../components/ui/buttonClasses'
 import './NotFoundPage.css'
@@ -9,7 +9,7 @@ import './NotFoundPage.css'
 const NotFoundPage: React.FC = () => {
   return (
     <div className="not-found-page">
-      <SubPageHeader />
+      <Header />
       <main className="not-found-main">
         <div className="not-found-panel">
           <p className="not-found-kicker">404</p>
