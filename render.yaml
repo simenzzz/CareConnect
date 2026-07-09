@@ -57,7 +57,7 @@ services:
 
       # --- Runtime ---
       - key: NODE_ENV
-        value: production
+        value: development
       # Render injects PORT automatically; the app listens on env.PORT.
 
       # --- CORS / payment callback URLs (fill after first deploy) ---
