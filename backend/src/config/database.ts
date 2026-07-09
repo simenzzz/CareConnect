@@ -1,8 +1,37 @@
 import { Pool, PoolClient } from 'pg';
 import { logger } from '../utils/logger';
-import { getEnv } from './env';
+import { getEnv, type Env } from './env';
 
 let pool: Pool;
+
+/**
+ * Resolve the PostgreSQL TLS mode.
+ *
+ * Defaults preserve the previous behavior: strict certificate verification in
+ * production and plaintext locally. `DB_SSL` lets a host override this — most
+ * importantly for Render Postgres, whose certificate is not in Node's CA bundle
+ * (so `verify`/`rejectUnauthorized: true` fails the handshake) and whose
+ * internal connection rejects the SSL upgrade entirely. Set `DB_SSL=require`
+ * there to encrypt without verifying. `disable` is for non-TLS connections.
+ */
+const resolveSsl = (env: Env): false | { rejectUnauthorized: boolean } => {
+  const mode = env.DB_SSL ?? (env.NODE_ENV === 'production' ? 'verify' : 'disable');
+  switch (mode) {
+    case 'verify':
+      return { rejectUnauthorized: true };
+    case 'require':
+      return { rejectUnauthorized: false };
+    case 'disable':
+      return false;
+    default: {
+      // Compile-time exhaustiveness guard: adding a DB_SSL mode without a case
+      // here becomes a type error. Unreachable in practice — Zod rejects any
+      // value outside the enum at startup before this runs.
+      const _exhaustive: never = mode;
+      throw new Error(`Unhandled DB_SSL mode: ${String(_exhaustive)}`);
+    }
+  }
+};
 
 export const connectDatabase = () => {
   try {
@@ -13,8 +42,7 @@ export const connectDatabase = () => {
       database: env.DB_NAME,
       password: env.DB_PASSWORD,
       port: env.DB_PORT,
-      // Enforce TLS in production; verify the server certificate.
-      ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
+      ssl: resolveSsl(env),
     });
 
     logger.info('✅ Database connection pool created');

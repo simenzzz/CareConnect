@@ -1,0 +1,95 @@
+# Render Blueprint — provisions the PostgreSQL database and the Docker API in one
+# click. Render Dashboard → New → Blueprint → select this repo → Apply.
+#
+# Spec: https://render.com/docs/blueprint-spec
+# After applying, fill every `sync: false` variable under the service's
+# Environment tab (Firebase, Whish, and the two URLs). See DEPLOY_VERCEL_RENDER.md.
+
+databases:
+  - name: careconnect-db
+    databaseName: careconnect
+    plan: free
+    # NOTE: free PostgreSQL databases are DELETED 90 days after creation.
+    # Upgrade to a paid plan before any real data exists.
+    postgresMajorVersion: 16
+    # Reachable from Render services only; restrict the allow-list before launch.
+    ipAllowList: []
+
+services:
+  - type: web
+    name: careconnect-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    # Closest Render region to Lebanon. Options include oregon, ohio, frankfurt,
+    # singapore — pick whichever gives the best latency for your users.
+    region: frankfurt
+    branch: main
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # --- Database (auto-mapped from the careconnect-db instance above) ---
+      - key: DB_HOST
+        fromDatabase:
+          name: careconnect-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: careconnect-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: careconnect-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: careconnect-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: careconnect-db
+          property: password
+      # Render's certificate is not in Node's CA bundle, so encrypt without
+      # verifying (the code's production default of strict-verify would fail).
+      - key: DB_SSL
+        value: require
+
+      # --- Runtime ---
+      - key: NODE_ENV
+        value: production
+      # Render injects PORT automatically; the app listens on env.PORT.
+
+      # --- CORS / payment callback URLs (fill after first deploy) ---
+      - key: FRONTEND_URL
+        sync: false # = Vercel URL, e.g. https://careconnect.vercel.app
+      - key: BACKEND_URL
+        sync: false # = this service URL, e.g. https://careconnect-api.onrender.com
+
+      # --- Firebase Admin service account (paste from your JSON key) ---
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY_ID
+        sync: false
+      # Keep the literal \n escape sequences; the code converts them to newlines.
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_CLIENT_ID
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+
+      # --- Whish Money (REQUIRED in production or the API will not boot) ---
+      # For a no-payments demo, set NODE_ENV=development above to use placeholders.
+      - key: WHISH_API_URL
+        sync: false
+      - key: WHISH_CHANNEL
+        sync: false
+      - key: WHISH_SECRET
+        sync: false
+      - key: WHISH_WEBSITE_URL
+        sync: false
+      - key: PAYMENT_CURRENCY
+        value: USD

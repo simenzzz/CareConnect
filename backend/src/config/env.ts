@@ -62,6 +62,11 @@ const envSchema = z.object({
   DB_NAME: nonEmpty('DB_NAME'),
   DB_USER: nonEmpty('DB_USER'),
   DB_PASSWORD: nonEmpty('DB_PASSWORD'),
+  // PostgreSQL TLS mode. Defaults preserve prior behavior (strict certificate
+  // verification in production, plaintext elsewhere); override for hosts whose
+  // certificate is not in Node's CA bundle (e.g. Render Postgres → `require`) or
+  // that do not support TLS at all (`disable`). See `config/database.ts`.
+  DB_SSL: z.enum(['verify', 'require', 'disable']).optional(),
 
   // Firebase Admin (service account)
   FIREBASE_PROJECT_ID: nonEmpty('FIREBASE_PROJECT_ID'),
