@@ -19,5 +19,8 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
+# SQL schema + dev seed, applied by the runtime DB bootstrap on first boot.
+COPY migrations ./migrations
+COPY fixtures ./fixtures
 EXPOSE 5000
 CMD ["npm", "start"]

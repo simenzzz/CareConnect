@@ -238,3 +238,11 @@ CREATE INDEX IF NOT EXISTS idx_reviews_customer_id    ON reviews(customer_id);
 CREATE INDEX IF NOT EXISTS idx_sitter_availability_sitter ON sitter_availability(sitter_id);
 CREATE INDEX IF NOT EXISTS idx_match_events_request_group ON match_events(request_group);
 CREATE INDEX IF NOT EXISTS idx_match_events_customer_id   ON match_events(customer_id);
+
+-- Bootstrap bookkeeping. The runtime DB bootstrap (src/config/dbBootstrap.ts) uses
+-- this to make schema application and the dev seed idempotent: a row per completed
+-- step means "already applied, skip". Not product data.
+CREATE TABLE IF NOT EXISTS schema_bootstrap (
+  step        TEXT PRIMARY KEY,
+  applied_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

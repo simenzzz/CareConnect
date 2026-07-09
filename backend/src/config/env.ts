@@ -47,6 +47,15 @@ const WHISH_REQUIRED_VARS = [
   'WHISH_WEBSITE_URL',
 ] as const;
 
+// Dev-seed Firebase UIDs are substituted verbatim into dev_seed.sql by the
+// runtime bootstrap, so they must be inert tokens only — no quotes, semicolons,
+// or other SQL metacharacters. Validation here is defence-in-depth on top of the
+// literal escaping in dbBootstrap.ts.
+const DEV_SEED_UID = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9_-]{1,128}$/, 'must be a simple UID token (letters, digits, "_" or "-")');
+
 const envSchema = z.object({
   // Runtime
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -87,6 +96,20 @@ const envSchema = z.object({
   WHISH_SECRET: optionalBlank(nonEmpty('WHISH_SECRET')),
   WHISH_WEBSITE_URL: optionalBlank(z.url({ message: 'WHISH_WEBSITE_URL must be a valid URL' })),
   PAYMENT_CURRENCY: z.string().trim().min(1).default('USD'),
+
+  // Dev seed (see src/config/dbBootstrap.ts). `ENABLE_DEV_SEED` gates the one-shot
+  // bootstrap seed; the UID vars are the Firebase identities of the demo accounts.
+  // They default to non-loginable placeholders so /sitters shows demo data with no
+  // extra configuration — override with real Firebase UIDs to log in as them.
+  ENABLE_DEV_SEED: z
+    .union([z.boolean(), z.string()])
+    .default('false')
+    .transform((v) => v === true || v === 'true'),
+  DEV_SEED_FIREBASE_UID_CUSTOMER_DEMO: DEV_SEED_UID.default('dev-demo-customer'),
+  DEV_SEED_FIREBASE_UID_SITTER_BABY: DEV_SEED_UID.default('dev-demo-sitter-baby'),
+  DEV_SEED_FIREBASE_UID_SITTER_PET: DEV_SEED_UID.default('dev-demo-sitter-pet'),
+  DEV_SEED_FIREBASE_UID_SITTER_BOTH: DEV_SEED_UID.default('dev-demo-sitter-both'),
+  DEV_SEED_FIREBASE_UID_SITTER_UNVERIFIED: DEV_SEED_UID.default('dev-demo-sitter-unverified'),
 })
   .superRefine((env, ctx) => {
     // In production the Whish credentials are mandatory — fail fast, exactly as

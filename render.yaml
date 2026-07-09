@@ -58,6 +58,12 @@ services:
       # --- Runtime ---
       - key: NODE_ENV
         value: development
+      # Marker-gated dev seed: on first boot, the API loads demo sitters into the
+      # empty DB so /sitters has data. Dev-only — the bootstrap refuses to seed
+      # unless NODE_ENV=development. Demo Firebase UIDs use safe baked-in
+      # placeholders, so no extra env is required.
+      - key: ENABLE_DEV_SEED
+        value: "true"
       # Render injects PORT automatically; the app listens on env.PORT.
 
       # --- CORS / payment callback URLs (fill after first deploy) ---

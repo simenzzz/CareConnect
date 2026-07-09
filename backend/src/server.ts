@@ -9,7 +9,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { initializeFirebase } from './config/firebase';
-import { connectDatabase } from './config/database';
+import { connectDatabase, getPool } from './config/database';
+import { bootstrapDatabase } from './config/dbBootstrap';
 import { generalLimiter, strictLimiter, reviewsLimiter } from './middleware/rateLimit';
 import { errorDetails } from './utils/errors';
 import authRoutes from './routes/auth';
@@ -23,13 +24,6 @@ const env = loadEnv();
 
 const app = express();
 const PORT = env.PORT;
-
-// Initialize Firebase and Database BEFORE importing routes
-logger.info('🔧 Initializing Firebase...');
-initializeFirebase();
-logger.info('🔧 Initializing Database...');
-connectDatabase();
-logger.info('✅ Firebase and Database initialized');
 
 // Middleware
 app.use(helmet()); // Security headers
@@ -82,13 +76,35 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  logger.info(`🚀 CareConnect Backend API running on port ${PORT}`);
-  logger.info(`📊 Health check: http://localhost:${PORT}/health`);
-  logger.info(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
-  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Initialize Firebase and Database, then bind the HTTP server. Wrapped in an async
+// function because bootstrapDatabase() (the schema + dev-seed step) is awaited
+// before listening, and top-level await is not valid in CommonJS.
+const start = async (): Promise<void> => {
+  logger.info('🔧 Initializing Firebase...');
+  initializeFirebase();
+  logger.info('🔧 Initializing Database...');
+  connectDatabase();
+  // Apply the schema and (when enabled) the one-shot dev seed before serving
+  // traffic. A schema failure throws and aborts startup; a seed failure is logged
+  // and non-fatal inside the bootstrap.
+  await bootstrapDatabase(env, getPool());
+  logger.info('✅ Firebase and Database initialized');
+
+  const server = app.listen(PORT, () => {
+    logger.info(`🚀 CareConnect Backend API running on port ${PORT}`);
+    logger.info(`📊 Health check: http://localhost:${PORT}/health`);
+    logger.info(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
+    logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+      logger.info('HTTP server closed');
+    });
+  });
+};
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
@@ -102,12 +118,13 @@ process.on('uncaughtException', (error) => {
   // Don't exit the process - keep server running
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    logger.info('HTTP server closed');
+// Only boot the server + DB bootstrap when run as the process entry point, so
+// importing this module (e.g. in tests) never opens a DB connection or a port.
+if (require.main === module) {
+  start().catch((error) => {
+    logger.error('❌ Failed to start CareConnect Backend API:', error);
+    process.exit(1);
   });
-});
+}
 
 export default app;

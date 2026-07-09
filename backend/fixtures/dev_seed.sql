@@ -1,8 +1,14 @@
 -- CareConnect disposable development seed.
 --
--- This script is executed by backend/fixtures/dev_seed.sh during first-time
--- Docker Postgres initialization, but only when all DEV_SEED_FIREBASE_UID_*
--- environment variables are set. It expects a fresh schema from migrations/init.sql.
+-- Applied by two paths:
+--  - fixtures/dev_seed.sh: first-time Docker Postgres init (requires every
+--    DEV_SEED_FIREBASE_UID_* var set, or it is skipped).
+--  - src/config/dbBootstrap.ts: runtime bootstrap on boot (needs ENABLE_DEV_SEED and
+--    NODE_ENV=development). It substitutes the :'var' UIDs and runs this body inside
+--    its own transaction, stripping this file's outer transaction wrapper first.
+--    Avoid stray transaction-control keywords followed by ';' inside comments or
+--    string literals, or that regex may remove the wrong occurrence.
+-- Expects a fresh schema from migrations/init.sql.
 
 BEGIN;
 
