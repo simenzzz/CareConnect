@@ -9,6 +9,9 @@ databases:
   - name: careconnect-db
     databaseName: careconnect
     plan: free
+    # Must match the web service region below — Render's internal DB hostname only
+    # resolves within the same region (cross-region → ENOTFOUND at boot).
+    region: frankfurt
     # NOTE: free PostgreSQL databases are DELETED 90 days after creation.
     # Upgrade to a paid plan before any real data exists.
     postgresMajorVersion: 16
@@ -50,10 +53,12 @@ services:
         fromDatabase:
           name: careconnect-db
           property: password
-      # Render's certificate is not in Node's CA bundle, so encrypt without
-      # verifying (the code's production default of strict-verify would fail).
+      # The same-region INTERNAL connection runs on Render's private network and
+      # rejects the TLS handshake, so connect without SSL. (Use `require` only if
+      # you switch to the EXTERNAL connection, which needs TLS but can't verify
+      # Render's cert.)
       - key: DB_SSL
-        value: require
+        value: disable
 
       # --- Runtime ---
       - key: NODE_ENV
